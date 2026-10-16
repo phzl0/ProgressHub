@@ -21,14 +21,14 @@ test('MongoDB: durable seasons, locks, migration and final results', { skip: !ur
   try {
     await t.test('migration and repeat synchronization retain one record per month', async () => {
       await ensureLegacy(db, user); await ensureLegacy(db, user);
-      await syncSeason(db, user, current, { force: true, collect });
-      await syncSeason(db, user, current, { force: true, collect });
+      await syncSeason(db, user, current, { force: true, missions: false, collect });
+      await syncSeason(db, user, current, { force: true, missions: false, collect });
       assert.equal(await seasons.countDocuments({ githubId: '42', period: current }), 1);
       assert.equal((await careerFor(db, user)).xp, 150);
       assert.equal((await seasons.findOne({ githubId: '42', period: current })).protectedXP, 100);
     });
     await t.test('a failed API request preserves the saved snapshot and releases its lock', async () => {
-      await assert.rejects(syncSeason(db, user, current, { force: true, collect: async () => { throw new Error('API unavailable'); } }));
+      await assert.rejects(syncSeason(db, user, current, { force: true, missions: false, collect: async () => { throw new Error('API unavailable'); } }));
       assert.equal((await users.findOne({ _id: user._id })).githubStats.xp, 150);
       assert.equal((await users.findOne({ _id: user._id })).syncLockId, undefined);
     });
@@ -37,9 +37,9 @@ test('MongoDB: durable seasons, locks, migration and final results', { skip: !ur
       let started;
       const ready = new Promise((resolve) => { started = resolve; });
       const gate = new Promise((resolve) => { release = resolve; });
-      const first = syncSeason(db, user, current, { force: true, collect: async (...args) => { started(); await gate; return collect(...args); } });
+      const first = syncSeason(db, user, current, { force: true, missions: false, collect: async (...args) => { started(); await gate; return collect(...args); } });
       await ready;
-      await assert.rejects(syncSeason(db, user, current, { force: true, collect }), (error) => error.status === 429);
+      await assert.rejects(syncSeason(db, user, current, { force: true, missions: false, collect }), (error) => error.status === 429);
       release(); await first;
       assert.equal((await careerFor(db, user)).xp, 150);
     });
@@ -52,7 +52,7 @@ test('MongoDB: durable seasons, locks, migration and final results', { skip: !ur
       assert.equal((await seasons.findOne({ githubId: '10', period: previous })).position, 1);
       assert.equal((await seasons.findOne({ githubId: '2', period: previous })).position, 2);
       assert.equal((await db.collection('communitySeasonResults').findOne({ _id: previous })).status, 'closed');
-      const result = await syncSeason(db, user, previous, { force: true, collect: async () => { throw new Error('must not query a closed season'); } });
+      const result = await syncSeason(db, user, previous, { force: true, missions: false, collect: async () => { throw new Error('must not query a closed season'); } });
       assert.equal(result.skipped, true);
       await finalizeSeason(db, previous, closeTime);
       assert.equal((await seasons.findOne({ githubId: '10', period: previous })).position, 1);

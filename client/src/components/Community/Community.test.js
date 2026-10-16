@@ -21,6 +21,7 @@ beforeEach(() => {
     if (url.endsWith('/sync')) syncCount += 1;
     return { ok: true, json: async () => url.endsWith('/leaderboard')
       ? { period: '2026-10', users: [] }
+      : url.endsWith('/missions') ? { startedAt: snapshot.toISOString(), missions: ['daily', 'weekly', 'monthly'].flatMap((kind) => Array.from({ length: 5 }, (_, index) => ({ id: `${kind}-${index+1}`, number: index+1, kind, xp: kind === 'monthly' ? 2000 : 300, description: `Objetivo ${kind} ${index+1}`, periodKey: '2026-10', endsAt: '2026-11-01T00:00:00Z', requirements: [{ label: 'commits', current: 0, target: 1 }], progress: 0, encouragement: 'Você está perto do próximo passo.', awarded: false }))) }
       : url.endsWith('/seasons') ? { seasons: [{ period: '2026-09', xp: 200, status: 'closed', position: 3, participants: 12, completeness: 'partial' }] }
       : url.includes('/profiles/') ? { githubId: '42', login: 'peer', picture: '', stats, position: 3 }
       : url.endsWith('/me') ? { connected: true, login: 'developer', optedIn: true, position: 1, stats }
@@ -95,4 +96,27 @@ test('career remains visible when the new season has no snapshot yet', async () 
   expect(screen.getByText('CARREIRA PERMANENTE')).toBeInTheDocument();
   expect(screen.getByText('1.200')).toBeInTheDocument();
   expect(screen.getByText('Nível 4')).toBeInTheDocument();
+});
+
+
+test('missions show five numbered cards per frequency without invented names', async () => {
+  render(<Community />);
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('link', { name: 'Missões', exact: true }));
+  await screen.findByText('Objetivo daily 1');
+  expect(screen.getAllByText(/^MISSÃO [1-5]$/)).toHaveLength(5);
+  fireEvent.click(screen.getByRole('button', { name: /Semanais/ }));
+  expect(screen.getByText('Objetivo weekly 5')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Mensais/ }));
+  expect(screen.getByText('Objetivo monthly 5')).toBeInTheDocument();
+  expect(screen.getAllByText('Você está perto do próximo passo.')).toHaveLength(5);
+});
+
+test('my profile groups career, achievements and links to mission progression', async () => {
+  render(<Community />);
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true }));
+  expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
+  expect(screen.getByText('XP de carreira')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /Ganhar bônus nas missões/ })).toHaveAttribute('href', '#missions');
 });

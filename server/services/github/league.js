@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { periodFor, periodBounds } = require('./scoring');
 const { preserveLegacy, summarizeCareer } = require('./career');
 const { collectStats } = require('./client');
+const { enroll, syncMissions, addMissionBonus, updateBonuses } = require('../missions/store');
 
 async function ensureLegacy(db, user) {
   if (!user.githubId || !user.githubStats?.period) return;
@@ -24,7 +25,7 @@ async function careerFor(db, user, migrate = true) {
   if (!records.length && user.githubStats) return summarizeCareer([{ period: user.githubStats.period, stats: user.githubStats }]);
   return summarizeCareer(records, user.career?.achievements || []);
 }
-async function syncSeason(db, user, period = periodFor(), { force = false, collect = collectStats } = {}) {
+async function syncSeason(db, user, period = periodFor(), { force = false, collect = collectStats, missions = true } = {}) {
   const users = db.collection('users');
   const seasons = db.collection('communitySeasons');
   const lockId = crypto.randomUUID();
@@ -36,7 +37,7 @@ async function syncSeason(db, user, period = periodFor(), { force = false, colle
         { 'githubStats.period': { $ne: period } },
         { 'githubStats.syncedAt': { $lt: new Date(now.getTime() - 30000) } }] }])
     ]
-  }, { $set: { syncLockId: lockId, syncLockUntil: new Date(now.getTime() + 120000) } });
+  }, { $set: { syncLockId: lockId, syncLockUntil: new Date(now.getTime() + 300000) } });
   if (!lock.modifiedCount) { const error = new Error('Aguarde 30 segundos ou a sincronização em andamento.'); error.status = 429; throw error; }
   try {
     user = await users.findOne({ _id: user._id });
@@ -44,8 +45,10 @@ async function syncSeason(db, user, period = periodFor(), { force = false, colle
     const closed = await db.collection('communitySeasonResults').findOne({ _id: period, status: { $in: ['closing', 'closed'] } });
     const existing = await seasons.findOne({ githubId: user.githubId, period });
     if (closed || existing?.status === 'closed') return { skipped: true };
+    if (missions) user = await enroll(db, user, now);
     const raw = await collect(user, period, now);
-    const stats = preserveLegacy(raw, existing?.protectedXP || 0);
+    const base = preserveLegacy(raw, existing?.protectedXP || 0);
+    let stats = addMissionBonus(base, existing?.stats?.missionXP || 0);
     const stillOwnsLease = await users.findOne({ _id: user._id, syncLockId: lockId, syncLockUntil: { $gt: new Date() } });
     if (!stillOwnsLease) throw new Error('Synchronization lease expired');
     const update = {
@@ -59,9 +62,16 @@ async function syncSeason(db, user, period = periodFor(), { force = false, colle
       await seasons.updateOne({ githubId: user.githubId, period, status: { $ne: 'closed' },
         $or: [{ updatedAt: { $lte: now } }, { updatedAt: { $exists: false } }] }, update, { upsert: true });
     } catch (error) { if (error.code === 11000) return { skipped: true }; throw error; }
+    if (missions && period === periodFor(now)) {
+      try { await syncMissions(db, user, new Date()); }
+      catch (_) { await users.updateOne({ _id: user._id }, { $set: { missionsError: 'A validação das missões ficou pendente. Seus pontos e bônus anteriores foram preservados.' } }); }
+    }
+    await updateBonuses(db, user, new Date());
+    const current = await seasons.findOne({ githubId: user.githubId, period: periodFor() });
+    if (period === periodFor()) stats = current?.stats || stats;
     const career = await careerFor(db, user, false);
     await users.updateOne({ _id: user._id, syncLockId: lockId }, {
-      $set: { career, ...(period === periodFor() ? { githubStats: stats, githubLogin: stats.login } : {}),
+      $set: { career, ...(current?.stats ? { githubStats: current.stats, ...(raw.login ? { githubLogin: raw.login } : {}) } : {}),
         backgroundSyncError: null }, $unset: { backgroundRetryAt: '' }
     });
     return { stats, career };

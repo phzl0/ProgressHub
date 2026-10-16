@@ -1,0 +1,73 @@
+const { activeMissions, claimCandidates } = require('./rules');
+const { periodFor, scoreContributions, progression } = require('../github/scoring');
+const { collectMissionEvents } = require('./github');
+async function enroll(db, user, now = new Date()) {
+  await db.collection('users').updateOne({ _id: user._id, missionsStartedAt: { $exists: false } }, { $set: { missionsStartedAt: now } });
+  return db.collection('users').findOne({ _id: user._id });
+}
+async function readMissions(db, user, now = new Date()) {
+  user = await enroll(db, user, now);
+  const events = await db.collection('missionEvents').find({ githubId: user.githubId, at: { $gte: new Date(now.getTime() - 65 * 86400000).toISOString() } }).toArray();
+  const active = activeMissions(events, user.missionsStartedAt, now);
+  const rewards = await db.collection('missionRewards').find({ githubId: user.githubId, $or: active.map((mission) => ({ missionId: mission.id, periodKey: mission.periodKey })) }).toArray();
+  const recent = await db.collection('missionRewards').find({ githubId: user.githubId }).sort({ awardedAt: -1 }).limit(15).toArray();
+  const paid = new Map(rewards.map((reward) => [`${reward.missionId}:${reward.periodKey}`, reward]));
+  const missions = active.map((mission) => {
+    const reward = paid.get(`${mission.id}:${mission.periodKey}`);
+    return { ...mission, awarded: Boolean(reward), awardedAt: reward?.awardedAt || null,
+      requirements: reward?.requirements || mission.requirements, progress: reward ? 100 : mission.progress, completedAt: reward?.completedAt || mission.completedAt,
+      encouragement: reward ? `Bônus de ${mission.xp.toLocaleString('pt-BR')} XP recebido. Continue construindo!` : mission.encouragement };
+  });
+  return { missions, startedAt: user.missionsStartedAt, syncedAt: user.missionsSyncedAt || null,
+    partial: Boolean(user.missionsPartial), error: user.missionsError || null,
+    recentRewards: recent.map(({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod }) => ({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod })) };
+}
+function addMissionBonus(stats, bonus) {
+  const baseXP = stats.baseXP ?? stats.xp - (stats.missionXP || 0);
+  const xp = baseXP + bonus;
+  return { ...stats, baseXP, missionXP: bonus, xp, ...progression(xp), breakdown: { ...stats.breakdown, missionXP: bonus } };
+}
+async function updateBonuses(db, user, now = new Date()) {
+  const period = periodFor(now);
+  const rewards = await db.collection('missionRewards').find({ githubId: user.githubId, creditedPeriod: period }).toArray();
+  if (!rewards.length) return;
+  const total = rewards.reduce((sum, reward) => sum + reward.xp, 0);
+  const seasons = db.collection('communitySeasons');
+  const existing = await seasons.findOne({ githubId: user.githubId, period });
+  if (existing?.status === 'closed') return;
+  const stats = addMissionBonus(existing?.stats || { ...scoreContributions([], 0), period, syncedAt: now }, total);
+  await seasons.updateOne({ githubId: user.githubId, period, status: { $ne: 'closed' } }, {
+    $set: { stats, updatedAt: now },
+    $setOnInsert: { githubId: user.githubId, period, status: 'open', eligible: Boolean(user.communityOptIn),
+      protectedXP: 0, createdAt: now, completeness: 'partial', note: 'Bônus confirmado; contribuições do período aguardam reconciliação.' }
+  }, { upsert: true });
+}
+async function syncMissions(db, user, now = new Date(), collector = collectMissionEvents) {
+  user = await enroll(db, user, now);
+  const collection = await collector(user, now);
+  const events = db.collection('missionEvents');
+  for (const event of collection.events) {
+    if (new Date(event.at) < new Date(user.missionsStartedAt) || new Date(event.at) > now) continue;
+    const key = `${user.githubId}:${event.kind}:${event.id}`;
+    if (event.kind === 'release') {
+      await events.updateOne({ _id: key }, { $set: { ...event, githubId: user.githubId, checkedAt: now } }, { upsert: true });
+    } else {
+      const { collaborative, issueClosed, ...stable } = event;
+      await events.updateOne({ _id: key }, { $setOnInsert: { ...stable, githubId: user.githubId },
+        ...(event.kind === 'merged' ? { $max: { collaborative: Boolean(collaborative), issueClosed: Boolean(issueClosed) } } : {}) }, { upsert: true });
+    }
+  }
+  const known = await events.find({ githubId: user.githubId, at: { $gte: new Date(now.getTime() - 65 * 86400000).toISOString() } }).toArray();
+  for (const mission of claimCandidates(known, user.missionsStartedAt, now)) {
+    const key = `${user.githubId}:${mission.id}:${mission.periodKey}:v1`;
+    try {
+      await db.collection('missionRewards').insertOne({ _id: key, githubId: user.githubId,
+        missionId: mission.id, kind: mission.kind, number: mission.number, periodKey: mission.periodKey,
+        xp: mission.xp, version: 1, completedAt: mission.completedAt, awardedAt: now,
+        creditedPeriod: periodFor(now), requirements: mission.requirements });
+    } catch (error) { if (error.code !== 11000) throw error; }
+  }
+  await updateBonuses(db, user, now);
+  await db.collection('users').updateOne({ _id: user._id }, { $set: { missionsSyncedAt: now, missionsPartial: collection.partial, missionsError: null } });
+}
+module.exports = { enroll, readMissions, addMissionBonus, syncMissions, updateBonuses };

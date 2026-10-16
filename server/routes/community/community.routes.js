@@ -6,6 +6,7 @@ const { connectToDatabase } = require('../../db');
 const { authenticateToken } = require('../../middleware/auth');
 const { periodFor } = require('../../services/github/scoring');
 const { tokenKey, encryptToken, githubClient } = require('../../services/github/client');
+const { readMissions } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
@@ -111,6 +112,14 @@ router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
     res.status(error.status === 429 ? 429 : 502).json({ error: error.status === 429
       ? error.message : 'Não foi possível sincronizar. Reconecte o GitHub se necessário; sua pontuação foi preservada.' });
   }
+});
+router.get('/missions', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar as missões.' });
+  try {
+    const db = await connectToDatabase();
+    res.set('Cache-Control', 'no-store');
+    res.json(await readMissions(db, req.user));
+  } catch (_) { res.status(503).json({ error: 'Não foi possível carregar as missões.' }); }
 });
 router.get('/seasons', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub.' });

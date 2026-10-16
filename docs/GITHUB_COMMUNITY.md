@@ -94,3 +94,46 @@ OAuth usa state descartável de dez minutos e PKCE S256. Tokens AES-256-GCM no b
 No frontend: `CI=true npm test -- --watchAll=false --runInBand --runTestsByPath src/components/Community/Community.test.js` e `npm run build`.
 
 Nesta etapa não há publicação. A execução integrada com MongoDB/worker deve ser confirmada no ambiente Docker. O ambiente do assistente bloqueou a inicialização do MongoDB de teste com `Operation not permitted`; testes unitários e de interface não substituem essa verificação. O vercel.json legado ainda exige revisão de domínio, CORS e arquitetura de execução do worker antes de uma futura publicação.
+
+## Missões numeradas e Meu perfil
+
+A aba Missões tem cinco objetivos diários, cinco semanais e cinco mensais, identificados apenas por número. Cada cartão mostra requisitos, progresso, prazo UTC, bônus e uma mensagem do que falta. Conclusão e crédito são automáticos. A tela consulta o resultado salvo a cada minuto; a coleta/validação GitHub acompanha a sincronização de dez minutos.
+
+| Frequência / número | Requisito | Bônus |
+| --- | --- | --- |
+| Diária 1 | 1 commit público elegível | 300 XP |
+| Diária 2 | 1 PR público aberto com alteração de conteúdo | 300 XP |
+| Diária 3 | 1 PR próprio mesclado | 500 XP |
+| Diária 4 | Revisão enviada em PR de outra pessoa | 300 XP |
+| Diária 5 | PR próprio mesclado que fechou uma issue vinculada | 500 XP |
+| Semanal 1 | Commits em 3 dias | 1.000 XP |
+| Semanal 2 | 10 commits em pelo menos 2 dias | 1.000 XP |
+| Semanal 3 | 3 PRs próprios mesclados | 1.500 XP |
+| Semanal 4 | Revisões em 3 PRs distintos de outras pessoas | 1.000 XP |
+| Semanal 5 | 2 PRs próprios mesclados por outros usuários humanos | 1.500 XP |
+| Mensal 1 | Commits em 12 dias | 2.000 XP |
+| Mensal 2 | 30 commits em pelo menos 3 semanas | 2.000 XP |
+| Mensal 3 | 8 PRs próprios mesclados em pelo menos 2 semanas | 3.000 XP |
+| Mensal 4 | 4 PRs próprios aceitos por outros humanos em pelo menos 2 repositórios | 3.000 XP |
+| Mensal 5 | Release própria com 20 commits em 5 dias, 5 PRs próprios mesclados, README e implementação na mesma versão | 5.000 XP |
+
+Dia/mês usam UTC; semana começa segunda-feira às 00:00 UTC. O prazo é exclusivo: uma ação exatamente no início do próximo período conta no próximo. Ações podem avançar várias frequências simultaneamente. O prêmio é único por conta, missão, versão de regra e período, com chave única no MongoDB. Não há botão para declarar conclusão ou receber repetidamente. Bônus entram no ranking e na carreira, além do XP normal, separados no extrato. Entram na temporada em que forem confirmados; uma confirmação atrasada não reabre rankings encerrados.
+
+`missionsStartedAt` é gravado uma única vez quando a conta entra no sistema de missões, pela primeira sincronização ou visita à aba. Ações anteriores não contam. Há até 48 horas após cada período para validar evidências atrasadas; não é concedido um histórico antigo de recompensas. Bônus já creditados permanecem mesmo se a evidência posteriormente deixar de estar acessível. A carreira é recalculada a partir de temporadas; o bônus salvo substitui o total anterior, sem incrementos duplicados.
+
+### Evidências e limites
+
+- Commits: autoria associada à conta, presentes na branch padrão pública consultada, com adições/remoções, datas de autoria e commit posteriores à ativação; merge commits automáticos são excluídos. SHA repetido não multiplica a contagem entre forks. São critérios mais específicos que o resumo legado de contribuições.
+- PR aberto: não rascunho, autoria própria, conteúdo alterado e data de criação elegível. PR mesclado: autoria própria, alteração de conteúdo e data de merge elegível. O bônus por merge de outro humano usa os mesmos critérios do sistema normal.
+- Revisões: enviadas, não rascunhos, em PRs de outros autores. Revisões repetidas no mesmo PR não multiplicam o objetivo semanal.
+- Issue: precisa estar fechada e o evento de fechamento apontar para aquele PR mesclado. Apenas escrever `fixes` no texto ou fechar a issue manualmente não basta.
+- Release: publicada pelo participante, sem draft/prerelease. O commit da tag precisa conter os commits próprios considerados e pelo menos cinco commits de merge dos PRs considerados (verificação de ancestralidade). README raiz de tamanho não zero e arquivo de implementação são verificados na árvore dessa versão. Dependências vendorizadas, builds, arquivos minificados e diretórios de documentação/imagens não comprovam implementação. Forks são permitidos, mas trabalho herdado anterior à ativação não satisfaz os objetivos. Isso verifica estrutura e eventos, não funcionamento ou qualidade do projeto.
+- A coleta tem orçamento de tempo de 70 segundos, até 24 repositórios por consulta, 100 commits por histórico consultado, 100 PRs abertos/mesclados e 100 contribuições de revisão, além das três releases recentes por repositório consultado. Os eventos confirmados são guardados entre consultas. Ao atingir limites/falhas, a tela avisa que o progresso pode estar parcial; não inventa evidências ou bloqueia os pontos básicos já calculados.
+
+Coleções: `missionEvents` (evidências por ID), `missionRewards` (livro de bônus com chave única e mês de crédito). GET `/api/community/missions` é privado e retorna somente objetivos e resumo dos bônus da sessão. A sincronização usa a trava de conta já existente; o prazo da trava agora é de cinco minutos para comportar a coleta adicional. Falhas de missões preservam o XP normal e os bônus anteriores.
+
+A aba Meu perfil reúne foto/nome GitHub, título, nível permanente, XP, posição atual/melhor posição e conquistas. Quando a participação pública está ativa, há link para visualizar como os demais usuários veem o perfil. Quando desativada, a visualização pessoal continua disponível e o perfil público retorna 404. Não foram criados itens cosméticos, upload de avatar ou conquistas fictícias.
+
+A paleta usa superfícies azul-marinho quase preto; verde claro permanece como destaque de progresso, com azul, roxo e dourado em atividades e status.
+
+Validação desta etapa: build de produção passou; 25 testes de backend e 8 testes de interface passaram. As consultas foram validadas contra o esquema GraphQL publicado do GitHub. As duas suítes MongoDB (temporadas e bônus) continuam opt-in e não foram executadas localmente pelo bloqueio do banco neste ambiente. A validação com a conta real e os serviços Docker continua necessária; não houve publicação.

@@ -71,6 +71,9 @@ async function initializeIndexes() {
     await usersCollection.createIndex({ 'githubStats.period': 1, 'githubStats.xp': -1, githubId: 1 });
     await db.collection('communitySeasons').createIndex({ githubId: 1, period: 1 }, { unique: true });
     await db.collection('communitySeasons').createIndex({ period: 1, status: 1, 'stats.xp': -1, githubId: 1 });
+    await db.collection('missionEvents').createIndex({ githubId: 1, at: 1 });
+    await db.collection('missionRewards').createIndex({ githubId: 1, creditedPeriod: 1 });
+    await db.collection('missionRewards').createIndex({ githubId: 1, awardedAt: -1 });
   } catch (error) {
     console.error('Error initializing database indexes:', error);
     throw error;

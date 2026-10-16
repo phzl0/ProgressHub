@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --test services/github/*.test.js",
+    "test": "node --test services/github/*.test.js services/missions/*.test.js",
     "start": "node server.js"
   },
   "keywords": [],
