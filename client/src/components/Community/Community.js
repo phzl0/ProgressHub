@@ -30,7 +30,10 @@ export default function Community() {
   const loadRanking = useCallback(async () => setRanking(await request('/leaderboard')), []);
   useEffect(() => {
     let mounted = true;
+    let inFlight = false;
     async function load() {
+      if (inFlight || document.visibilityState === 'hidden') return;
+      inFlight = true;
       try {
         const board = await request('/leaderboard');
         if (mounted) setRanking(board);
@@ -38,19 +41,29 @@ export default function Community() {
       try {
         const user = await request('/me');
         if (mounted) setMe(user);
-        // Opening the community refreshes stale data; no unattended scheduling yet.
-        if (user.connected && (!user.stats || Date.now() - new Date(user.stats.syncedAt).getTime() > 300000)) {
+        // Refresh while visible; no unattended server scheduling yet.
+        if (user.connected && (!user.stats || Date.now() - new Date(user.stats.syncedAt).getTime() > 60000)) {
           try {
             const stats = await request('/sync', {});
             const board = await request('/leaderboard');
             if (mounted) { setMe({ ...user, stats }); setRanking(board); }
           } catch (err) { if (mounted && err.status !== 429) setError(err.message); }
         }
-      } catch (err) { if (mounted && err.status !== 401) setError(err.message); }
-      finally { if (mounted) setLoading(false); }
+      } catch (err) {
+        if (mounted && err.status === 401) setMe(null);
+        else if (mounted) setError(err.message);
+      }
+      finally { inFlight = false; if (mounted) setLoading(false); }
     }
     load();
-    return () => { mounted = false; };
+    const timer = window.setInterval(load, 60000);
+    const resume = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', resume);
+    };
   }, []);
   async function sync() {
     setBusy(true); setError('');
@@ -107,6 +120,7 @@ export default function Community() {
               <div className="flex flex-wrap gap-2">{stats?.achievements?.map((badge) => <span key={badge} className="inline-flex gap-1 items-center rounded-full bg-indigo-500/20 px-3 py-1 text-xs"><Award size={14} />{badge}</span>)}</div>
               <button disabled={busy || loading} onClick={sync} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 disabled:opacity-50"><RefreshCw size={16} />{busy ? 'Atualizando…' : 'Sincronizar GitHub'}</button>
               <button disabled={busy || loading} onClick={participate} className="text-sm underline disabled:opacity-50">{me.optedIn ? 'Sair do ranking público' : 'Participar do ranking público'}</button>
+              <p className="text-xs text-indigo-300">Atualização automática ativa enquanto a página estiver visível · a cada minuto</p>
               <p className="text-xs text-slate-400">{stats ? `Última sincronização: ${new Date(stats.syncedAt).toLocaleString('pt-BR')}` : 'Ainda sem contribuições sincronizadas.'}</p>
             </> : <p className="text-slate-400">Entre com GitHub para acompanhar XP, nível e conquistas. Você escolhe se quer aparecer no ranking público.</p>}
           </section>
@@ -120,7 +134,7 @@ export default function Community() {
           <h2 className="text-lg font-semibold">Regras da primeira temporada</h2>
           <p className="text-sm text-slate-300">10 XP por commit reconhecido nas contribuições públicas do GitHub, até 20 por dia. 50 XP por PR público mesclado, até 100 por mês. Empates seguem o identificador estável da conta.</p>
           <p className="text-sm text-slate-400">XP, níveis e conquistas são mensais e reiniciam a cada mês UTC. Tarefas manuais não pontuam. O GitHub pode demorar para reconhecer commits; commits fora dos critérios de contribuição do perfil não entram. Quantidade não mede qualidade técnica.</p>
-          <p className="text-sm text-slate-400">Atualização ao abrir esta página ou pelo botão, com intervalo mínimo de cinco minutos. Ainda não há sincronização em segundo plano. A pontuação pode diminuir se contribuições deixarem de ser reconhecidas. Importação limitada a menos de 100 repositórios por mês.</p>
+          <p className="text-sm text-slate-400">Atualização automática a cada minuto enquanto esta página estiver visível, e ao voltar para ela. O botão permite atualizar após 30 segundos. Com o site fechado, a sincronização fica pausada. A pontuação pode diminuir se contribuições deixarem de ser reconhecidas. Importação limitada a menos de 100 repositórios por mês.</p>
           <p className="text-xs text-slate-500">Base open source: QuestLog · licença MIT. Participação pública opcional; tokens permanecem criptografados no servidor.</p>
         </section>
       </div>

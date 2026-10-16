@@ -95,10 +95,10 @@ router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
         { $or: [{ syncLockUntil: { $exists: false } }, { syncLockUntil: { $lt: now } }] },
         { $or: [{ 'githubStats.syncedAt': { $exists: false } },
           { 'githubStats.period': { $ne: period } },
-          { 'githubStats.syncedAt': { $lt: new Date(now.getTime() - 300000) } }] }
+          { 'githubStats.syncedAt': { $lt: new Date(now.getTime() - 30000) } }] }
       ]
     }, { $set: { syncLockId: lockId, syncLockUntil: new Date(now.getTime() + 90000) } });
-    if (!lock.modifiedCount) return res.status(429).json({ error: 'Aguarde cinco minutos entre sincronizações.' });
+    if (!lock.modifiedCount) return res.status(429).json({ error: 'Aguarde 30 segundos entre sincronizações.' });
     const stats = await collectStats(req.user, period, now);
     const result = await users.updateOne({ _id: req.user._id, syncLockId: lockId }, { $set: { githubStats: stats, githubLogin: stats.login } });
     if (!result.modifiedCount) throw new Error('Sync lock expired');

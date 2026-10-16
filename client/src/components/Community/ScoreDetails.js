@@ -4,7 +4,7 @@ const dateLabel = (date) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
 export default function ScoreDetails({ stats }) {
   if (!stats) return null;
   if (!stats.breakdown) {
-    return <section className="rounded-2xl border border-slate-700 bg-slate-800/70 p-6"><h2 className="text-xl font-semibold">De onde veio seu XP?</h2><p className="mt-3 text-slate-400">Sincronize o GitHub para carregar o detalhamento da sua pontuação. Se acabou de sincronizar, aguarde o intervalo de cinco minutos.</p></section>;
+    return <section className="rounded-2xl border border-slate-700 bg-slate-800/70 p-6"><h2 className="text-xl font-semibold">De onde veio seu XP?</h2><p className="mt-3 text-slate-400">O detalhamento será carregado na próxima atualização automática. Você também pode usar o botão de sincronização após 30 segundos.</p></section>;
   }
   const { breakdown, commitDays = [], pullRequests = [] } = stats;
   return (

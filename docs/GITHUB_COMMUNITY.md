@@ -9,7 +9,7 @@ A rota `/community` (também apresentada em `/`) adiciona uma comunidade competi
 - Tokens AES-256-GCM no banco, com chave exclusiva de ambiente; nunca enviados ao frontend.
 - Ranking global público dos participantes, Top 100, com consentimento explícito no botão de participação.
 - Temporadas mensais UTC. XP, nível, títulos e conquistas são da temporada, não vitalícios.
-- Abertura da página sincroniza dados antigos; botão permite nova sincronização após cinco minutos. Não há cron, webhook ou atualização com o usuário ausente nesta versão.
+- A página visível verifica a sessão, sincroniza dados antigos e atualiza o ranking a cada minuto; ao voltar à aba, verifica novamente. O botão permite nova sincronização após 30 segundos. Não há cron, webhook ou atualização com o site fechado nesta versão.
 
 ## Pontuação v1
 
