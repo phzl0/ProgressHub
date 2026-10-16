@@ -85,3 +85,13 @@ Tema preto e verde com navegação por Dashboard, Progresso e Ranking (links por
 A consulta automática ocorre a cada dez minutos enquanto a página está visível; ao retornar à aba ocorre uma verificação, e o GitHub só é sincronizado automaticamente quando o retrato tem pelo menos dez minutos. Atualização manual continua disponível após 30 segundos. Os horários exibidos distinguem sincronização do GitHub e consulta do ranking. Não há atualização com o site fechado.
 
 Verificação desta interface: build de produção do frontend concluído; dois testes de navegação/temporizador no frontend e cinco testes das regras de pontuação passaram. A revisão visual com navegador não foi concluída porque o download do navegador de teste falhou neste ambiente. O posicionamento e os estilos responsivos ainda devem ser conferidos no navegador do usuário.
+
+## Perfis públicos
+
+Os nomes no pódio e na tabela do ranking abrem `/community#profile/ID_GITHUB`, compartilhável e independente do nome de usuário. Quem participa do ranking tem perfil público com avatar, login, nível, título, posição, resumo de XP/commits/PRs e conquistas da temporada atual. O próprio participante encontra o link no Dashboard.
+
+`GET /api/community/profiles/:githubId` não exige login. A consulta exige communityOptIn=true e retorna 404 tanto para perfis inexistentes quanto para quem saiu do ranking. O endpoint tem limite próprio de 30 consultas/minuto/IP e Cache-Control:no-store. A resposta usa seleção explícita de campos: não inclui e-mail, tokens, tarefas, atividade detalhada ou temporadas anteriores. Ao sair do ranking, novas consultas ao perfil ficam indisponíveis; informações já visualizadas não podem ser recolhidas. O perfil aberto verifica o resumo a cada dez minutos e ao voltar à aba; não sincroniza o GitHub de terceiros.
+
+Preto e verde permanecem como identidade; azul diferencia atividades, roxo diferencia títulos/níveis e dourado diferencia conquistas/pódio.
+
+Validação desta entrega: build de produção concluído; quatro testes de frontend (abas, temporizador, link direto de perfil e perfil indisponível) e oito testes de regras/seleção de campos públicos passaram. Não foi feita uma nova validação visual em navegador real nem uma consulta a banco real nesta etapa.

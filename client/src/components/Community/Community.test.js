@@ -21,6 +21,7 @@ beforeEach(() => {
     if (url.endsWith('/sync')) syncCount += 1;
     return { ok: true, json: async () => url.endsWith('/leaderboard')
       ? { period: '2026-10', users: [] }
+      : url.includes('/profiles/') ? { githubId: '42', login: 'peer', picture: '', stats, position: 3 }
       : url.endsWith('/me') ? { connected: true, login: 'developer', optedIn: true, position: 1, stats }
       : stats };
   });
@@ -48,4 +49,26 @@ test('automatic GitHub synchronization waits ten minutes', async () => {
   expect(syncCount).toBe(0);
   await act(async () => { jest.advanceTimersByTime(1); });
   expect(syncCount).toBe(1);
+});
+
+
+test('public profile supports a direct link inside the community', async () => {
+  window.history.replaceState(null, '', '/community#profile/42');
+  render(<Community />);
+  await screen.findByRole('heading', { name: '@peer' });
+  expect(screen.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('href', 'https://github.com/peer');
+  expect(screen.getByText('#3')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('link', { name: 'Dashboard', exact: true }));
+  expect(screen.getByRole('heading', { name: 'Suas conquistas' })).toBeInTheDocument();
+});
+
+test('an unavailable public profile does not render participant details', async () => {
+  const normalFetch = global.fetch;
+  global.fetch = jest.fn((url, options) => url.includes('/profiles/')
+    ? Promise.resolve({ ok: false, status: 404, json: async () => ({ error: 'Perfil indisponível.' }) })
+    : normalFetch(url, options));
+  window.history.replaceState(null, '', '/community#profile/42');
+  render(<Community />);
+  await screen.findByRole('heading', { name: 'Perfil indisponível' });
+  expect(screen.queryByRole('link', { name: /Ver no GitHub/ })).not.toBeInTheDocument();
 });

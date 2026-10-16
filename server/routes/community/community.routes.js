@@ -11,6 +11,8 @@ const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
 const saveSession = (req) => new Promise((resolve, reject) => req.session.save((err) => err ? reject(err) : resolve()));
 const limiter = rateLimit({ windowMs: 60000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+// Separate public browsing limit avoids consuming login/sync quota when opening profiles.
+router.use('/profiles', require('./profiles.routes'));
 router.use(limiter);
 
 // Mutations are only accepted from the configured frontend (also prevents CSRF).
@@ -82,7 +84,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       });
     }
     res.set('Cache-Control', 'no-store');
-    res.json({ connected: Boolean(req.user.githubId), login: req.user.githubLogin,
+    res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
       stats, position });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
