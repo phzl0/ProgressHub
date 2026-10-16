@@ -10,7 +10,7 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
 
-const { connectToDatabase } = require('./db');
+const { connectToDatabase, initializeIndexes } = require('./db');
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
@@ -63,6 +63,8 @@ const analyticsRoutes = require('./routes/analytics/analytics.routes');
 const todoistRoutes = require('./routes/integrations/todoist/todoist.routes');
 const ticktickRoutes = require('./routes/integrations/ticktick/ticktick.routes');
 
+app.use('/api/community', require('./routes/community/community.routes'));
+
 app.use('/api/ai', require('./routes/ai/ai.routes'));
 
 app.use('/api', apiRoutes);
@@ -76,6 +78,7 @@ const PORT = process.env.PORT || 3001;
 const startServer = async () => {
   try {
     await connectToDatabase();
+    await initializeIndexes();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

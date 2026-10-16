@@ -1,4 +1,5 @@
 import './styles/globals.css';
+import Community from './components/Community/Community';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Users } from 'lucide-react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
@@ -429,6 +430,9 @@ const AppContent = () => {
 };
 
 const App = () => {
+  if (window.location.pathname === '/' || window.location.pathname === '/community') {
+    return <Community />;
+  }
   return (
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
       <NotificationProvider>

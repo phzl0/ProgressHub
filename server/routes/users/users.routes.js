@@ -9,6 +9,6 @@ const { authenticateToken, verifyOwnership } = require('../../middleware/auth');
 
 router.put('/:id', authenticateToken, verifyOwnership, updateUser);
 router.get('/:id', authenticateToken, getUser);
-router.put('/:id/opt-in', authenticateToken, updateOptInStatus);
+router.put('/:id/opt-in', authenticateToken, verifyOwnership, updateOptInStatus);
 
 module.exports = router;

@@ -54,22 +54,28 @@ async function initializeIndexes() {
     const db = await connectToDatabase();
     const usersCollection = db.collection('users');
 
-    // Check if index already exists
-    const indexes = await usersCollection.indexes();
-    const hasGoogleIdIndex = indexes.some(
-      (index) => index.key && index.key.googleId === 1
-    );
-
-    if (!hasGoogleIdIndex) {
-      await usersCollection.createIndex({ googleId: 1 }, { unique: true });
-      console.log('Created googleId index');
+    const indexes = await usersCollection.listIndexes().toArray().catch((error) => {
+      if (error.code === 26) return [];
+      throw error;
+    });
+    const googleIndex = indexes.find((index) => index.key?.googleId === 1);
+    if (googleIndex && !googleIndex.partialFilterExpression) {
+      await usersCollection.dropIndex(googleIndex.name);
     }
+    await usersCollection.createIndex(
+      { googleId: 1 }, { unique: true, partialFilterExpression: { googleId: { $type: 'string' } } }
+    );
+    await usersCollection.createIndex(
+      { githubId: 1 }, { unique: true, partialFilterExpression: { githubId: { $type: 'string' } } }
+    );
+    await usersCollection.createIndex({ 'githubStats.period': 1, 'githubStats.xp': -1, githubId: 1 });
   } catch (error) {
     console.error('Error initializing database indexes:', error);
+    throw error;
   }
 }
 
-initializeIndexes();
+
 
 process.on('SIGINT', async () => {
   if (client) {
@@ -80,5 +86,6 @@ process.on('SIGINT', async () => {
 });
 
 module.exports = {
-  connectToDatabase
+  connectToDatabase,
+  initializeIndexes
 };
