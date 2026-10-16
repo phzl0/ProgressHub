@@ -67,11 +67,25 @@ router.get('/auth/callback', async (req, res) => {
     res.redirect(`${clientURL()}/community`);
   } catch (_) { res.redirect(`${clientURL()}/community?error=oauth`); }
 });
-router.get('/me', authenticateToken, (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.json({ connected: Boolean(req.user.githubId), login: req.user.githubLogin,
-    name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
-    stats: req.user.githubStats?.period === periodFor() ? req.user.githubStats : null });
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const stats = req.user.githubStats?.period === periodFor() ? req.user.githubStats : null;
+    let position = null;
+    if (req.user.communityOptIn && req.user.githubId && stats) {
+      const db = await connectToDatabase();
+      position = 1 + await db.collection('users').countDocuments({
+        communityOptIn: true, 'githubStats.period': periodFor(),
+        $or: [
+          { 'githubStats.xp': { $gt: stats.xp } },
+          { 'githubStats.xp': stats.xp, githubId: { $lt: req.user.githubId } }
+        ]
+      });
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json({ connected: Boolean(req.user.githubId), login: req.user.githubLogin,
+      name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
+      stats, position });
+  } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
 });
 router.post('/participation', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId || typeof req.body.optedIn !== 'boolean') return res.status(400).json({ error: 'Conecte o GitHub e informe a participação.' });

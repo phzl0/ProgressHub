@@ -9,7 +9,7 @@ A rota `/community` (também apresentada em `/`) adiciona uma comunidade competi
 - Tokens AES-256-GCM no banco, com chave exclusiva de ambiente; nunca enviados ao frontend.
 - Ranking global público dos participantes, Top 100, com consentimento explícito no botão de participação.
 - Temporadas mensais UTC. XP, nível, títulos e conquistas são da temporada, não vitalícios.
-- A página visível verifica a sessão, sincroniza dados antigos e atualiza o ranking a cada minuto; ao voltar à aba, verifica novamente. O botão permite nova sincronização após 30 segundos. Não há cron, webhook ou atualização com o site fechado nesta versão.
+- A página visível verifica a sessão, sincroniza dados antigos e atualiza o ranking a cada dez minutos; ao voltar à aba, verifica novamente. O botão permite nova sincronização após 30 segundos. Não há cron, webhook ou atualização com o site fechado nesta versão.
 
 ## Pontuação v1
 
@@ -77,3 +77,11 @@ O perfil privado agora mostra a composição do XP (commits e PRs), quantidades 
 Esses detalhes só aparecem após uma nova sincronização. Dados antigos permanecem válidos, com uma mensagem orientando atualizar. O ranking público retorna apenas identificação, avatar, XP, nível e título; o detalhamento não é enviado nesse endpoint. O retrato mensal não é um registro imutável de eventos nem um histórico de temporadas.
 
 Verificação isolada das regras: no diretório server, `npm test` executa os testes de pontuação com o runner nativo do Node, sem banco, OAuth ou instalação de bibliotecas.
+
+## Interface da comunidade
+
+Tema preto e verde com navegação por Dashboard, Progresso e Ranking (links por hash, compatíveis com voltar/avançar do navegador). Dashboard apresenta nível, XP, conquistas e posição; Progresso apresenta gráfico diário de XP de commits e o extrato; Ranking apresenta destaques dos três primeiros e classificação. Não há atividades ou participantes fictícios nos estados vazios.
+
+A consulta automática ocorre a cada dez minutos enquanto a página está visível; ao retornar à aba ocorre uma verificação, e o GitHub só é sincronizado automaticamente quando o retrato tem pelo menos dez minutos. Atualização manual continua disponível após 30 segundos. Os horários exibidos distinguem sincronização do GitHub e consulta do ranking. Não há atualização com o site fechado.
+
+Verificação desta interface: build de produção do frontend concluído; dois testes de navegação/temporizador no frontend e cinco testes das regras de pontuação passaram. A revisão visual com navegador não foi concluída porque o download do navegador de teste falhou neste ambiente. O posicionamento e os estilos responsivos ainda devem ser conferidos no navegador do usuário.
