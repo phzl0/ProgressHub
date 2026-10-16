@@ -21,3 +21,4 @@
 .ql-game .ql-pr-list a{color:var(--ql-blue)}.ql-game .ql-table-profile a:hover,.ql-podium-card>a:hover{color:var(--ql-blue);text-decoration:underline}.ql-page-heading h1{overflow-wrap:anywhere}
 @media(max-width:1150px){.ql-public-badges{grid-template-columns:repeat(2,minmax(0,1fr))}.ql-public-hero{align-items:flex-start;flex-direction:column}.ql-public-actions{flex-direction:row;flex-wrap:wrap}}
 @media(max-width:760px){.ql-public-identity{gap:13px}.ql-public-identity>img{width:60px;height:60px;border-radius:14px}.ql-public-identity h2{font-size:23px}.ql-public-identity p{font-size:10px}.ql-public-profile{gap:18px}.ql-public-badge{padding:17px 12px}.ql-public-badge strong{font-size:11px}.ql-public-badge span{font-size:7px}}
+@media(max-width:760px){.ql-nav{gap:3px}.ql-nav a{padding:10px 5px;font-size:10px;gap:5px}.ql-nav a>svg{width:16px;flex-shrink:0}}

@@ -21,6 +21,7 @@ beforeEach(() => {
     if (url.endsWith('/sync')) syncCount += 1;
     return { ok: true, json: async () => url.endsWith('/leaderboard')
       ? { period: '2026-10', users: [] }
+      : url.endsWith('/seasons') ? { seasons: [{ period: '2026-09', xp: 200, status: 'closed', position: 3, participants: 12, completeness: 'partial' }] }
       : url.includes('/profiles/') ? { githubId: '42', login: 'peer', picture: '', stats, position: 3 }
       : url.endsWith('/me') ? { connected: true, login: 'developer', optedIn: true, position: 1, stats }
       : stats };
@@ -71,4 +72,27 @@ test('an unavailable public profile does not render participant details', async 
   render(<Community />);
   await screen.findByRole('heading', { name: 'Perfil indisponível' });
   expect(screen.queryByRole('link', { name: /Ver no GitHub/ })).not.toBeInTheDocument();
+});
+
+
+test('season history keeps final standings and labels partial records', async () => {
+  render(<Community />);
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('link', { name: 'Temporadas', exact: true }));
+  await screen.findByText('2026-09');
+  expect(screen.getByText('#3 de 12')).toBeInTheDocument();
+  expect(screen.getByText('Histórico parcial')).toBeInTheDocument();
+});
+
+test('career remains visible when the new season has no snapshot yet', async () => {
+  const normalFetch = global.fetch;
+  global.fetch = jest.fn((url, options) => url.endsWith('/me')
+    ? Promise.resolve({ ok: true, json: async () => ({ connected: true, login: 'developer', stats: null,
+      career: { xp: 1200, level: 4, experience: 0, nextLevelXP: 800, title: 'Explorador', achievements: ['Primeiro commit'] } }) })
+    : normalFetch(url, options));
+  render(<Community />);
+  await screen.findByText('@developer');
+  expect(screen.getByText('CARREIRA PERMANENTE')).toBeInTheDocument();
+  expect(screen.getByText('1.200')).toBeInTheDocument();
+  expect(screen.getByText('Nível 4')).toBeInTheDocument();
 });

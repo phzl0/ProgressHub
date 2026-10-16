@@ -1,39 +1,60 @@
-# Comunidade GitHub — primeira versão
+# Comunidade GitHub — MVP local
 
-A rota `/community` (também apresentada em `/`) adiciona uma comunidade competitiva ao QuestLog. Mantém React, Tailwind, a barra de progresso, Express, Passport, sessões e MongoDB existentes. A aplicação de tarefas original continua em `/app`. Seus pontos nunca entram na competição.
+Aplicação: `/community` ou `/`. Código legado de tarefas: `/app`. Mantém React, Express, Passport, MongoDB e Docker. Tarefas manuais não contam na comunidade. Esta entrega não publica nem altera ambientes Vercel.
 
-## Escopo
+## Carreira e temporadas
 
-- Login GitHub com OAuth authorization code, state descartável de dez minutos e PKCE S256.
-- Identidade pelo ID numérico estável, não por e-mail ou nome de usuário. Contas Google e GitHub permanecem separadas: não há vínculo automático por e-mail.
-- Tokens AES-256-GCM no banco, com chave exclusiva de ambiente; nunca enviados ao frontend.
-- Ranking global público dos participantes, Top 100, com consentimento explícito no botão de participação.
-- Temporadas mensais UTC. XP, nível, títulos e conquistas são da temporada, não vitalícios.
-- A página visível verifica a sessão, sincroniza dados antigos e atualiza o ranking a cada dez minutos; ao voltar à aba, verifica novamente. O botão permite nova sincronização após 30 segundos. Não há cron, webhook ou atualização com o site fechado nesta versão.
+- **Carreira permanente:** soma dos registros mensais conhecidos, nível, título e conquistas acumuladas. Curva de nível do QuestLog: 200 XP, mais 400, mais 600, etc. Explorador; Construtor no nível 5; Veterano no nível 10.
+- **Temporada mensal UTC:** pontuação e ranking do mês; começa uma nova disputa na virada. A carreira não reinicia.
+- **Histórico privado:** até 120 registros na aba Temporadas, com XP, posição final, participantes registrados, situação e cobertura. A carreira considera todos os registros, mesmo além dos 120 exibidos.
+- **Fechamento:** janela de 48 horas após o mês terminar para reconciliar contribuições com GitHub; depois resultados e posições ficam congelados. Empate por ID GitHub em ordem textual, como no ranking atual. Falhas mantêm o último retrato e marcam a cobertura como parcial. Posições parciais valem entre os participantes efetivamente registrados, sem reconstruir uma classificação antiga desconhecida.
+- **Migração:** importa o último retrato legado de cada conta uma única vez; seu XP fica protegido como piso na temporada correspondente. O ajuste aparece no extrato se necessário. Meses que nunca foram registrados não são inventados. Importações após o fechamento ficam sem posição histórica e com cobertura parcial.
 
-## Pontuação v1
+A coleção `communitySeasons` tem índice único `(githubId, period)`: cada sincronização substitui o retrato daquele mês, nunca soma outro retrato igual. Carreira é recalculada a partir desses registros. Conquistas já desbloqueadas são preservadas. Correções de contribuições podem alterar pontos do mês aberto e, portanto, o XP da carreira; não há reset mensal de carreira. Resultados encerrados não são recalculados.
+
+## Pontuação v2
 
 | Atividade | Regra |
 | --- | --- |
-| Commit reconhecido pelo perfil GitHub em repositório público | 10 XP; máximo de 20 commits por dia UTC |
-| PR público de autoria do participante, mesclado no mês | 50 XP; máximo de 100 PRs por mês |
-| Tarefas manuais, issues, criação de repositórios, estrelas | Sem pontos nesta versão |
+| Commit público reconhecido pelo perfil GitHub | 10 XP; máximo de 20 por dia UTC, somando repositórios |
+| PR público mesclado, de autoria do participante | Base de 50 XP |
+| Mesmo PR, com merge feito por outro usuário humano | +25 XP (total 75) |
+| Merge pelo próprio autor, bot ou identidade indisponível | Sem bônus; mantém 50 XP |
+| Issues, tarefas manuais, estrelas, criação de repositório | Sem XP nesta versão |
 
-Commits vêm de `contributionsCollection.commitContributionsByRepository`; o total é somado por dia antes de aplicar o limite. Somente repositórios públicos entram. Os critérios de contribuição do GitHub continuam valendo (por exemplo, associação de autoria e branch elegível). Não é uma contagem de todos os commits em todas as branches. PRs vêm de busca GraphQL por autoria, visibilidade pública e data de merge.
+Até 100 PRs/mês, selecionados pela data de criação mais antiga na busca GitHub (`sort:created-asc`). A busca é limitada às datas de merge do mês consultado, incluindo a consulta de meses anteriores. O extrato apresenta o bônus de colaboração e eventual ajuste legado. A lista de PRs mostra até 100 resultados considerados.
 
-O nível reutiliza a curva do QuestLog: 200 XP para passar do nível 1, mais 400 para passar do 2, etc. Títulos: Explorador, Construtor (nível 5) e Veterano (nível 10). Conquistas iniciais: primeiro commit, primeiro PR mesclado, 50 commits no mês e nível 5.
+Commits usam `contributionsCollection.commitContributionsByRepository`, não toda atividade Git em qualquer branch. Aplicam-se critérios de autoria/branch do GitHub. Importação de menos de 100 repositórios por mês; ao alcançar o limite ou receber dados parciais, não publica um novo total incompleto. Quantidade e aprovação por outra conta não comprovam qualidade técnica; contas alternativas, colaboração combinada e spam ainda precisam de evolução futura. Não usar o MVP para prêmios financeiros.
 
-A pontuação é um retrato recalculado, substituído atomicamente após consulta completa. Sincronizar novamente não soma o mesmo resultado outra vez. Uma trava com identificador e validade evita gravações simultâneas; erros preservam o último retrato. Empates são resolvidos pelo ID GitHub (ordem textual) para estabilidade.
+## Atualização automática local
 
-Limitações: menos de 100 repositórios de contribuições por mês; ao atingir o limite, a atualização falha explicitamente em vez de gravar dados parciais. GitHub pode atrasar contribuições e indexação de PRs. Retratos podem diminuir se as contribuições mudarem. Quantidade não comprova qualidade, e os limites apenas reduzem abuso: não eliminam spam, contas alternativas ou manipulação de autoria. Não usar esta versão para prêmios financeiros. Histórico de temporadas e análise de relevância ficam para depois.
+O Compose inicia **community-worker**, processo separado que consulta as contas conectadas a cada dez minutos, sequencialmente. Requer computador ligado, rede e Docker rodando; independe do navegador. Pode haver atraso quando o ciclo demora ou quando GitHub limita/falha. O painel mostra atividade recente do serviço e a última sincronização real.
 
-## Configuração local
+O worker tem uma concessão global renovável no MongoDB. Cada conta também tem uma trava, compartilhada com o botão HTTP, que evita gravações concorrentes. Escritores lentos são rejeitados; o banco mantém o último resultado em falhas e o worker tenta novamente em um ciclo posterior. Tokens nunca são incluídos nos logs. Na virada, o worker reconcilia retratos anteriores antes do fechamento, sempre que as APIs permitirem. Desligamentos prolongados e dados já indisponíveis no GitHub podem deixar o histórico parcial.
 
-1. Crie uma OAuth App própria em https://github.com/settings/developers (OAuth Apps → New OAuth App).
-2. Homepage URL: `http://localhost:3000`.
-3. Authorization callback URL: `http://localhost:3001/api/community/auth/callback`.
-4. Use uma aplicação exclusiva para este MVP, sem autorização `repo` ou escopos privados. A implementação pede escopo vazio e rejeita autorizações com escopos ampliados. Se habilitar tokens com expiração, será necessário reconectar após expirar; renovação automática ainda não está implementada.
-5. Copie `example.env` para `.env.test` apenas se ainda não tiver configuração e preencha:
+A página consulta os resultados a cada dez minutos e ao voltar à aba. Se o serviço não for detectado, a página faz uma sincronização de apoio enquanto visível. O botão permite sincronização após 30 segundos. O perfil de terceiros só consulta resultados salvos; não sincroniza contas de terceiros.
+
+### Atualizar a instalação existente
+
+Na pasta do projeto, depois de parar o antigo Compose em primeiro plano:
+
+```bash
+git pull --ff-only comunidade feat/github-community-mvp
+sudo docker compose --env-file .env.test up -d --build
+```
+
+`-d` mantém os serviços em segundo plano, mesmo após fechar o terminal. Os volumes existentes permanecem. Abra `http://localhost:3000/community`. Para conferir o worker:
+
+```bash
+sudo docker compose --env-file .env.test logs --tail=30 community-worker
+```
+
+## Primeira configuração
+
+1. Crie uma OAuth App exclusiva em https://github.com/settings/developers.
+2. Homepage `http://localhost:3000`; callback `http://localhost:3001/api/community/auth/callback`.
+3. Copie `example.env` para `.env.test` somente se ainda não tiver configuração.
+4. Configure:
 
 ```dotenv
 CLIENT=http://localhost:3000
@@ -41,57 +62,35 @@ REACT_APP_PROD=http://localhost:3001/api
 GITHUB_CLIENT_ID=seu_client_id
 GITHUB_CLIENT_SECRET=seu_client_secret
 GITHUB_CALLBACK_URL=http://localhost:3001/api/community/auth/callback
-GITHUB_TOKEN_KEY=chave_hexadecimal_de_64_caracteres
-SESSION_SECRET=outro_segredo_aleatorio_com_pelo_menos_32_caracteres
+GITHUB_TOKEN_KEY=64_caracteres_hexadecimais
+SESSION_SECRET=outro_segredo_aleatorio_de_pelo_menos_32_caracteres
 ```
 
-Execute `openssl rand -hex 32` duas vezes para gerar valores independentes de GITHUB_TOKEN_KEY e SESSION_SECRET. Não publique esses valores. Trocar a chave de tokens exige novo login GitHub. Variáveis REACT_APP são públicas no build: nunca coloque segredos nelas.
+Use `openssl rand -hex 32` duas vezes para gerar segredos independentes. Não publique `.env.test`. Variáveis REACT_APP são públicas no build; nunca coloque segredos nelas. Trocar GITHUB_TOKEN_KEY exige novo login. O worker usa os tokens salvos; se revogados/expirados, o usuário precisa reconectar. Renovação automática de tokens com expiração ainda não foi implementada.
 
-O Google é opcional para a comunidade. Remova as variáveis GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET se não for usar o login legado. Ao executar fora do Docker, configure as variáveis também no ambiente dos respectivos processos.
+Google é opcional. O código usa `usersDB` para aplicação; o seed `questlog_test` não é o banco de aplicação. Índices parciais únicos permitem contas Google e GitHub separadas. Não há vínculo automático por e-mail.
 
-Depois de configurar, `sudo docker compose --env-file .env.test up --build` reconstrói frontend e backend. Abra `http://localhost:3000/community`. MongoDB e portas da aplicação ficam vinculados ao localhost no Compose desta branch.
+## Perfis e privacidade
 
-O banco de aplicação continua sendo `usersDB`, preservando o comportamento legado. O seed `questlog_test` não é utilizado pela aplicação. Sessões usam o banco da URI de conexão. Na inicialização, o índice Google antigo é migrado para único parcial; um índice GitHub único parcial permite contas sem googleId. Falhas nessa migração interrompem a inicialização para evitar contas duplicadas.
+Participar do ranking disponibiliza `/community#profile/ID_GITHUB`. Perfil público mostra apenas avatar, login, carreira, conquistas e resumo mensal. Ao sair, novas consultas ao perfil retornam 404. Histórico pessoal, e-mail, tokens, tarefas e atividade detalhada não entram no perfil. Dados já visualizados não podem ser recolhidos.
+
+OAuth usa state descartável de dez minutos e PKCE S256. Tokens AES-256-GCM no banco; nunca no frontend. Escopo OAuth vazio; autorizações ampliadas são rejeitadas. Usar uma OAuth App exclusiva. POSTs exigem Origin igual a CLIENT. Limite geral de dez requisições/minuto/IP; perfis públicos têm limite separado de 30/minuto/IP. Limites HTTP são locais por instância; travas de sincronização ficam no banco.
 
 ## Endpoints
 
-- GET `/api/community/auth` — inicia OAuth.
-- GET `/api/community/auth/callback` — conclui OAuth e cria sessão.
-- GET `/api/community/me` — perfil privado com pontuação da temporada atual; nunca retorna token.
-- POST `/api/community/sync` — sincroniza apenas a conta da sessão.
-- POST `/api/community/participation` — define `{ "optedIn": true/false }` apenas para a conta da sessão.
-- GET `/api/community/leaderboard` — Top 100 público da temporada atual.
+- GET `/api/community/auth` e `/auth/callback`: OAuth.
+- GET `/api/community/me`: perfil privado, carreira, temporada e posição atual.
+- POST `/api/community/sync`: sincronização da conta da sessão.
+- POST `/api/community/participation`: participação pública da conta da sessão.
+- GET `/api/community/leaderboard`: Top 100 por XP mensal, com nível/título da carreira.
+- GET `/api/community/profiles/:githubId`: resumo público de participante.
+- GET `/api/community/seasons`: histórico privado.
+- GET `/api/community/sync-status`: situação recente do processo automático, sem dados de contas.
 
-POSTs exigem Origin igual ao CLIENT configurado. Limite inicial de dez requisições por minuto/IP neste router, em memória por instância; em produção distribuída, migrar para armazenamento compartilhado. Também há intervalo de sincronização e trava no MongoDB por usuário.
+## Verificação e limites da entrega
 
-## Publicação e validação
+`npm test` em server executa testes de regras, migração e proteção de campos. A suíte de integração MongoDB é opt-in: configure MONGODB_TEST_URI para um servidor de teste descartável. Ela cria um banco com nome aleatório e apaga somente esse banco ao terminar. Testa unicidade, migração, falha da API, concorrência e congelamento de classificação. O workflow Community MVP checks roda com MongoDB isolado no GitHub Actions e também testa/builda o frontend.
 
-Nenhuma publicação faz parte desta entrega. O vercel.json legado contém domínio do autor original; antes de hospedar, revisar CORS, cookies, callback, região do banco, roteamento SPA `/community`, segredos e limites de plataforma. Preferir frontend e API sob a mesma origem para reduzir problemas de cookies entre sites.
+No frontend: `CI=true npm test -- --watchAll=false --runInBand --runTestsByPath src/components/Community/Community.test.js` e `npm run build`.
 
-Esta implementação não foi validada com login real, MongoDB ou navegador. Testes de execução foram adiados por solicitação do usuário. Antes de disponibilizar: validar consentimento negado, callback inválido, login repetido, mês novo, contas empatadas, opt-out, falhas/rate limits do GitHub e duas sincronizações simultâneas. Próximas entregas: sincronização agendada, histórico de temporadas, paginação além do Top 100, desconexão/exclusão da conta, critérios de contribuição e política de privacidade própria.
-
-## Detalhamento da pontuação
-
-O perfil privado agora mostra a composição do XP (commits e PRs), quantidades detectadas, quantidades pontuadas e o que ficou acima dos limites. Commits são apresentados por dia UTC; PRs têm título, repositório, data de merge e link público. A busca retorna até 100 PRs como referência, enquanto o total encontrado continua sendo usado no cálculo com limite de 100. As regras v1 não mudaram.
-
-Esses detalhes só aparecem após uma nova sincronização. Dados antigos permanecem válidos, com uma mensagem orientando atualizar. O ranking público retorna apenas identificação, avatar, XP, nível e título; o detalhamento não é enviado nesse endpoint. O retrato mensal não é um registro imutável de eventos nem um histórico de temporadas.
-
-Verificação isolada das regras: no diretório server, `npm test` executa os testes de pontuação com o runner nativo do Node, sem banco, OAuth ou instalação de bibliotecas.
-
-## Interface da comunidade
-
-Tema preto e verde com navegação por Dashboard, Progresso e Ranking (links por hash, compatíveis com voltar/avançar do navegador). Dashboard apresenta nível, XP, conquistas e posição; Progresso apresenta gráfico diário de XP de commits e o extrato; Ranking apresenta destaques dos três primeiros e classificação. Não há atividades ou participantes fictícios nos estados vazios.
-
-A consulta automática ocorre a cada dez minutos enquanto a página está visível; ao retornar à aba ocorre uma verificação, e o GitHub só é sincronizado automaticamente quando o retrato tem pelo menos dez minutos. Atualização manual continua disponível após 30 segundos. Os horários exibidos distinguem sincronização do GitHub e consulta do ranking. Não há atualização com o site fechado.
-
-Verificação desta interface: build de produção do frontend concluído; dois testes de navegação/temporizador no frontend e cinco testes das regras de pontuação passaram. A revisão visual com navegador não foi concluída porque o download do navegador de teste falhou neste ambiente. O posicionamento e os estilos responsivos ainda devem ser conferidos no navegador do usuário.
-
-## Perfis públicos
-
-Os nomes no pódio e na tabela do ranking abrem `/community#profile/ID_GITHUB`, compartilhável e independente do nome de usuário. Quem participa do ranking tem perfil público com avatar, login, nível, título, posição, resumo de XP/commits/PRs e conquistas da temporada atual. O próprio participante encontra o link no Dashboard.
-
-`GET /api/community/profiles/:githubId` não exige login. A consulta exige communityOptIn=true e retorna 404 tanto para perfis inexistentes quanto para quem saiu do ranking. O endpoint tem limite próprio de 30 consultas/minuto/IP e Cache-Control:no-store. A resposta usa seleção explícita de campos: não inclui e-mail, tokens, tarefas, atividade detalhada ou temporadas anteriores. Ao sair do ranking, novas consultas ao perfil ficam indisponíveis; informações já visualizadas não podem ser recolhidas. O perfil aberto verifica o resumo a cada dez minutos e ao voltar à aba; não sincroniza o GitHub de terceiros.
-
-Preto e verde permanecem como identidade; azul diferencia atividades, roxo diferencia títulos/níveis e dourado diferencia conquistas/pódio.
-
-Validação desta entrega: build de produção concluído; quatro testes de frontend (abas, temporizador, link direto de perfil e perfil indisponível) e oito testes de regras/seleção de campos públicos passaram. Não foi feita uma nova validação visual em navegador real nem uma consulta a banco real nesta etapa.
+Nesta etapa não há publicação. A execução integrada com MongoDB/worker deve ser confirmada no ambiente Docker. O ambiente do assistente bloqueou a inicialização do MongoDB de teste com `Operation not permitted`; testes unitários e de interface não substituem essa verificação. O vercel.json legado ainda exige revisão de domínio, CORS e arquitetura de execução do worker antes de uma futura publicação.

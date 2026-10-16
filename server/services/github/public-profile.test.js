@@ -17,7 +17,7 @@ test('only consenting participants have a public profile', () => {
 });
 test('public profile allowlist excludes private fields and detailed activity', () => {
   const result = publicProfile(user, 4, now);
-  assert.deepEqual(Object.keys(result).sort(), ['githubId', 'login', 'picture', 'position', 'stats']);
+  assert.deepEqual(Object.keys(result).sort(), ['career', 'githubId', 'login', 'picture', 'position', 'stats']);
   assert.equal(result.position, 4);
   assert.equal(result.stats.xp, 200);
   assert.equal(JSON.stringify(result).includes('private'), false);

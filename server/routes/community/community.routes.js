@@ -5,7 +5,8 @@ const rateLimit = require('express-rate-limit');
 const { connectToDatabase } = require('../../db');
 const { authenticateToken } = require('../../middleware/auth');
 const { periodFor } = require('../../services/github/scoring');
-const { tokenKey, encryptToken, githubClient, collectStats } = require('../../services/github/client');
+const { tokenKey, encryptToken, githubClient } = require('../../services/github/client');
+const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -83,10 +84,12 @@ router.get('/me', authenticateToken, async (req, res) => {
         ]
       });
     }
+    const db = await connectToDatabase();
+    const career = req.user.githubId ? await careerFor(db, req.user) : null;
     res.set('Cache-Control', 'no-store');
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
-      stats, position });
+      stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
 });
 router.post('/participation', authenticateToken, sameOrigin, async (req, res) => {
@@ -94,37 +97,39 @@ router.post('/participation', authenticateToken, sameOrigin, async (req, res) =>
   try {
     const db = await connectToDatabase();
     await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityOptIn: req.body.optedIn } });
+    await db.collection('communitySeasons').updateOne({ githubId: req.user.githubId, period: periodFor(), status: 'open' }, { $set: { eligible: req.body.optedIn } });
     res.json({ optedIn: req.body.optedIn });
   } catch (_) { res.status(500).json({ error: 'Não foi possível atualizar sua participação.' }); }
 });
 router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para sincronizar.' });
-  let users;
-  const lockId = crypto.randomUUID();
   try {
     const db = await connectToDatabase();
-    users = db.collection('users');
-    const now = new Date();
-    const period = periodFor(now);
-    const lock = await users.updateOne({ _id: req.user._id,
-      $and: [
-        { $or: [{ syncLockUntil: { $exists: false } }, { syncLockUntil: { $lt: now } }] },
-        { $or: [{ 'githubStats.syncedAt': { $exists: false } },
-          { 'githubStats.period': { $ne: period } },
-          { 'githubStats.syncedAt': { $lt: new Date(now.getTime() - 30000) } }] }
-      ]
-    }, { $set: { syncLockId: lockId, syncLockUntil: new Date(now.getTime() + 90000) } });
-    if (!lock.modifiedCount) return res.status(429).json({ error: 'Aguarde 30 segundos entre sincronizações.' });
-    const stats = await collectStats(req.user, period, now);
-    const result = await users.updateOne({ _id: req.user._id, syncLockId: lockId }, { $set: { githubStats: stats, githubLogin: stats.login } });
-    if (!result.modifiedCount) throw new Error('Sync lock expired');
-    res.json(stats);
-  } catch (_) {
-    // Do not log axios errors: their request configuration contains the access token.
-    res.status(502).json({ error: 'Não foi possível sincronizar. Reconecte o GitHub se necessário; sua pontuação anterior foi preservada.' });
-  } finally {
-    if (users) await users.updateOne({ _id: req.user._id, syncLockId: lockId }, { $unset: { syncLockId: '', syncLockUntil: '' } }).catch(() => {});
+    const result = await syncSeason(db, req.user);
+    res.json(result.stats || { skipped: true });
+  } catch (error) {
+    res.status(error.status === 429 ? 429 : 502).json({ error: error.status === 429
+      ? error.message : 'Não foi possível sincronizar. Reconecte o GitHub se necessário; sua pontuação foi preservada.' });
   }
+});
+router.get('/seasons', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub.' });
+  try {
+    const db = await connectToDatabase();
+    res.set('Cache-Control', 'no-store');
+    res.json({ seasons: await seasonHistory(db, req.user) });
+  } catch (_) { res.status(503).json({ error: 'Não foi possível carregar as temporadas.' }); }
+});
+router.get('/sync-status', async (req, res) => {
+  try {
+    const db = await connectToDatabase();
+    const job = await db.collection('communityJobs').findOne({ _id: 'github-sync' });
+    const heartbeatAt = job?.leaseUntil ? new Date(new Date(job.leaseUntil).getTime() - 180000) : null;
+    const lastSeen = Math.max(new Date(job?.completedAt || 0).getTime(), heartbeatAt?.getTime() || 0);
+    res.set('Cache-Control', 'no-store');
+    res.json({ active: Boolean(lastSeen && Date.now() - lastSeen < 15 * 60000),
+      status: job?.status || 'not_started', lastCycleAt: job?.completedAt || null });
+  } catch (_) { res.status(503).json({ error: 'Não foi possível consultar a atualização automática.' }); }
 });
 router.get('/leaderboard', async (req, res) => {
   try {
@@ -132,7 +137,8 @@ router.get('/leaderboard', async (req, res) => {
     const period = periodFor();
     const users = await db.collection('users').find({ communityOptIn: true, 'githubStats.period': period }, {
       projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1,
-        'githubStats.xp': 1, 'githubStats.level': 1, 'githubStats.title': 1 }
+        'githubStats.xp': 1, 'githubStats.level': 1, 'githubStats.title': 1,
+        'career.level': 1, 'career.title': 1 }
     }).sort({ 'githubStats.xp': -1, githubId: 1 }).limit(100).toArray();
     res.set('Cache-Control', 'no-store');
     res.json({ period, users });

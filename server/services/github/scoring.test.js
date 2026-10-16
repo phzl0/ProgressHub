@@ -9,7 +9,7 @@ test('daily commit limits apply before monthly aggregation', () => {
   assert.deepEqual(stats.breakdown, {
     commitXP: 240, pullRequestXP: 100,
     detectedCommits: 29, detectedMergedPRs: 2,
-    ignoredCommits: 5, ignoredMergedPRs: 0
+    ignoredCommits: 5, ignoredMergedPRs: 0, collaborationBonus: 0, collaborativePRs: 0, legacyAdjustment: 0
   });
   assert.equal(stats.level, 2);
   assert.equal(stats.experience, 140);
@@ -36,4 +36,21 @@ test('exact level threshold and repeated snapshots do not add XP', () => {
 });
 test('season boundary uses UTC rather than local calendar month', () => {
   assert.equal(periodFor(new Date('2026-10-31T22:00:00-03:00')), '2026-11');
+});
+
+
+test('collaboration rewards an independent human merger without reducing the base', () => {
+  const { collaborativePR } = require('./scoring');
+  assert.equal(collaborativePR({ mergedBy: 'peer', mergerType: 'User' }, 'author'), true);
+  assert.equal(collaborativePR({ mergedBy: 'AUTHOR', mergerType: 'User' }, 'author'), false);
+  assert.equal(collaborativePR({ mergedBy: 'bot', mergerType: 'Bot' }, 'author'), false);
+  assert.equal(collaborativePR({ mergedBy: null, mergerType: null }, 'author'), false);
+  const stats = scoreContributions([], 3, 2);
+  assert.equal(stats.xp, 200);
+  assert.equal(stats.breakdown.collaborationBonus, 50);
+});
+test('historical month bounds stop at the next UTC month, including leap years', () => {
+  const { periodBounds } = require('./scoring');
+  assert.equal(periodBounds('2024-02').end.toISOString(), '2024-03-01T00:00:00.000Z');
+  assert.throws(() => periodBounds('2026-13'));
 });

@@ -1,10 +1,14 @@
 const { periodFor } = require('./scoring');
+const { summarizeCareer } = require('./career');
 
 // Explicit allowlist: never return the user document or its full GitHub snapshot.
 function publicProfile(user, position = null, now = new Date()) {
   if (!user?.communityOptIn || !/^\d{1,20}$/.test(user.githubId || '')) return null;
   const stats = user.githubStats?.period === periodFor(now) ? user.githubStats : null;
+  const career = user.career || summarizeCareer(user.githubStats ? [{ period: user.githubStats.period, stats: user.githubStats }] : []);
   return {
+    career: { xp: career.xp, level: career.level, experience: career.experience, nextLevelXP: career.nextLevelXP,
+      title: career.title, achievements: career.achievements || [], seasons: career.seasons, since: career.since, bestPosition: career.bestPosition },
     githubId: user.githubId,
     login: user.githubLogin,
     picture: user.picture,

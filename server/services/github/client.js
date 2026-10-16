@@ -1,6 +1,6 @@
 const axios = require('axios');
 const crypto = require('crypto');
-const { scoreContributions } = require('./scoring');
+const { RULES_VERSION, periodBounds, collaborativePR, scoreContributions } = require('./scoring');
 
 function tokenKey() {
   const value = process.env.GITHUB_TOKEN_KEY || '';
@@ -27,7 +27,10 @@ function githubClient(token) {
 }
 async function collectStats(user, period, now = new Date()) {
   const client = githubClient(decryptToken(user.githubToken));
-  const from = `${period}-01T00:00:00Z`;
+  const bounds = periodBounds(period);
+  const from = bounds.from.toISOString();
+  const to = new Date(Math.min(now.getTime(), bounds.end.getTime() - 1));
+  if (to < bounds.from) throw new Error('Future season');
   // Revalidate identity: names can change, numeric IDs cannot.
   const { data: profile } = await client.get('/user');
   if (String(profile.id) !== user.githubId) throw new Error('GitHub identity mismatch');
@@ -42,12 +45,12 @@ async function collectStats(user, period, now = new Date()) {
     }
     search(query: $search, type: ISSUE, first: 100) {
       issueCount
-      nodes { ... on PullRequest { title url mergedAt repository { nameWithOwner isPrivate } } }
+      nodes { ... on PullRequest { title url mergedAt mergedBy { login __typename } repository { nameWithOwner isPrivate } } }
     }
   }`;
   const { data } = await client.post('/graphql', { query, variables: {
-    login: profile.login, from, to: now.toISOString(),
-    search: `is:pr is:merged is:public author:${profile.login} merged:>=${period}-01`
+    login: profile.login, from, to: to.toISOString(),
+    search: `is:pr is:merged is:public author:${profile.login} merged:${period}-01..${to.toISOString().slice(0, 10)} sort:created-asc`
   } });
   if (data.errors || !data.data?.user) throw new Error('GitHub returned incomplete contribution data');
   const repos = data.data.user.contributionsCollection.commitContributionsByRepository;
@@ -63,16 +66,21 @@ async function collectStats(user, period, now = new Date()) {
       days[day] = (days[day] || 0) + contribution.commitCount;
     }
   }
+  const pullRequests = data.data.search.nodes
+    .filter((pr) => pr?.mergedAt && pr.repository && !pr.repository.isPrivate)
+    .map((pr) => ({ title: pr.title, url: pr.url, mergedAt: pr.mergedAt,
+      repository: pr.repository.nameWithOwner, mergedBy: pr.mergedBy?.login || null,
+      mergerType: pr.mergedBy?.__typename || null }));
+  if (pullRequests.length !== Math.min(100, data.data.search.issueCount)) throw new Error('Incomplete PR search results');
+  const collaborationCount = pullRequests.filter((pr) => collaborativePR(pr, profile.login)).length;
   return {
-    ...scoreContributions(Object.values(days), data.data.search.issueCount),
+    ...scoreContributions(Object.values(days), data.data.search.issueCount, collaborationCount),
     commitDays: Object.entries(days).sort(([a], [b]) => b.localeCompare(a)).map(([date, count]) => ({
       date, detected: count, credited: Math.min(20, count), xp: Math.min(20, count) * 10
     })),
-    pullRequests: data.data.search.nodes
-      .filter((pr) => pr?.mergedAt && pr.repository && !pr.repository.isPrivate)
-      .map((pr) => ({ title: pr.title, url: pr.url, mergedAt: pr.mergedAt, repository: pr.repository.nameWithOwner }))
+    pullRequests: pullRequests.map((pr) => ({ ...pr, xp: collaborativePR(pr, profile.login) ? 75 : 50 }))
       .sort((a, b) => b.mergedAt.localeCompare(a.mergedAt)),
-    period, syncedAt: now, rulesVersion: 1, detailsVersion: 1,
+    period, syncedAt: now, rulesVersion: RULES_VERSION, detailsVersion: 2,
     login: profile.login
   };
 }
