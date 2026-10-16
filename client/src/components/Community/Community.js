@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, Award } from 'lucide-react';
 import ProgressBar from '../XP Management/ProgressBar';
+import ScoreDetails from './ScoreDetails';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 async function request(path, body) {
@@ -114,6 +115,7 @@ export default function Community() {
             {ranking.users.length === 0 ? <p className="text-slate-400 py-8">O ranking está começando. Conecte sua conta, sincronize e participe.</p> : <ol className="divide-y divide-slate-700">{ranking.users.map((user, index) => <li key={user.githubId} className="flex items-center gap-3 py-4"><span className="text-slate-400 w-7">{index + 1}º</span><img src={user.picture} alt="" className="w-9 h-9 rounded-full" /><div className="min-w-0 flex-1"><a href={`https://github.com/${user.githubLogin}`} target="_blank" rel="noreferrer" className="font-semibold hover:underline break-all">@{user.githubLogin}</a><p className="text-xs text-slate-400">Nível {user.githubStats.level} · {user.githubStats.title}</p></div><strong className="whitespace-nowrap">{user.githubStats.xp} XP</strong></li>)}</ol>}
           </section>
         </div>
+        {me?.connected && <ScoreDetails stats={stats} />}
         <section className={`${card} space-y-3`}>
           <h2 className="text-lg font-semibold">Regras da primeira temporada</h2>
           <p className="text-sm text-slate-300">10 XP por commit reconhecido nas contribuições públicas do GitHub, até 20 por dia. 50 XP por PR público mesclado, até 100 por mês. Empates seguem o identificador estável da conta.</p>

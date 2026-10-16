@@ -17,6 +17,13 @@ function scoreContributions(days, mergedPRs) {
   return {
     xp, level, experience, nextLevelXP: level * 200,
     commits, mergedPRs: pulls,
+    breakdown: {
+      commitXP: commits * 10, pullRequestXP: pulls * 50,
+      detectedCommits: days.reduce((sum, count) => sum + Math.max(0, count), 0),
+      detectedMergedPRs: Math.max(0, mergedPRs),
+      ignoredCommits: days.reduce((sum, count) => sum + Math.max(0, count - 20), 0),
+      ignoredMergedPRs: Math.max(0, mergedPRs - 100)
+    },
     title: level >= 10 ? 'Veterano' : level >= 5 ? 'Construtor' : 'Explorador',
     achievements: [
       ...(commits > 0 ? ['Primeiro commit'] : []),

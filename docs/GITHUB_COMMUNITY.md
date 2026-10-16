@@ -69,3 +69,11 @@ POSTs exigem Origin igual ao CLIENT configurado. Limite inicial de dez requisiç
 Nenhuma publicação faz parte desta entrega. O vercel.json legado contém domínio do autor original; antes de hospedar, revisar CORS, cookies, callback, região do banco, roteamento SPA `/community`, segredos e limites de plataforma. Preferir frontend e API sob a mesma origem para reduzir problemas de cookies entre sites.
 
 Esta implementação não foi validada com login real, MongoDB ou navegador. Testes de execução foram adiados por solicitação do usuário. Antes de disponibilizar: validar consentimento negado, callback inválido, login repetido, mês novo, contas empatadas, opt-out, falhas/rate limits do GitHub e duas sincronizações simultâneas. Próximas entregas: sincronização agendada, histórico de temporadas, paginação além do Top 100, desconexão/exclusão da conta, critérios de contribuição e política de privacidade própria.
+
+## Detalhamento da pontuação
+
+O perfil privado agora mostra a composição do XP (commits e PRs), quantidades detectadas, quantidades pontuadas e o que ficou acima dos limites. Commits são apresentados por dia UTC; PRs têm título, repositório, data de merge e link público. A busca retorna até 100 PRs como referência, enquanto o total encontrado continua sendo usado no cálculo com limite de 100. As regras v1 não mudaram.
+
+Esses detalhes só aparecem após uma nova sincronização. Dados antigos permanecem válidos, com uma mensagem orientando atualizar. O ranking público retorna apenas identificação, avatar, XP, nível e título; o detalhamento não é enviado nesse endpoint. O retrato mensal não é um registro imutável de eventos nem um histórico de temporadas.
+
+Verificação isolada das regras: no diretório server, `npm test` executa os testes de pontuação com o runner nativo do Node, sem banco, OAuth ou instalação de bibliotecas.

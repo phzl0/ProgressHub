@@ -115,7 +115,8 @@ router.get('/leaderboard', async (req, res) => {
     const db = await connectToDatabase();
     const period = periodFor();
     const users = await db.collection('users').find({ communityOptIn: true, 'githubStats.period': period }, {
-      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1, githubStats: 1 }
+      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1,
+        'githubStats.xp': 1, 'githubStats.level': 1, 'githubStats.title': 1 }
     }).sort({ 'githubStats.xp': -1, githubId: 1 }).limit(100).toArray();
     res.set('Cache-Control', 'no-store');
     res.json({ period, users });
