@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { MongoClient, ObjectId } = require('mongodb');
-const { syncMissions, readMissions } = require('./store');
+const { syncMissions, readMissions, claimMission } = require('./store');
 const { periodFor, scoreContributions } = require('../github/scoring');
 test('MongoDB: mission rewards credit once and add to normal action XP', { skip: !process.env.MONGODB_TEST_URI }, async () => {
   const client = await MongoClient.connect(process.env.MONGODB_TEST_URI);
@@ -14,6 +14,16 @@ test('MongoDB: mission rewards credit once and add to normal action XP', { skip:
     await db.collection('communitySeasons').insertOne({ githubId: '42', period: periodFor(now), status: 'open', stats: { ...scoreContributions([5], 0), period: periodFor(now) } });
     const collector = async () => ({ partial: false, events: [{ kind: 'commit', id: 'sha-new', repo: 'user/project', at: now.toISOString() }] });
     await syncMissions(db, user, now, collector);
+    await syncMissions(db, user, now, collector);
+    assert.equal(await db.collection('missionRewards').countDocuments({ githubId: '42' }), 0);
+    const before = await readMissions(db, user, now);
+    const ready = before.missions.find(m => m.id === 'daily-1');
+    assert.equal(ready.progress, 100);
+    assert.equal(ready.awarded, false);
+    assert.ok(ready.completedAt);
+    await assert.rejects(claimMission(db, user, 'daily-3', ready.periodKey, now), { status: 409 });
+    await claimMission(db, user, ready.id, ready.periodKey, now);
+    await claimMission(db, user, ready.id, ready.periodKey, now);
     await syncMissions(db, user, now, collector);
     assert.equal(await db.collection('missionRewards').countDocuments({ githubId: '42' }), 1);
     const record = await db.collection('communitySeasons').findOne({ githubId: '42', period: periodFor(now) });

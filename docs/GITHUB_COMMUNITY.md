@@ -97,7 +97,7 @@ Nesta etapa não há publicação. A execução integrada com MongoDB/worker dev
 
 ## Missões numeradas e Meu perfil
 
-A aba Missões tem cinco objetivos diários, cinco semanais e cinco mensais, identificados apenas por número. Cada cartão mostra requisitos, progresso, prazo UTC, bônus e uma mensagem do que falta. Conclusão e crédito são automáticos. A tela consulta o resultado salvo a cada minuto; a coleta/validação GitHub acompanha a sincronização de dez minutos.
+A aba Missões tem cinco objetivos diários, cinco semanais e cinco mensais, identificados apenas por número. Cada linha mostra requisitos, progresso, prazo UTC, bônus e uma mensagem do que falta. A conclusão é detectada automaticamente e o bônus é recebido pelo botão à direita. A tela consulta o resultado salvo a cada minuto; a coleta/validação GitHub acompanha a sincronização de dez minutos.
 
 | Frequência / número | Requisito | Bônus |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ A aba Missões tem cinco objetivos diários, cinco semanais e cinco mensais, ide
 | Mensal 4 | 4 PRs próprios aceitos por outros humanos em pelo menos 2 repositórios | 3.000 XP |
 | Mensal 5 | Release própria com 20 commits em 5 dias, 5 PRs próprios mesclados, README e implementação na mesma versão | 5.000 XP |
 
-Dia/mês usam UTC; semana começa segunda-feira às 00:00 UTC. O prazo é exclusivo: uma ação exatamente no início do próximo período conta no próximo. Ações podem avançar várias frequências simultaneamente. O prêmio é único por conta, missão, versão de regra e período, com chave única no MongoDB. Não há botão para declarar conclusão ou receber repetidamente. Bônus entram no ranking e na carreira, além do XP normal, separados no extrato. Entram na temporada em que forem confirmados; uma confirmação atrasada não reabre rankings encerrados.
+Dia/mês usam UTC; semana começa segunda-feira às 00:00 UTC. O prazo é exclusivo: uma ação exatamente no início do próximo período conta no próximo. Ações podem avançar várias frequências simultaneamente. O prêmio é único por conta, missão, versão de regra e período, com chave única no MongoDB. O botão Receber fica indisponível até a conclusão; após o recebimento, mostra Recebido e não permite repetir. Bônus entram no ranking e na carreira, além do XP normal, separados no extrato. Entram na temporada em que forem recebidos; uma confirmação atrasada não reabre rankings encerrados.
 
 `missionsStartedAt` é gravado uma única vez quando a conta entra no sistema de missões, pela primeira sincronização ou visita à aba. Ações anteriores não contam. Há até 48 horas após cada período para validar evidências atrasadas; não é concedido um histórico antigo de recompensas. Bônus já creditados permanecem mesmo se a evidência posteriormente deixar de estar acessível. A carreira é recalculada a partir de temporadas; o bônus salvo substitui o total anterior, sem incrementos duplicados.
 
@@ -134,6 +134,12 @@ Coleções: `missionEvents` (evidências por ID), `missionRewards` (livro de bô
 
 A aba Meu perfil reúne foto/nome GitHub, título, nível permanente, XP, posição atual/melhor posição e conquistas. Quando a participação pública está ativa, há link para visualizar como os demais usuários veem o perfil. Quando desativada, a visualização pessoal continua disponível e o perfil público retorna 404. Não foram criados itens cosméticos, upload de avatar ou conquistas fictícias.
 
-A paleta usa superfícies azul-marinho quase preto; verde claro permanece como destaque de progresso, com azul, roxo e dourado em atividades e status.
+A paleta usa superfícies pretas com detalhes verdes; verde claro permanece como destaque de progresso, com azul, roxo e dourado em atividades e status.
 
 Validação desta etapa: build de produção passou; 25 testes de backend e 8 testes de interface passaram. As consultas foram validadas contra o esquema GraphQL publicado do GitHub. As duas suítes MongoDB (temporadas e bônus) continuam opt-in e não foram executadas localmente pelo bloqueio do banco neste ambiente. A validação com a conta real e os serviços Docker continua necessária; não houve publicação.
+
+### Recebimento das missões
+
+A sincronização salva evidências e atualiza o progresso, sem pagar novos bônus automaticamente. `POST /api/community/missions/claim` recebe apenas `missionId` e `periodKey`; o servidor revalida conclusão e prazo e calcula o XP. Exige sessão GitHub e mesma origem. O recibo único impede pagamento repetido e a trava compartilhada evita concorrência com sincronizações. Bônus automáticos anteriores continuam recebidos.
+
+Missões concluídas do período anterior aparecem por até 48 horas para recebimento. O XP entra na temporada do recebimento. A interface atualiza missões após sincronizar e atualiza carreira e ranking após receber.

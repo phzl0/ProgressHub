@@ -6,7 +6,7 @@ const { connectToDatabase } = require('../../db');
 const { authenticateToken } = require('../../middleware/auth');
 const { periodFor } = require('../../services/github/scoring');
 const { tokenKey, encryptToken, githubClient } = require('../../services/github/client');
-const { readMissions } = require('../../services/missions/store');
+const { readMissions, claimMission } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
@@ -120,6 +120,18 @@ router.get('/missions', authenticateToken, async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json(await readMissions(db, req.user));
   } catch (_) { res.status(503).json({ error: 'Não foi possível carregar as missões.' }); }
+});
+router.post('/missions/claim', authenticateToken, sameOrigin, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para receber.' });
+  try {
+    const db = await connectToDatabase();
+    res.set('Cache-Control', 'no-store');
+    res.json(await claimMission(db, req.user, req.body.missionId, req.body.periodKey));
+  } catch (error) {
+    res.status([400, 409].includes(error.status) ? error.status : 503).json({
+      error: error.status ? error.message : 'Não foi possível confirmar o recebimento. Tente novamente.'
+    });
+  }
 });
 router.get('/seasons', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub.' });

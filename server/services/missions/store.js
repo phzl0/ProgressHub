@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { activeMissions, claimCandidates } = require('./rules');
 const { periodFor, scoreContributions, progression } = require('../github/scoring');
 const { collectMissionEvents } = require('./github');
@@ -9,6 +10,11 @@ async function readMissions(db, user, now = new Date()) {
   user = await enroll(db, user, now);
   const events = await db.collection('missionEvents').find({ githubId: user.githubId, at: { $gte: new Date(now.getTime() - 65 * 86400000).toISOString() } }).toArray();
   const active = activeMissions(events, user.missionsStartedAt, now);
+  // Keep completed previous-period objectives claimable during the existing 48h grace.
+  const keys = new Set(active.map(m => `${m.id}:${m.periodKey}`));
+  for (const mission of claimCandidates(events, user.missionsStartedAt, now)) {
+    if (!keys.has(`${mission.id}:${mission.periodKey}`)) active.push({ ...mission, previousPeriod: true });
+  }
   const rewards = await db.collection('missionRewards').find({ githubId: user.githubId, $or: active.map((mission) => ({ missionId: mission.id, periodKey: mission.periodKey })) }).toArray();
   const recent = await db.collection('missionRewards').find({ githubId: user.githubId }).sort({ awardedAt: -1 }).limit(15).toArray();
   const paid = new Map(rewards.map((reward) => [`${reward.missionId}:${reward.periodKey}`, reward]));
@@ -57,17 +63,48 @@ async function syncMissions(db, user, now = new Date(), collector = collectMissi
         ...(event.kind === 'merged' ? { $max: { collaborative: Boolean(collaborative), issueClosed: Boolean(issueClosed) } } : {}) }, { upsert: true });
     }
   }
-  const known = await events.find({ githubId: user.githubId, at: { $gte: new Date(now.getTime() - 65 * 86400000).toISOString() } }).toArray();
-  for (const mission of claimCandidates(known, user.missionsStartedAt, now)) {
-    const key = `${user.githubId}:${mission.id}:${mission.periodKey}:v1`;
-    try {
-      await db.collection('missionRewards').insertOne({ _id: key, githubId: user.githubId,
-        missionId: mission.id, kind: mission.kind, number: mission.number, periodKey: mission.periodKey,
-        xp: mission.xp, version: 1, completedAt: mission.completedAt, awardedAt: now,
-        creditedPeriod: periodFor(now), requirements: mission.requirements });
-    } catch (error) { if (error.code !== 11000) throw error; }
-  }
   await updateBonuses(db, user, now);
   await db.collection('users').updateOne({ _id: user._id }, { $set: { missionsSyncedAt: now, missionsPartial: collection.partial, missionsError: null } });
 }
-module.exports = { enroll, readMissions, addMissionBonus, syncMissions, updateBonuses };
+async function claimMission(db, user, missionId, periodKey, now = new Date()) {
+  if (typeof missionId !== 'string' || typeof periodKey !== 'string' || missionId.length > 30 || periodKey.length > 40) {
+    const error = new Error('Missão inválida.'); error.status = 400; throw error;
+  }
+  const users = db.collection('users');
+  const lockId = crypto.randomUUID();
+  const lock = await users.updateOne({ _id: user._id, $or: [
+    { syncLockUntil: { $exists: false } }, { syncLockUntil: { $lt: now } }
+  ] }, { $set: { syncLockId: lockId, syncLockUntil: new Date(now.getTime() + 300000) } });
+  if (!lock.modifiedCount) { const error = new Error('Sincronização em andamento. Tente receber novamente em instantes.'); error.status = 409; throw error; }
+  try {
+    user = await enroll(db, user, now);
+    const { ensureLegacy, careerFor } = require('../github/league');
+    await ensureLegacy(db, user);
+    const key = `${user.githubId}:${missionId}:${periodKey}:v1`;
+    const rewards = db.collection('missionRewards');
+    const existing = await rewards.findOne({ _id: key });
+    if (!existing) {
+      const events = await db.collection('missionEvents').find({ githubId: user.githubId,
+        at: { $gte: new Date(now.getTime() - 65 * 86400000).toISOString() } }).toArray();
+      const mission = claimCandidates(events, user.missionsStartedAt, now)
+        .find(m => m.id === missionId && m.periodKey === periodKey);
+      if (!mission) { const error = new Error('Esta missão ainda não foi concluída ou o prazo para receber terminou.'); error.status = 409; throw error; }
+      try {
+        await rewards.insertOne({ _id: key, githubId: user.githubId, missionId: mission.id,
+          kind: mission.kind, number: mission.number, periodKey: mission.periodKey, xp: mission.xp,
+          version: 1, completedAt: mission.completedAt, awardedAt: now, creditedPeriod: periodFor(now), requirements: mission.requirements });
+      } catch (error) { if (error.code !== 11000) throw error; }
+    }
+    // Sum the ledger instead of incrementing: retries also repair interrupted claims.
+    await updateBonuses(db, user, now);
+    const current = await db.collection('communitySeasons').findOne({ githubId: user.githubId, period: periodFor(now) });
+    const career = await careerFor(db, user, false);
+    await users.updateOne({ _id: user._id, syncLockId: lockId }, { $set: {
+      career, ...(current?.stats ? { githubStats: current.stats } : {})
+    } });
+    return readMissions(db, user, now);
+  } finally {
+    await users.updateOne({ _id: user._id, syncLockId: lockId }, { $unset: { syncLockId: '', syncLockUntil: '' } });
+  }
+}
+module.exports = { enroll, readMissions, addMissionBonus, syncMissions, updateBonuses, claimMission };
