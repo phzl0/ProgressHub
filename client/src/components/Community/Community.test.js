@@ -9,6 +9,7 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.setSystemTime(snapshot);
   window.history.replaceState(null, '', '/community');
+  localStorage.clear();
   syncCount = 0;
   global.fetch = jest.fn(async (url) => {
     const stats = {
@@ -32,22 +33,22 @@ beforeEach(() => {
       : stats };
   });
 });
-afterEach(() => { cleanup(); jest.useRealTimers(); delete global.fetch; });
+afterEach(async () => { await act(async () => {}); cleanup(); jest.useRealTimers(); delete global.fetch; });
 
 test('dashboard, progress and ranking occupy separate views', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
-  expect(screen.getByRole('heading', { name: 'Suas conquistas' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Classificação global' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Progresso', exact: true }));
   expect(screen.getByRole('heading', { name: 'Seu ritmo de contribuição' })).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'Suas conquistas' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Top 10 de carreira' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Ranking', exact: true }));
   expect(screen.getByRole('heading', { name: 'Classificação global' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Seu ritmo de contribuição' })).not.toBeInTheDocument();
 });
 test('automatic GitHub synchronization waits ten minutes', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   expect(syncCount).toBe(0);
   const remaining = 600000 - (Date.now() - snapshot.getTime());
@@ -60,12 +61,12 @@ test('automatic GitHub synchronization waits ten minutes', async () => {
 
 test('public profile supports a direct link inside the community', async () => {
   window.history.replaceState(null, '', '/community#profile/42');
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByRole('heading', { name: '@peer' });
   expect(screen.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('href', 'https://github.com/peer');
   expect(screen.getByText('#3')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('link', { name: 'Dashboard', exact: true }));
-  expect(screen.getByRole('heading', { name: 'Suas conquistas' })).toBeInTheDocument();
+  await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Dashboard', exact: true })); });
+  expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
 });
 
 test('an unavailable public profile does not render participant details', async () => {
@@ -74,14 +75,14 @@ test('an unavailable public profile does not render participant details', async 
     ? Promise.resolve({ ok: false, status: 404, json: async () => ({ error: 'Perfil indisponível.' }) })
     : normalFetch(url, options));
   window.history.replaceState(null, '', '/community#profile/42');
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByRole('heading', { name: 'Perfil indisponível' });
   expect(screen.queryByRole('link', { name: /Ver no GitHub/ })).not.toBeInTheDocument();
 });
 
 
 test('season history keeps final standings and labels partial records', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   fireEvent.click(screen.getByRole('link', { name: 'Temporadas', exact: true }));
   await screen.findByText('2026-09');
@@ -95,7 +96,7 @@ test('career remains visible when the new season has no snapshot yet', async () 
     ? Promise.resolve({ ok: true, json: async () => ({ connected: true, login: 'developer', stats: null,
       career: { xp: 1200, level: 4, experience: 0, nextLevelXP: 800, title: 'Explorador', achievements: ['Primeiro commit'] } }) })
     : normalFetch(url, options));
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   expect(screen.getByText('CARREIRA PERMANENTE')).toBeInTheDocument();
   expect(screen.getByText('1.200')).toBeInTheDocument();
@@ -104,7 +105,7 @@ test('career remains visible when the new season has no snapshot yet', async () 
 
 
 test('missions show five numbered cards per frequency without invented names', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   fireEvent.click(screen.getByRole('link', { name: 'Missões', exact: true }));
   await screen.findByText('Objetivo daily 1');
@@ -117,7 +118,7 @@ test('missions show five numbered cards per frequency without invented names', a
 });
 
 test('my profile groups career, achievements and links to mission progression', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true }));
   expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
@@ -126,7 +127,7 @@ test('my profile groups career, achievements and links to mission progression', 
 });
 
 test('ranking switches between global XP and community contribution without mixing standings', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   fireEvent.click(screen.getByRole('link', { name: 'Ranking', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'Comunitário' }));
@@ -137,9 +138,38 @@ test('ranking switches between global XP and community contribution without mixi
 });
 
 test('update control is compact and the large synchronization notice is absent', async () => {
-  render(<Community />);
+  await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   expect(screen.getByRole('button', { name: 'Atualizar contribuições' })).toBeInTheDocument();
   expect(screen.queryByText(/Pontuação, atividades e ranking atualizados/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Ranking consultado às/)).not.toBeInTheDocument();
+});
+
+test('navigation collapses, retains accessible links and remembers the preference', async () => {
+  let view;
+  await act(async () => { view = render(<Community />); });
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('button', { name: 'Recolher navegação' }));
+  expect(screen.getByRole('button', { name: 'Expandir navegação' })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('link', { name: 'Metas pessoais' })).toHaveAttribute('title', 'Metas pessoais');
+  view.unmount();
+  await act(async () => { render(<Community />); });
+  expect(screen.getByRole('button', { name: 'Expandir navegação' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Expandir navegação' }));
+  expect(localStorage.getItem('ql-navigation-collapsed')).toBe('false');
+});
+
+test('career leaders use their own total and footer information keeps the current view', async () => {
+  const normalFetch = global.fetch;
+  global.fetch = jest.fn((url, options) => url.endsWith('/career-leaderboard')
+    ? Promise.resolve({ ok: true, json: async () => ({ users: [{ githubId: '99', githubLogin: 'veteran', career: { xp: 12500, level: 11, title: 'Veterano' } }] }) })
+    : normalFetch(url, options));
+  await act(async () => { render(<Community />); });
+  expect(await screen.findByRole('link', { name: '@veteran' })).toHaveAttribute('href', '#profile/99');
+  expect(screen.getByText('12.500 XP')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Privacidade' }));
+  expect(screen.getByRole('heading', { name: 'Privacidade' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Fechar informações' }));
+  expect(screen.queryByRole('heading', { name: 'Privacidade' })).not.toBeInTheDocument();
 });

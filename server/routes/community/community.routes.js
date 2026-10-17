@@ -13,6 +13,7 @@ const { weeklySummary } = require('../../services/community/engagement');
 const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
 const { CATALOG, validateAppearance, appearanceFor } = require('../../services/community/cosmetics');
 const { poolView, setParticipation, ensurePool } = require('../../services/community/pool');
+const { careerRanking } = require('../../services/community/career-ranking');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -220,6 +221,12 @@ router.get('/sync-status', async (req, res) => {
     res.json({ active: Boolean(lastSeen && Date.now() - lastSeen < 15 * 60000),
       status: job?.status || 'not_started', lastCycleAt: job?.completedAt || null });
   } catch (_) { res.status(503).json({ error: 'Não foi possível consultar a atualização automática.' }); }
+});
+router.get('/career-leaderboard', async (req, res) => {
+  try {
+    const db = await connectToDatabase();
+    res.set('Cache-Control', 'no-store').json(await careerRanking(db));
+  } catch (_) { res.status(503).json({ error: 'Não foi possível carregar o ranking de carreira.' }); }
 });
 router.get('/leaderboard', async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, Award, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
+import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, PanelLeftClose, PanelLeftOpen, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
 import ProgressChart from './ProgressChart';
 import './community.css';
 import ScoreDetails from './ScoreDetails';
@@ -12,6 +12,8 @@ import CommunityRanking from './CommunityRanking';
 import { CosmeticAvatar, CosmeticTitle } from './Appearance';
 import PersonalGoals from './PersonalGoals';
 import WeeklySummary from './WeeklySummary';
+import CareerTop from './CareerTop';
+import CommunityFooter from './CommunityFooter';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 async function request(path, body) {
@@ -40,6 +42,8 @@ export default function Community() {
     if (value === 'ranking/community') return 'ranking';
     return ['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard';
   });
+  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem('ql-navigation-collapsed') === 'true'; } catch (_) { return false; } });
+  function toggleNavigation() { setCollapsed(value => { try { localStorage.setItem('ql-navigation-collapsed', String(!value)); } catch (_) { /* Storage is optional. */ } return !value; }); }
   const [me, setMe] = useState(null);
   const [rankKind, setRankKind] = useState(() => window.location.hash === '#ranking/community' ? 'community' : 'global');
   const [ranking, setRanking] = useState({ users: [], period: '' });
@@ -146,19 +150,14 @@ export default function Community() {
     { id: 'ranking', label: 'Ranking', icon: Trophy },
     { id: 'seasons', label: 'Temporadas', icon: History }
   ];
-  const achievements = [
-    { name: 'Primeiro commit', description: 'Seu primeiro passo na temporada.' },
-    { name: 'Primeiro PR mesclado', description: 'Código que passou a fazer parte.' },
-    { name: '50 commits no mês', description: 'Consistência em ação.' },
-    { name: 'Nível 5', description: 'Um novo patamar desbloqueado.' }
-  ];
   const activeDays = stats?.commitDays?.length || 0;
   const subtitle = tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
-  return <div className="ql-game">
+  return <div className={`ql-game${collapsed ? ' ql-navigation-collapsed' : ''}`}>
     <aside className="ql-sidebar">
+      <button className="ql-icon-button ql-nav-toggle" onClick={toggleNavigation} aria-expanded={!collapsed} aria-controls="community-navigation" aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'} title={collapsed ? 'Expandir navegação' : 'Recolher navegação'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
       <a href="/community" className="ql-brand"><span className="ql-brand-mark"><Github size={23} /></span><span>QUEST<span className="ql-green">LOG</span><small>DEVELOPER COMMUNITY</small></span></a>
       <p className="ql-nav-label">SEU PRÓXIMO NÍVEL</p>
-      <nav aria-label="Navegação principal" className="ql-nav">{tabs.map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={tab === id || (tab === 'profile' && id === 'ranking') ? 'page' : undefined} onClick={event => { if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); window.location.hash = id; setTab(id); if (id === 'ranking') setRankKind('global'); }} className={tab === id || (tab === 'profile' && id === 'ranking') ? 'is-active' : ''}><Icon size={19} /><span>{label}</span>{tab === id && <ChevronRight size={15} />}</a>)}</nav>
+      <nav id="community-navigation" aria-label="Navegação principal" className="ql-nav">{tabs.map(({ id, label, icon: Icon }) => <a key={id} aria-label={label} title={collapsed ? label : undefined} href={`#${id}`} aria-current={tab === id || (tab === 'profile' && id === 'ranking') ? 'page' : undefined} onClick={event => { if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); window.location.hash = id; setTab(id); if (id === 'ranking') setRankKind('global'); }} className={tab === id || (tab === 'profile' && id === 'ranking') ? 'is-active' : ''}><Icon size={19} /><span>{label}</span>{tab === id && <ChevronRight size={15} />}</a>)}</nav>
       <div className="ql-sidebar-bottom"><div className="ql-season-card"><span className="ql-live-dot" /> TEMPORADA ATUAL<strong>{ranking.period || new Date().toISOString().slice(0, 7)}</strong><p>Novas contribuições.<br />Uma nova chance de evoluir.</p><span className="ql-tag">REINÍCIO MENSAL · UTC</span></div><p className="ql-caption">Construído sobre QuestLog · MIT</p></div>
     </aside>
     <div className="ql-workspace">
@@ -175,7 +174,7 @@ export default function Community() {
             <section className="ql-panel ql-profile-card"><div className="ql-profile-heading">{me?.picture ? <CosmeticAvatar src={me.picture} frame={me.appearance?.frame} size={44} /> : <span className="ql-avatar-placeholder"><Github size={24} /></span>}<div><strong>{me?.login ? `@${me.login}` : 'Seu perfil começa aqui'}</strong><span>{career?.title || 'Explorador'} · Nível {level}</span></div><ShieldCheck className="ql-green" size={20} /></div><div className="ql-xp-total">{number(career?.xp)} <span>XP</span><small>CARREIRA PERMANENTE</small></div><div className="ql-progress-label"><span>Nível {level}</span><strong>{progress}%</strong><span>Nível {level + 1}</span></div><div className="ql-xp-track" role="progressbar" aria-label={`Progresso para o nível ${level + 1}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Faltam {number((career?.nextLevelXP || 200) - (career?.experience || 0))} XP para seu próximo nível.</p>{me?.optedIn && me?.githubId && <a className="ql-own-profile" href={`#profile/${me.githubId}`}>Ver meu perfil público <ArrowUpRight size={13} /></a>}</section>
           </div>
           <div className="ql-metrics"><Metric tone="blue" icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="10 XP por commit elegível" /><Metric tone="purple" icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="50 XP por PR + bônus de colaboração" /><Metric icon={Zap} label="Dias com commits" value={number(activeDays)} note="Atividade reconhecida neste mês" /><Metric tone="gold" icon={Trophy} label="Sua posição global" value={position ? `#${position}` : '—'} note={me?.optedIn ? 'Ranking da temporada atual' : 'Participe na aba Ranking'} /></div>
-          <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">PEQUENAS VITÓRIAS. GRANDES PASSOS.</p><h2>Suas conquistas</h2></div><span className="ql-tag">{career?.achievements?.length || 0} / 4 DESBLOQUEADAS</span></div><div className="ql-achievements">{achievements.map((badge, index) => { const unlocked = career?.achievements?.includes(badge.name); return <div key={badge.name} className={`ql-achievement ${unlocked ? 'is-unlocked' : ''}`}><span className="ql-badge-icon"><Award size={26} /></span><span className="ql-achievement-number">0{index + 1}</span><h3>{badge.name}</h3><p>{badge.description}</p><small>{unlocked ? 'DESBLOQUEADA' : 'A CONQUISTAR'}</small></div>; })}</div></section>
+          <CareerTop revision={`${stats?.syncedAt}:${stats?.xp}:${me?.optedIn}:${me?.appearance?.frame}`} login={me?.login} />
         </>}
         {tab === 'progress' && <>
           <WeeklySummary connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.missionXP}`} />
@@ -197,8 +196,7 @@ export default function Community() {
         {tab === 'seasons' && <SeasonHistory connected={me?.connected} career={career} />}
         {me?.backgroundSyncError && <p className="ql-caption">{me.backgroundSyncError}</p>}
         {tab === 'profile' && profileId && <PublicProfile key={profileId} githubId={profileId} />}
-        <details className="ql-rules"><summary><ShieldCheck size={16} /> Regras da temporada e atualização</summary><p>10 XP por commit público reconhecido pelo GitHub, até 20 por dia UTC. 50 XP por PR público mesclado, mais 25 XP se outro usuário humano fizer o merge, até 100 PRs por mês (selecionados pela data de criação mais antiga). Tarefas manuais não pontuam. Missões concedem bônus extras, uma vez por período, tanto para carreira quanto para o ranking da temporada em que o bônus for recebido. Quantidade não mede qualidade técnica.</p><p>Apenas o XP e a classificação da temporada reiniciam mensalmente. XP de carreira, nível, títulos e conquistas continuam acumulados. Atualização automática a cada 10 minutos enquanto a página estiver visível, com verificação ao voltar à aba. A atualização manual tem intervalo mínimo de 30 segundos. Com o Docker e o computador ligados, o serviço automático continua com o navegador fechado.</p><p>O GitHub pode demorar para reconhecer contribuições. Importação limitada a menos de 100 repositórios por mês. Alterações nas contribuições reconhecidas podem reduzir a pontuação.</p></details>
-        <footer className="ql-footer"><span>QUESTLOG COMMUNITY <span className="ql-green">/</span> EVOLUA CONSTRUINDO.</span><span>Temporada mensal · Contribuições reais</span></footer>
+        <CommunityFooter />
       </main>
     </div>
   </div>;
