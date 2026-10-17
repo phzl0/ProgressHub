@@ -48,7 +48,7 @@ router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (re
   catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
 });
 const social = require('../../services/community/social');
-for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction]]) {
+for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction]]) {
   router.get(`/${path}`, authenticateToken, githubOnly, async (req, res) => {
     try { res.set('Cache-Control', 'no-store').json(await read(await connectToDatabase(), req.user, req.query)); }
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar. Tente novamente.' }); }
@@ -58,6 +58,25 @@ for (const [path, read, write] of [['social', social.readSocial, social.socialAc
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível salvar. Tente novamente.' }); }
   });
 }
+router.get('/feed/comments', authenticateToken, githubOnly, async (req,res) => {
+  try { res.set('Cache-Control','no-store').json(await require('../../services/community/comments').readComments(await connectToDatabase(),req.user,req.query)); }
+  catch(error) { res.status(error.status||503).json({error:error.status?error.message:'Não foi possível carregar os comentários.'}); }
+});
+const attachments = require('../../services/community/attachments');
+router.post('/chat/attachments', authenticateToken, githubOnly, sameOrigin, express.raw({type:'application/octet-stream',limit:'10mb'}), async (req,res) => {
+  try { res.set('Cache-Control','no-store').json(await attachments.uploadFile(await connectToDatabase(),req.user,req.query,req.body)); }
+  catch(error) { res.status(error.status||503).json({error:error.status?error.message:'Não foi possível anexar o arquivo.'}); }
+});
+router.post('/chat/attachments/delete', authenticateToken, githubOnly, sameOrigin, async (req,res) => {
+  if (typeof req.body.id !== 'string' || !/^[a-f0-9]{24}$/.test(req.body.id)) return res.status(400).json({error:'Anexo inválido.'});
+  try { const db=await connectToDatabase(); await db.collection('communityAttachments').deleteOne({_id:new (require('mongodb').ObjectId)(req.body.id),githubId:req.user.githubId,messageId:{$exists:false}}); res.json({ok:true}); }
+  catch (_) { res.status(503).json({error:'Não foi possível remover o anexo.'}); }
+});
+router.get('/chat/attachments/:id', authenticateToken, githubOnly, async (req,res) => {
+  try { const file=await attachments.readFile(await connectToDatabase(),req.user,req.params.id); res.set({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Type':file.type,'Content-Disposition':`${file.type.startsWith('image/')?'inline':'attachment'}; filename*=UTF-8''${encodeURIComponent(file.name)}`}).send(Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data.buffer)); }
+  catch(error) { res.status(error.status||503).json({error:error.status?error.message:'Não foi possível baixar o arquivo.'}); }
+});
+router.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).json({error:'O arquivo deve ter até 10 MB.'}); next(error); });
 router.get('/auth', async (req, res) => {
   try {
     if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) throw new Error('Missing configuration');

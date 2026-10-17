@@ -292,8 +292,29 @@ Identidade: troféu alado vetorial simples na marca e no favicon, com verde de d
 
 ### Comunidade social
 
-A Comunidade abre em Publicações: texto (até 2.000 caracteres), foto opcional convertida no navegador para WebP (até 300 KB), pedidos de ajuda, curtidas por conta e comentários de até 600 caracteres. Compartilhar usa o compartilhamento do dispositivo ou copia um link interno; o destinatário precisa entrar com GitHub. Há paginação de publicações e os dez comentários mais recentes de cada publicação. Curtir, publicar e comentar não alteram XP. Exclusão de publicação é restrita ao autor; comentários podem ser apagados por seus autores.
+A Comunidade abre em Publicações: texto (novas publicações: até 200 caracteres; antigas preservadas), foto opcional convertida no navegador para WebP (até 300 KB), pedidos de ajuda, curtidas por conta e comentários de até 600 caracteres. Compartilhar usa o compartilhamento do dispositivo ou copia um link interno; o destinatário precisa entrar com GitHub. Há paginação de publicações e comentários em janela compacta com paginação de 30 por vez. Curtir, publicar e comentar não alteram XP. Exclusão de publicação é restrita ao autor; comentários podem ser apagados por seus autores.
 
-Chat geral, Chat de ajuda e Grupos e contatos são caminhos separados. O chat continua atualizando a cada cinco segundos quando visível, sem moldura externa, com intervalo entre envios. Mensagens gerais antigas continuam disponíveis. Grupos são privados para membros; convites precisam ser aceitos. Apenas o criador convida contatos previamente confirmados, até 50 membros/convites e dez grupos por criador. Nesta primeira versão o criador permanece no próprio grupo. Contatos são adicionados pelo login GitHub de usuários que já acessaram a plataforma. Não há indicação inventada de presença online.
+Publicações, Chat geral, Pedidos de ajuda, Grupos, Contatos e Convites são caminhos separados. O chat continua atualizando a cada cinco segundos quando visível, sem moldura externa, com intervalo entre envios. Mensagens gerais antigas continuam disponíveis. Grupos são privados para membros; convites precisam ser aceitos. Apenas o criador convida contatos previamente confirmados, até 50 membros/convites e dez grupos por criador. Nesta primeira versão o criador permanece no próprio grupo. Contatos são adicionados pelo login GitHub de usuários que já acessaram a plataforma. Não há indicação inventada de presença online.
 
 O menu do avatar abre com mouse ou clique e oferece atalhos e contatos. Dados sociais reutilizam MongoDB e sessão existentes; índices são inicializados pelo servidor. Sem novos serviços, variáveis de ambiente ou dependências. Antes de uma abertura pública ampla, a moderação e as denúncias ainda precisam ser desenvolvidas.
+
+
+### Interações e pedidos de ajuda
+
+As reações disponíveis são coração, joia, risada e triste. Uma conta tem uma reação por publicação; trocar substitui a anterior e selecionar novamente remove. Curtidas antigas aparecem como coração. O seletor abre ao passar o mouse e também pelo botão de opções no celular/teclado. Fotos antigas e novas são exibidas em área compacta de 380 × 220 px (180 px de altura em telas pequenas), preservando a proporção. Novas fotos são reduzidas a até 800 px e 300 KB no navegador.
+
+Comentários ficam em um diálogo de até 480 px de largura, com fechamento por Escape, foco contido, retorno ao botão de origem e carregamento de comentários anteriores. Os identificadores antigos de comentários permanecem compatíveis.
+
+Pedidos de ajuda usam título de 80 e descrição de 2.000 caracteres. Criar o pedido já cria o grupo com o autor; aceitar adiciona o voluntário atomicamente, respeitando o limite escolhido de 2 a 20 pessoas (incluindo o autor). Cada autor pode ter até cinco pedidos não resolvidos. Apenas o autor altera Aberto/Pausado/Resolvido. Pausar ou resolver impede novas entradas, preservando a conversa dos membros. Convites comuns não permitem burlar o limite do pedido. O antigo chat livre de ajuda não aceita novos envios; seu histórico não foi apagado do banco.
+
+### Caixa de correio e permissões
+
+O ícone ao lado de atualizar consulta notificações ao entrar, a cada minuto enquanto a página está visível e após ações sociais. Mostra até 50 avisos recentes, total de não lidas e marcação de leitura do conjunto consultado. Convites de contato/grupo, aceitação de contato, entrada de voluntários e conclusão de ajuda geram avisos individuais. Mensagens não aparecem para outras contas. Avisos gerais são visíveis aos usuários conectados.
+
+Para habilitar o envio de avisos gerais, configure opcionalmente `COMMUNITY_ADMIN_GITHUB_IDS=ID_NUMERICO_DO_GITHUB` em `.env.test` e reconstrua/recrie o servidor pelo Compose. IDs adicionais podem ser separados por vírgula. O ID aparece nas informações da conta; não use o login textual. Contas com `communityRole: "admin"` ou `"moderator"` atribuído diretamente no banco por um administrador também têm essa permissão. Nenhuma API permite promover a própria conta. O formulário de envio aparece dentro da caixa de correio apenas para contas autorizadas. As demais funcionalidades não precisam de novas variáveis.
+
+### Arquivos em grupos
+
+O clipe permite um anexo por mensagem, com ou sem texto: JPG, PNG, WebP, PDF, TXT ou ZIP, até 10 MiB. O upload binário evita aumentar o corpo em base64, valida extensão/conteúdo e persiste em coleção MongoDB separada, abaixo do limite de documento de 16 MiB. Fotos têm prévia pequena; documentos são baixados. A leitura exige sessão GitHub, vínculo com o grupo e mensagem não apagada. O nome do arquivo é validado e o download usa tipo verificado, `nosniff` e cache privado desabilitado. ZIPs não são extraídos nem executados pelo servidor.
+
+Anexos não enviados expiram após 24 horas (índice TTL); no máximo dez uploads pendentes por conta. Apagar a própria mensagem remove seu anexo. Sair do grupo remove o acesso aos arquivos pelo servidor. Todos os dados continuam no volume MongoDB existente. Nesta versão o armazenamento de anexos usa o banco local; nenhuma cobrança ou serviço externo foi adicionado.

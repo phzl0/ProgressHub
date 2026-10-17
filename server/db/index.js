@@ -77,6 +77,12 @@ async function initializeIndexes() {
     await db.collection('missionRewards').createIndex({ githubId: 1, awardedAt: -1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, creditedPeriod: 1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, status: 1 });
+    await db.collection('communityNotifications').createIndex({ recipient: 1, createdAt: -1 });
+    await db.collection('communityGroups').createIndex({ requestKey: 1 }, { unique: true, partialFilterExpression: { requestKey: { $type: 'string' } } });
+    await db.collection('communityAttachments').createIndex({ requestKey: 1 }, { unique: true, partialFilterExpression: { requestKey: { $type: 'string' } } });
+    await db.collection('communityAttachments').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    await db.collection('communityAttachments').createIndex({ githubId: 1, messageId: 1 });
+    await db.collection('communityComments').createIndex({ postId: 1, createdAt: -1, _id: -1 });
     await db.collection('communityPosts').createIndex({ requestKey: 1 }, { unique: true });
     await db.collection('communityComments').createIndex({ postId: 1, _id: -1 });
     await db.collection('communityLikes').createIndex({ postId: 1 });

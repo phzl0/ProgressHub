@@ -6,7 +6,7 @@ const fail = (message, status = 400) => Object.assign(new Error(message), { stat
 function validateMessage(input) {
   if (typeof input?.text !== 'string' || typeof input?.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Mensagem inválida.');
   const text = input.text.replace(/\r\n?/g, '\n').trim();
-  if (!text || [...text].length > 600 || text.split('\n').length > 6 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) throw fail('Escreva de 1 a 600 caracteres, em até 6 linhas.');
+  if ((!text && !input.attachmentId) || [...text].length > 600 || text.split('\n').length > 6 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) throw fail('Escreva de 1 a 600 caracteres, em até 6 linhas.');
   return { text, requestId: input.requestId };
 }
 function parseIds(value) {
@@ -23,7 +23,7 @@ async function present(db, rows, viewer) {
   return rows.map(row => {
     const author = authors.get(row.githubId);
     return { id: row._id.toHexString(), text: row.deletedAt ? '' : row.text, deleted: Boolean(row.deletedAt), createdAt: row.createdAt,
-      own: row.githubId === viewer.githubId, author: { login: author?.githubLogin || 'Participante', picture: author?.picture || '',
+      attachment: !row.deletedAt ? row.attachment || null : null, own: row.githubId === viewer.githubId, author: { login: author?.githubLogin || 'Participante', picture: author?.picture || '',
         profileId: author?.communityOptIn ? author.githubId : null, appearance: appearanceFor(author || {}) } };
   });
 }
@@ -43,11 +43,21 @@ async function readChat(db, user, query = {}) {
 }
 async function sendMessage(db, user, input, now = new Date()) {
   const channel = await channelFor(db, user, input.channel);
+  if (channel === 'help') throw fail('Abra um pedido de ajuda para iniciar uma conversa.');
   const { text, requestId } = validateMessage(input);
   const messages = db.collection('communityMessages');
   const requestKey = `${user.githubId}:${channel}:${requestId}`;
   const previous = await messages.findOne({ requestKey });
-  if (previous) return (await present(db, [previous], user))[0];
+  if (previous) {
+    if (previous.attachment && !previous.deletedAt) await db.collection('communityAttachments').updateOne({ _id: new ObjectId(previous.attachment.id), githubId: user.githubId, channel, $or: [{ messageId: { $exists: false } }, { messageId: previous._id.toHexString() }] }, { $set: { messageId: previous._id.toHexString() }, $unset: { expiresAt: '' } });
+    return (await present(db, [previous], user))[0];
+  }
+  let attachment = null;
+  if (input.attachmentId) {
+    if (!channel.startsWith('group:') || typeof input.attachmentId !== 'string' || !/^[a-f0-9]{24}$/.test(input.attachmentId)) throw fail('Anexo inválido.');
+    attachment = await db.collection('communityAttachments').findOne({ _id: new ObjectId(input.attachmentId), githubId: user.githubId, channel, messageId: { $exists: false }, expiresAt: { $gt: now } }, { projection: { data: 0 } });
+    if (!attachment) throw fail('O anexo expirou ou já foi enviado. Selecione o arquivo novamente.');
+  }
   const lock = await db.collection('users').updateOne({ _id: user._id, $or: [{ chatLastSentAt: { $exists: false } }, { chatLastSentAt: { $lte: new Date(now.getTime() - 5000) } }] }, { $set: { chatLastSentAt: now } });
   if (!lock.modifiedCount) {
     const repeated = await messages.findOne({ requestKey });
@@ -55,14 +65,17 @@ async function sendMessage(db, user, input, now = new Date()) {
     throw fail('Aguarde 5 segundos antes de enviar outra mensagem.', 429);
   }
   const row = { _id: new ObjectId(), requestKey, githubId: user.githubId, channel, text, createdAt: now };
+  if (attachment) row.attachment = { id: attachment._id.toHexString(), name: attachment.name, type: attachment.type, size: attachment.size };
   try { await messages.insertOne(row); }
   catch (error) { if (error.code !== 11000) throw error; return (await present(db, [await messages.findOne({ requestKey })], user))[0]; }
+  if (attachment) await db.collection('communityAttachments').updateOne({ _id: attachment._id }, { $set: { messageId: row._id.toHexString() }, $unset: { expiresAt: '' } });
   return (await present(db, [row], user))[0];
 }
 async function deleteMessage(db, user, id, now = new Date()) {
   if (typeof id !== 'string' || !/^[a-f0-9]{24}$/.test(id)) throw fail('Mensagem indisponível.', 404);
-  const result = await db.collection('communityMessages').updateOne({ _id: new ObjectId(id), githubId: user.githubId }, { $set: { deletedAt: now }, $unset: { text: '' } });
+  const result = await db.collection('communityMessages').updateOne({ _id: new ObjectId(id), githubId: user.githubId }, { $set: { deletedAt: now }, $unset: { text: '', attachment: '' } });
   if (!result.matchedCount) throw fail('Mensagem indisponível.', 404);
+  await db.collection('communityAttachments').deleteMany({ messageId: id, githubId: user.githubId });
   return { id, deleted: true };
 }
 module.exports = { validateMessage, parseIds, readChat, sendMessage, deleteMessage };
