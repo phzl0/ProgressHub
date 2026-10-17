@@ -49,3 +49,12 @@ test('received missions stay in place and old pending bonuses are kept in a sepa
   expect(screen.getByRole('button', { name: 'Recebido bônus da missão 1' })).toBeDisabled();
   expect(screen.queryByText(/Período anterior/)).not.toBeInTheDocument();
 });
+
+
+test('mission summary shows server total for all mission receipts in this month',async()=>{
+  global.fetch=jest.fn(async()=>({ok:true,json:async()=>({monthlyXP:7500,creditedMonth:'2026-10',missions:[mission(1,true,true)]})}));
+  render(<Missions connected />);
+  expect(await screen.findByText('7.500 XP')).toBeInTheDocument();
+  expect(screen.getByRole('heading',{name:'XP acumulado das missões deste mês'})).toBeInTheDocument();
+  expect(screen.queryByText('Você programa. Seu progresso aparece.')).not.toBeInTheDocument();
+});

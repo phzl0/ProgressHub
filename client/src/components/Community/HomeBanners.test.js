@@ -27,22 +27,25 @@ test('three announcement banners rotate every three seconds, wrap and pause on h
   act(() => { jest.advanceTimersByTime(6000); });
   expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
 });
-test('manual controls pause playback and links use the selected destination', () => {
+test('only arrow controls remain and automatic rotation resumes after manual navigation', () => {
   const navigate = jest.fn();
   render(<HomeBanners navigate={navigate} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Mostrar banner 3' }));
-  act(() => { jest.advanceTimersByTime(6000); });
+  expect(screen.getAllByRole('button')).toHaveLength(2);
+  fireEvent.click(screen.getByRole('button', { name: 'Banner anterior' }));
   expect(screen.getByText('Banner 3 de 3')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: /Escolher uma meta/ }));
   expect(navigate).toHaveBeenCalledWith('goals', expect.anything());
+  fireEvent.focus(screen.getByRole('button', { name: 'Próximo banner' }));
   fireEvent.click(screen.getByRole('button', { name: 'Próximo banner' }));
   expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  act(() => { jest.advanceTimersByTime(3000); });
+  expect(screen.getByText('Banner 2 de 3')).toBeInTheDocument();
 });
 test('reduced motion and the saved preference prevent automatic rotation', () => {
   render(<HomeBanners navigate={jest.fn()} autoplay={false} />);
   act(() => { jest.advanceTimersByTime(9000); });
   expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Iniciar banners automáticos' })).toBeDisabled();
+  expect(screen.getAllByRole('button')).toHaveLength(2);
   cleanup();
   window.matchMedia = jest.fn(() => ({ matches: true, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
   render(<HomeBanners navigate={jest.fn()} />);

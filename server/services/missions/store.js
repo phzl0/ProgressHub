@@ -17,6 +17,8 @@ async function readMissions(db, user, now = new Date()) {
   }
   const rewards = await db.collection('missionRewards').find({ githubId: user.githubId, $or: active.map((mission) => ({ missionId: mission.id, periodKey: mission.periodKey })) }).toArray();
   const recent = await db.collection('missionRewards').find({ githubId: user.githubId }).sort({ awardedAt: -1 }).limit(15).toArray();
+  const monthRewards = await db.collection('missionRewards').find({ githubId: user.githubId, creditedPeriod: periodFor(now) }).toArray();
+  const monthlyXP = monthRewards.reduce((sum, reward) => sum + reward.xp, 0);
   const paid = new Map(rewards.map((reward) => [`${reward.missionId}:${reward.periodKey}`, reward]));
   const missions = active.map((mission) => {
     const reward = paid.get(`${mission.id}:${mission.periodKey}`);
@@ -24,7 +26,7 @@ async function readMissions(db, user, now = new Date()) {
       requirements: reward?.requirements || mission.requirements, progress: reward ? 100 : mission.progress, completedAt: reward?.completedAt || mission.completedAt,
       encouragement: reward ? `Bônus de ${mission.xp.toLocaleString('pt-BR')} XP recebido. Continue construindo!` : mission.encouragement };
   });
-  return { missions: missions.filter(mission => !mission.previousPeriod),
+  return { monthlyXP, creditedMonth: periodFor(now), missions: missions.filter(mission => !mission.previousPeriod),
     pendingRewards: missions.filter(mission => mission.previousPeriod && !mission.awarded), startedAt: user.missionsStartedAt, syncedAt: user.missionsSyncedAt || null,
     partial: Boolean(user.missionsPartial), error: user.missionsError || null,
     recentRewards: recent.map(({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod }) => ({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod })) };

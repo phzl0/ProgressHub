@@ -263,3 +263,15 @@ O botão de configurações abre uma lateral temporária para Configurações, C
 A tela inicial mantém Top 10 de carreira e cards resumidos. O antigo bloco de conquistas foi movido. Três banners internos em `HomeBanners.js` apresentam a comunidade, o desafio e as metas. Trocam a cada 3 segundos, com controles, pausa ao passar o mouse, ao usar teclado e em aba oculta. Movimento reduzido desativa a troca automática. Configurações oferece uma preferência persistida neste navegador (`ph-banner-autoplay`). Os banners são slots de conteúdo local, sem provedor externo de anúncios ou painel de administração nesta versão.
 
 `site-layout.css` contém a composição nova e os ajustes de densidade: margens, preenchimentos e espaços menores, conteúdo sem o recuo da antiga lateral, cards de perfil, metas, missões e ranking compactos. Em telas menores o menu horizontal recolhe em um botão, preservando acesso às cinco áreas.
+
+## Interface direta, missões recolhíveis e pódio
+
+Os blocos de apresentação (sobretítulo, título e subtítulo) foram removidos de Tela inicial, Ranking, Missões, Progresso, Metas pessoais e Perfil público. O atalho do perfil encaminha visitantes diretamente ao login GitHub, preservando o acesso sem depender desses blocos. Avisos de falha na sincronização ficam no ícone de atualizar com indicador discreto e descrição; falhas de outras operações continuam visíveis no respectivo fluxo.
+
+Na Tela inicial, os banners exibem apenas as setas de anterior/próximo e continuam alternando a cada 3 segundos. Não há play, stop ou indicadores de bolinhas. Pausam ao passar o mouse e ao focar o link do conteúdo; movimento reduzido e a preferência em Configurações continuam respeitados. Usar as setas não mantém a rotação permanentemente parada.
+
+O bolão comunitário em Missões começa como um banner expansível. Detalhes e consulta de progresso são carregados ao abrir, incluindo regras, requisitos, contribuição própria, estimativas e pagamentos anteriores. Os cards de missões são menores, com instruções em Como fazer e regras gerais recolhidas. Recebimento, progresso e renovação mantêm as regras existentes.
+
+O resumo XP acumulado das missões deste mês soma o livro de `missionRewards` por conta e `creditedPeriod` UTC. Inclui missões diárias e semanais de dias anteriores e pendências recebidas no mês; não depende da lista ativa nem do histórico recente de 15 recibos. Não inclui bônus de conquistas ou bolões. O endpoint de leitura retorna `monthlyXP` e `creditedMonth`; não altera pontuação.
+
+O Top 3 mensal usa um pódio compacto com primeiro lugar ao centro, segundo à esquerda e terceiro à direita, mantendo a ordem semântica por classificação. Perfis, XP, nível, molduras e títulos equipados são reaproveitados. Classes por moldura permitem continuar o desenho depois; esta etapa não cria novos cosméticos, desbloqueios ou compras.

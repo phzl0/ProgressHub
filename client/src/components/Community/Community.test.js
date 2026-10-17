@@ -231,3 +231,38 @@ test('account shows GitHub identity without an email field and settings remember
   await act(async () => { render(<Community />); });
   expect(screen.getByRole('checkbox', { name: /Banners automáticos/ })).not.toBeChecked();
 });
+
+
+test('main pages and public profiles omit introductory blocks and sync errors stay on the refresh icon', async () => {
+  const originalFetch=global.fetch;
+  global.fetch=jest.fn(async (url,options) => {
+    const response=await originalFetch(url,options);
+    if(url.endsWith('/me')) {const me=await response.json();return {ok:true,json:async()=>({...me,backgroundSyncError:'Não foi possível atualizar pelo GitHub. A pontuação salva foi preservada.'})};}
+    return response;
+  });
+  await act(async()=>{render(<Community />);});
+  const main=screen.getByRole('main');
+  expect(main.querySelector('.ql-page-heading')).toBeNull();
+  expect(screen.queryByText('Não foi possível atualizar pelo GitHub. A pontuação salva foi preservada.')).not.toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Atualizar contribuições: sincronização pendente'})).toHaveAttribute('title',expect.stringContaining('pontuação salva'));
+  for (const label of ['Ranking','Missões','Progresso','Metas pessoais']) {
+    await act(async()=>{fireEvent.click(screen.getByRole('link',{name:label,exact:true}));});
+    expect(main.querySelector('.ql-page-heading')).toBeNull();
+  }
+  await act(async()=>{window.location.hash='profile/42';window.dispatchEvent(new HashChangeEvent('hashchange'));});
+  expect(await screen.findByRole('heading',{name:'@peer'})).toBeInTheDocument();
+  expect(main.querySelector('.ql-page-heading')).toBeNull();
+});
+
+test('top three use a compact podium with profile links and equipped frames and titles', async () => {
+  const originalFetch=global.fetch;
+  global.fetch=jest.fn((url,options)=>url.endsWith('/leaderboard') ? Promise.resolve({ok:true,json:async()=>({period:'2026-10',users:[1,2,3].map((id)=>({githubId:String(id),githubLogin:`player${id}`,picture:'',appearance:{frame:id===1?'crystal':'essential',title:id===1?'building':'none'},career:{level:3,title:'Explorador'},githubStats:{xp:1000-id,level:3,title:'Explorador'}}))})}) : originalFetch(url,options));
+  await act(async()=>{render(<Community />);});
+  fireEvent.click(screen.getByRole('link',{name:'Ranking',exact:true}));
+  const {within}=require('@testing-library/react');
+  const podium=screen.getByRole('list',{name:'Pódio dos três primeiros da temporada'});
+  expect(within(podium).getAllByRole('listitem')).toHaveLength(3);
+  expect(within(podium).getByRole('link',{name:'@player1'})).toHaveAttribute('href','#profile/1');
+  expect(within(podium).getByText('Ideias em código')).toBeInTheDocument();
+  expect(podium.querySelector('.ql-frame-crystal')).toBeInTheDocument();
+});

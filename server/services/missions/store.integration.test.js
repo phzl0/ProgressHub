@@ -54,3 +54,21 @@ test('MongoDB: previous-period bonuses are separate and disappear from pending a
     assert.equal(data.recentRewards.length, 1);
   } finally { await db.dropDatabase(); await client.close(); }
 });
+
+test('MongoDB: monthly mission summary includes all receipts beyond recent history and excludes other credit months', { skip: !process.env.MONGODB_TEST_URI }, async () => {
+  const client=await MongoClient.connect(process.env.MONGODB_TEST_URI);
+  const db=client.db(`progresshub_monthly_${new ObjectId().toHexString()}`);
+  const now=new Date('2026-10-17T12:00:00Z');
+  const user={_id:new ObjectId(),githubId:'99',missionsStartedAt:new Date('2026-10-01T00:00:00Z')};
+  try {
+    await db.collection('users').insertOne(user);
+    await db.collection('missionRewards').insertMany([
+      ...Array.from({length:22},(_,i)=>({_id:`reward${i}`,githubId:'99',missionId:`daily-${i%5+1}`,periodKey:`2026-10-${String(Math.floor(i/5)+1).padStart(2,'0')}`,creditedPeriod:'2026-10',xp:300,awardedAt:now})),
+      {_id:'old',githubId:'99',missionId:'daily-1',periodKey:'2026-09-01',creditedPeriod:'2026-09',xp:9999,awardedAt:new Date('2026-09-01T12:00:00Z')}
+    ]);
+    const result=await readMissions(db,user,now);
+    assert.equal(result.monthlyXP,6600);assert.equal(result.creditedMonth,'2026-10');
+    assert.equal(result.recentRewards.length,15);
+    assert.equal((await db.collection('users').findOne({_id:user._id})).githubStats,undefined);
+  } finally {await db.dropDatabase();await client.close();}
+});
