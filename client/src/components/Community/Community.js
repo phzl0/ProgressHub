@@ -18,6 +18,7 @@ import Achievements from './Achievements';
 import CommunityHeader from './CommunityHeader';
 import HomeBanners from './HomeBanners';
 import RankingPodium from './RankingPodium';
+import CommunityChat from './CommunityChat';
 import AccountPages from './AccountPages';
 import { viewFromHash, PAGE_LABELS, parentView } from './navigation';
 import CommunityFooter from './CommunityFooter';
@@ -154,7 +155,7 @@ export default function Community() {
   const activeDays = stats?.commitDays?.length || 0;
   const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   const group = parentView(tab);
-  const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile'].includes(tab);
+  const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community'].includes(tab);
   return <div className="ql-game ql-site-shell">
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
@@ -190,6 +191,7 @@ export default function Community() {
           <section className="ql-panel"><div className="ql-panel-head"><h2>Classificação global</h2><span className="ql-tag">TOP 100 · {ranking.period}</span></div>{!ranking.users.length ? <div className="ql-empty"><Trophy size={36} /><h3>A arena está aberta.</h3><p>Sincronize suas contribuições e participe para iniciar o ranking.</p></div> : <div className="ql-table-scroll"><table className="ql-ranking-table"><caption className="ql-sr-only">Ranking global mensal por XP</caption><thead><tr><th scope="col">Posição</th><th scope="col">Desenvolvedor</th><th scope="col">Nível</th><th scope="col">XP da temporada</th></tr></thead><tbody>{ranking.users.map((user, index) => <tr key={user.githubId} className={user.githubLogin === me?.login ? 'ql-my-row' : ''}><th scope="row">#{String(index + 1).padStart(2, '0')}</th><td><div className="ql-table-profile"><CosmeticAvatar src={user.picture} frame={user.appearance?.frame} size={42} /><div><a href={`#profile/${user.githubId}`}>@{user.githubLogin}{user.githubLogin === me?.login && <span className="ql-you">VOCÊ</span>}</a><small>{user.career?.title || user.githubStats.title}</small><CosmeticTitle title={user.appearance?.title} /></div></div></td><td><span className="ql-level-chip">LVL {user.career?.level || user.githubStats.level}</span></td><td className="ql-green">{number(user.githubStats.xp)} XP</td></tr>)}</tbody></table></div>}<p className="ql-caption">Participar torna seu resumo de progresso e conquistas públicos. Ao sair, seu perfil fica indisponível para novas consultas. Empates seguem o identificador estável da conta. A posição considera todos os participantes, mesmo fora do Top 100.</p></section>
           </>}
         </>}
+        {tab === 'community' && <CommunityChat connected={me?.connected} />}
         {tab === 'goals' && <PersonalGoals connected={me?.connected} revision={stats?.syncedAt} />}
         {tab === 'missions' && <Missions connected={me?.connected} revision={stats?.syncedAt} onClaimed={async () => { setMe(await request('/me')); await loadRanking(); }} />}
         {tab === 'me' && <MyProfile me={me} onSaved={(profile, appearance) => setMe(current => ({ ...current, profile, ...(appearance ? { appearance } : {}) }))} onAppearanceSaved={appearance => { setMe(current => ({ ...current, appearance })); setRanking(current => ({ ...current, users: current.users.map(user => user.githubId === me.githubId ? { ...user, appearance } : user) })); }} />}

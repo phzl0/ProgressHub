@@ -32,6 +32,21 @@ function sameOrigin(req, res, next) {
   if (req.get('Origin') !== new URL(clientURL()).origin) return res.status(403).json({ error: 'Origem não autorizada.' });
   next();
 }
+// Chat uses the same authenticated session, origin validation and rate limits as other community actions.
+const chat = require('../../services/community/chat');
+const githubOnly = (req, res, next) => req.user.githubId ? next() : res.status(400).json({ error: 'Entre com GitHub para acessar o chat.' });
+router.get('/chat', authenticateToken, githubOnly, async (req, res) => {
+  try { res.set('Cache-Control', 'no-store').json(await chat.readChat(await connectToDatabase(), req.user, req.query)); }
+  catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar o chat.' }); }
+});
+router.post('/chat', authenticateToken, githubOnly, sameOrigin, async (req, res) => {
+  try { res.set('Cache-Control', 'no-store').json({ message: await chat.sendMessage(await connectToDatabase(), req.user, req.body) }); }
+  catch (error) { if (error.status === 429) res.set('Retry-After', '5'); res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível enviar. Tente novamente.' }); }
+});
+router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (req, res) => {
+  try { res.set('Cache-Control', 'no-store').json(await chat.deleteMessage(await connectToDatabase(), req.user, req.body.id)); }
+  catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
+});
 router.get('/auth', async (req, res) => {
   try {
     if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) throw new Error('Missing configuration');

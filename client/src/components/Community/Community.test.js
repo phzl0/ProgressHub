@@ -191,11 +191,11 @@ test('Progress Hub uses its new identity and distinct mission and personal goal 
 });
 
 
-test('five primary links, profile shortcut and separate nested achievements view', async () => {
+test('primary links including community, profile shortcut and separate nested achievements view', async () => {
   await act(async () => { render(<Community />); });
   const { within } = require('@testing-library/react');
   const navigation = screen.getByRole('navigation', { name: 'Navegação principal' });
-  expect(within(navigation).getAllByRole('link').map(a => a.textContent)).toEqual(['Tela inicial', 'Ranking', 'Missões', 'Progresso', 'Metas pessoais']);
+  expect(within(navigation).getAllByRole('link').map(a => a.textContent)).toEqual(['Tela inicial', 'Ranking', 'Missões', 'Progresso', 'Metas pessoais', 'Comunidade']);
   expect(within(navigation).queryByRole('link', { name: 'Meu perfil' })).not.toBeInTheDocument();
   expect(screen.getByRole('banner')).not.toContainElement(screen.getByRole('main'));
   expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('contentinfo'));

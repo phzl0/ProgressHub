@@ -7,7 +7,7 @@
   "theme_color": "#101815",
   "icons": [
     {
-      "src": "/progress-hub.svg",
+      "src": "/progress-hub.svg?v=winged",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

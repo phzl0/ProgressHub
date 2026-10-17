@@ -275,3 +275,17 @@ O bolão comunitário em Missões começa como um banner expansível. Detalhes e
 O resumo XP acumulado das missões deste mês soma o livro de `missionRewards` por conta e `creditedPeriod` UTC. Inclui missões diárias e semanais de dias anteriores e pendências recebidas no mês; não depende da lista ativa nem do histórico recente de 15 recibos. Não inclui bônus de conquistas ou bolões. O endpoint de leitura retorna `monthlyXP` e `creditedMonth`; não altera pontuação.
 
 O Top 3 mensal usa um pódio compacto com primeiro lugar ao centro, segundo à esquerda e terceiro à direita, mantendo a ordem semântica por classificação. Perfis, XP, nível, molduras e títulos equipados são reaproveitados. Classes por moldura permitem continuar o desenho depois; esta etapa não cria novos cosméticos, desbloqueios ou compras.
+
+## Chat coletivo e refinamento visual
+
+A aba Comunidade (`#community`) abre o Chat geral para contas GitHub autenticadas. Usa a sessão existente, sem novo provedor, escopo OAuth ou serviço externo. Textos simples, até 600 caracteres Unicode e 6 linhas; nenhuma mensagem gera XP ou eventos de missão. O envio mostra o aviso de que nome e avatar ficam visíveis no chat. Perfis privados podem conversar, mas não recebem link de perfil público. Autores e aparência são resolvidos pelo servidor com projeção explícita, sem expor e-mail, token ou o documento da conta.
+
+`GET /api/community/chat`: 30 mensagens recentes por página, com paginação anterior via `before`. A visualização mantém até 180 mensagens carregadas. Ao subir, carrega anteriores até esse limite; há também botão manual. Atualiza a cada 5 segundos apenas com a tela aberta e visível. A lista `known` permite atualizar exclusões nas mensagens já carregadas. Ao ler mensagens antigas, novas mensagens não forçam rolagem; um botão retorna ao fim da conversa. Erros preservam o rascunho e a conversa disponível, com espera após limites de consulta.
+
+`POST /api/community/chat`: sessão GitHub, origem do frontend validada, limites compartilhados da API e intervalo de 5 segundos por conta, aplicado atomicamente no MongoDB. Uma chave de tentativa gerada no cliente, combinada à conta e indexada como única, permite repetir um envio de resposta incerta sem duplicar a mensagem. A identidade não é aceita do corpo.
+
+`POST /api/community/chat/delete`: somente o autor pode apagar sua mensagem. O texto é removido do documento e uma indicação de exclusão permanece; os demais clientes atualizam os registros carregados na próxima consulta. Não há edição, arquivos, mensagens privadas, notificações com navegador fechado ou moderação administrativa nesta primeira versão. Denúncias e moderação continuam como etapa anterior à abertura pública.
+
+Persistência nova: `communityMessages`, índice único `requestKey`. O banco e o Docker existentes são reaproveitados; não são necessárias variáveis de ambiente novas. Testes de serviço cobrem validação, concorrência, repetição, exclusão, paginação e ausência de XP; testes HTTP cobrem sessão e origem.
+
+Identidade: troféu alado vetorial simples na marca e no favicon, com verde de destaque. Base geral preta/grafite, superfícies neutras e acentos variados. A introdução de Meu perfil foi removida. Os textos de apoio e roteiro de Metas pessoais ficam sem card ou borda; controles e projeto ativo mantêm agrupamento. As missões foram compactadas novamente, preservando progresso, prazos e recebimento.
