@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Flag, CheckCircle2, ArrowUpRight, Code2, Plus, Archive } from 'lucide-react';
 import useCommunityData, { COMMUNITY_API } from './useCommunityData';
+import { mutationRequest } from './actionFeedback';
 import { readApiResponse } from './apiResponse';
 import { normalizeRepositoryURL, REPOSITORY_HELP } from './repositoryURL';
 const dateLabel = date => date ? new Date(`${date}T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Sem prazo definido';
@@ -21,8 +22,8 @@ export default function PersonalGoals({ connected, revision }) {
   async function mutate(path, body) {
     setBusy(true); setSaveError('');
     try {
-      const response = await fetch(`${COMMUNITY_API}${path}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      setData(await readApiResponse(response)); setNewGoal(false);
+      const value = await mutationRequest(`${COMMUNITY_API}${path}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      setData(value); setNewGoal(false);
     } catch (err) {
       setSaveError(err.message);
       if (err.status === 409) {

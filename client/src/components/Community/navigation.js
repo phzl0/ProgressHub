@@ -9,7 +9,7 @@ export const PRIMARY_NAVIGATION = [
 ];
 export const PAGE_LABELS = { dashboard: 'Tela inicial', ranking: 'Ranking', missions: 'Missões', progress: 'Progresso', goals: 'Metas pessoais', community: 'Comunidade', me: 'Meu perfil', profile: 'Perfil público', seasons: 'Temporadas', achievements: 'Conquistas', settings: 'Configurações', account: 'Conta', privacy: 'Privacidade', information: 'Regras e ajuda' };
 export function viewFromHash(hash = window.location.hash) {
-  const path = hash.replace(/^#/, '');
+  const path = hash.replace(/^#/, '').split('?')[0];
   if (/^profile\/\d{1,20}$/.test(path)) return 'profile';
   if (/^community\/(general|help|groups|contacts|invitations)$/.test(path) || /^community\/(groups|help)\/[a-f0-9]{24}$/.test(path) || /^community\/post\/[a-f0-9]{24}$/.test(path)) return 'community';
   if (path === 'ranking/community') return 'ranking';

@@ -1,3 +1,4 @@
+import { mutationRequest } from './actionFeedback';
 import { readApiResponse } from './apiResponse';
 import CommunityChallenge from './CommunityChallenge';
 import React, { useEffect, useRef, useState } from 'react';
@@ -57,10 +58,8 @@ export default function Missions({ connected, revision, onClaimed }) {
     requestEpoch.current += 1; claimingRef.current = true;
     setClaiming(key); setError('');
     try {
-      const response = await fetch(`${API}/missions/claim`, { method: 'POST', credentials: 'include',
+      const value = await mutationRequest(`${API}/missions/claim`, { method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ missionId: mission.id, periodKey: mission.periodKey }) });
-      const value = await readApiResponse(response);
-      if (!response.ok) throw new Error(value.error || 'Não foi possível receber o bônus.');
       setData(value);
       if (onClaimed) await onClaimed();
     } catch (err) { setError(err.message); }

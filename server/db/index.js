@@ -77,6 +77,8 @@ async function initializeIndexes() {
     await db.collection('missionRewards').createIndex({ githubId: 1, awardedAt: -1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, creditedPeriod: 1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, status: 1 });
+    await db.collection('communityComments').createIndex({ postId: 1, rootId: 1, createdAt: -1, _id: -1 });
+    await db.collection('communityHelpComments').createIndex({ helpId: 1, rootId: 1, createdAt: -1, _id: -1 });
     await db.collection('communityReactions').createIndex({ kind: 1, targetId: 1, githubId: 1 });
     await db.collection('communityHelpSaves').createIndex({ githubId: 1, helpId: 1 });
     await db.collection('communityHelpComments').createIndex({ helpId: 1, createdAt: -1, _id: -1 });

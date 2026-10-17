@@ -17,7 +17,7 @@ async function requireTarget(db,user,kind,targetId) {
     await require('./social').channelFor(db,user,message.channel||'general');return message;
   }
   if(!['comment','help-comment'].includes(kind))throw fail('Tipo de reação inválido.');
-  const message=await db.collection(kind==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId});
+  const message=await db.collection(kind==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false}});
   if(!message)throw fail('Comentário indisponível.',404);
   const parent=await db.collection(kind==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(kind==='comment'?message.postId:message.helpId),...(kind==='comment'?{deletedAt:{$exists:false}}:{type:'help'})});
   if(!parent)throw fail('Conteúdo indisponível.',404);return message;

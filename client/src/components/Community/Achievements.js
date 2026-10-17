@@ -3,9 +3,9 @@ import { Award, GitCommitHorizontal, GitPullRequest, CalendarDays, MessageSquare
 import useCommunityData from './useCommunityData';
 const icons = { commits: GitCommitHorizontal, pulls: GitPullRequest, consistency: CalendarDays, reviews: MessageSquareCode, collaboration: Handshake, missions: ScrollText, releases: Rocket, career: TrendingUp };
 export function AchievementIcon({ category, size = 23 }) { const Icon = icons[category] || Award; return <Icon size={size} aria-hidden="true" />; }
-function AchievementCard({ item }) {
+function AchievementCard({ item, highlighted }) {
   const value = n => (n || 0).toLocaleString('pt-BR');
-  return <article className={`ql-milestone ql-milestone-${item.tone || 'green'} ${item.unlocked ? 'is-unlocked' : ''}`}>
+  return <article id={`achievement-${item.id}`} className={`${highlighted ? 'ph-search-highlight ' : ''}ql-milestone ql-milestone-${item.tone || 'green'} ${item.unlocked ? 'is-unlocked' : ''}`}>
     <div className="ql-milestone-top"><span className="ql-milestone-emblem"><AchievementIcon category={item.category} /></span><span className="ql-milestone-reward">{item.xp > 0 ? `+${value(item.xp)} XP` : 'CONQUISTA'}</span></div>
     <h3>{item.name}</h3><p>{item.description || 'Uma conquista que faz parte da sua história.'}</p>
     <div className="ql-milestone-progress"><span style={{ width: `${item.progress || 0}%` }} /></div>
@@ -20,6 +20,9 @@ export default function Achievements({ connected, revision, carousel = false, fa
   const [focused, setFocused] = useState(false);
   const [reduced, setReduced] = useState(() => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches));
   const [filter, setFilter] = useState('all');
+  const [selected,setSelected]=useState(()=>new URLSearchParams(window.location.hash.split('?')[1]||'').get('achievement'));
+  useEffect(()=>{const changed=()=>{setSelected(new URLSearchParams(window.location.hash.split('?')[1]||'').get('achievement'));setFilter('all');};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed);},[]);
+  useEffect(()=>{if(selected&&data?.achievements)document.getElementById(`achievement-${selected}`)?.scrollIntoView?.({block:'center'});},[selected,data,filter]);
   const track = useRef(null);
   const items = data?.achievements || fallbackNames.map(name => ({ id: name, name, unlocked: true, progress: 100 }));
   const unlocked = items.filter(item => item.unlocked).length;
@@ -61,7 +64,7 @@ export default function Achievements({ connected, revision, carousel = false, fa
     <p className="ql-caption">Bônus únicos, recebidos automaticamente ao sincronizar. Valem para carreira e temporada. Marcos de dias não exigem sequência. {data?.bonusXP > 0 && <strong>{data.bonusXP.toLocaleString('pt-BR')} XP recebidos em conquistas.</strong>}</p>
     {error && <p role="alert" className="ql-error">{error}</p>}{!connected ? <p className="ql-empty">Entre com GitHub para descobrir suas conquistas e ganhar bônus de XP.</p> : !data && !error ? <p role="status" className="ql-caption">Carregando conquistas…</p> : null}
     {!carousel && items.length > 0 && <div className="ql-milestone-filters" role="group" aria-label="Filtrar conquistas">{[['all', 'Todas'], ['earned', 'Desbloqueadas'], ['next', 'A conquistar']].map(([id, label]) => <button key={id} className="ql-button ql-button-secondary" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>}
-    {items.length > 0 && <div ref={track} className={carousel ? 'ql-milestone-track' : 'ql-milestone-grid'} tabIndex={carousel ? 0 : undefined} aria-label={carousel ? 'Conquistas; use as setas ou deslize para navegar' : undefined}>{(carousel ? items : visible).map(item => <AchievementCard key={item.id} item={item} />)}</div>}
+    {items.length > 0 && <div ref={track} className={carousel ? 'ql-milestone-track' : 'ql-milestone-grid'} tabIndex={carousel ? 0 : undefined} aria-label={carousel ? 'Conquistas; use as setas ou deslize para navegar' : undefined}>{(carousel ? items : visible).map(item => <AchievementCard key={item.id} item={item} highlighted={item.id===selected} />)}</div>}
     {!carousel && items.length > 0 && !visible.length && <p className="ql-empty">Ainda não há conquistas neste filtro. Continue construindo!</p>}
     {carousel && items.length > 0 && <p className="ql-caption ql-carousel-hint">{reduced ? 'Avanço automático desativado pela sua preferência de movimento.' : paused ? 'Avanço automático pausado.' : 'Avanço automático a cada 6 segundos; pausa ao passar o mouse ou usar o teclado.'} <a href="#me">Ver minha coleção →</a></p>}
   </section>;

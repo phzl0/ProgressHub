@@ -27,7 +27,7 @@ async function readHelp(db, user, query = {}) {
   const users=await db.collection('users').find({githubId:{$in:[...new Set(rows.flatMap(r=>[r.owner,...helpersFor(r)]))]}},{projection:{githubId:1,githubLogin:1,communityOptIn:1}}).toArray();
   const ids=rows.map(r=>r._id.toHexString());
   const saved=viewer?await db.collection('communityHelpSaves').find({githubId:viewer,helpId:{$in:ids}}).toArray():[];
-  const counts=await db.collection('communityHelpComments').aggregate([{$match:{helpId:{$in:ids}}},{$group:{_id:'$helpId',count:{$sum:1}}}]).toArray();
+  const counts=await db.collection('communityHelpComments').aggregate([{$match:{helpId:{$in:ids},deletedAt:{$exists:false}}},{$group:{_id:'$helpId',count:{$sum:1}}}]).toArray();
   return {requests:rows.slice(0,20).map(r=>({id:r._id.toHexString(),title:r.name,description:r.description,status:r.helpStatus,limit:r.helpLimit,count:r.members.length,joined:r.members.includes(viewer),own:r.owner===viewer,author:users.find(u=>u.githubId===r.owner)?.githubLogin||'Participante',createdAt:r.createdAt,saved:saved.some(s=>s.helpId===r._id.toHexString()),commentCount:counts.find(c=>c._id===r._id.toHexString())?.count||0,helpers:helpersFor(r).map(m=>{const u=users.find(u=>u.githubId===m);return {login:u?.communityOptIn||r.owner===viewer||m===viewer?u?.githubLogin||'Participante':'Participante',profileId:u?.communityOptIn?m:null};})})),hasMore:rows.length>20};
 }
 async function helpAction(db, user, input) {
@@ -53,11 +53,9 @@ async function helpAction(db, user, input) {
     if(input.saved)await db.collection('communityHelpSaves').updateOne({_id:key},{$setOnInsert:{githubId:user.githubId,helpId:input.id,createdAt:new Date()}},{upsert:true});
     else await db.collection('communityHelpSaves').deleteOne({_id:key});
   } else if(input.action==='comment') {
-    const body=boundedText(input.text,600,3);
-    if(typeof input.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId))throw fail('Comentário inválido.');
-    await db.collection('communityHelpComments').updateOne({_id:`${user.githubId}:${input.requestId}`},{$setOnInsert:{helpId:input.id,githubId:user.githubId,text:body,createdAt:new Date()}},{upsert:true});
+    await require('./comments').addComment(db,user,'help',input.id,input);
   } else if(input.action==='delete-comment') {
-    await db.collection('communityHelpComments').deleteOne({_id:String(input.commentId),helpId:input.id,githubId:user.githubId});
+    await require('./comments').deleteComment(db,user,'help',input.id,input.commentId);
   } else if (input.action === 'status') {
     if (group.owner !== user.githubId) throw fail('Apenas o autor pode encerrar o pedido.',403);
     if (!['open','paused','resolved'].includes(input.status)) throw fail('Estado inválido.');

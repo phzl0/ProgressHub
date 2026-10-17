@@ -1,8 +1,9 @@
+import { mutationRequest } from './actionFeedback';
 import React from 'react';
 import { CosmeticAvatar } from './Appearance';
 import { COMMUNITY_API } from './useCommunityData';
 import { readApiResponse } from './apiResponse';
-export const socialRequest = async (path, body) => readApiResponse(await fetch(`${COMMUNITY_API}/${path}`, { credentials: 'include', ...(body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) }));
+export const socialRequest = async (path, body, options={}) => body!==undefined ? mutationRequest(`${COMMUNITY_API}/${path}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},{path,...options}) : readApiResponse(await fetch(`${COMMUNITY_API}/${path}`,{credentials:'include'}));
 export const requestId = () => window.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
 export function Author({ author }) { return <div className="ph-social-author"><CosmeticAvatar src={author?.picture} frame={author?.appearance?.frame} size={32} />{author?.profileId ? <a href={`#profile/${author.profileId}`}>@{author.login}</a> : <strong>@{author?.login || 'Participante'}</strong>}</div>; }
 export async function preparePhoto(file) {

@@ -33,7 +33,7 @@ test('MongoDB: social feed, contacts, invitations and channel isolation', { skip
     const comment={action:'comment',postId,text:'great',requestId:'comment-request-0001'}; await feedAction(db,b,comment); await feedAction(db,b,comment);
     feed=await readFeed(db,b); assert.equal(feed.posts[0].likes,1);assert.equal(feed.posts[0].commentCount,1); assert.equal(feed.posts[0].liked,true);
     await assert.rejects(feedAction(db,b,{action:'delete-post',postId}),{status:403});
-    await feedAction(db,c,{action:'delete-comment',postId,id:feed.posts[0].comments[0].id}); assert.equal((await readFeed(db,b)).posts[0].commentCount,1);
+    await assert.rejects(feedAction(db,c,{action:'delete-comment',postId,id:feed.posts[0].comments[0].id}),{status:404}); assert.equal((await readFeed(db,b)).posts[0].commentCount,1);
     await feedAction(db,a,{action:'delete-post',postId}); assert.equal((await readFeed(db,b)).posts.length,0);
     assert.equal((await db.collection('users').findOne({_id:a._id})).githubStats.xp,10);
   } finally { await db.dropDatabase(); await client.close(); }

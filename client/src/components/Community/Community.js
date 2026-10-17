@@ -1,3 +1,5 @@
+import ActionToasts from './ActionToasts';
+import { mutationRequest, showFeedback } from './actionFeedback';
 import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Github, Trophy, GitCommitHorizontal, GitPullRequest, ArrowUpRight, Zap, ShieldCheck } from 'lucide-react';
@@ -25,6 +27,7 @@ import CommunityFooter from './CommunityFooter';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 async function request(path, body) {
+  if(body!==undefined)return mutationRequest(`${API}${path}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},{path});
   const response = await fetch(`${API}${path}`, {
     credentials: 'include',
     ...(body !== undefined ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
@@ -46,7 +49,7 @@ export default function Community() {
   const [profileId, setProfileId] = useState(profileFromHash);
   const [tab, setTab] = useState(() => viewFromHash());
   const [bannerAutoplay, setBannerAutoplay] = useState(() => { try { return localStorage.getItem('ph-banner-autoplay') !== 'false'; } catch (_) { return true; } });
-  function changeBannerAutoplay(value) { setBannerAutoplay(value); try { localStorage.setItem('ph-banner-autoplay', String(value)); } catch (_) { /* Storage is optional. */ } }
+  function changeBannerAutoplay(value) { setBannerAutoplay(value); try { localStorage.setItem('ph-banner-autoplay', String(value)); showFeedback('Preferência de animação salva.'); } catch (_) { showFeedback('Preferência aplicada nesta sessão.'); } }
   function navigate(path, event) {
     if (event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button > 0)) return;
     event?.preventDefault();
@@ -118,6 +121,11 @@ export default function Community() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  useEffect(()=>{
+    if(!me?.connected)return;let active=true;let timer;let version=0;
+    const changed=event=>{if(!event.detail?.domains?.includes('me'))return;const mine=++version;window.clearTimeout(timer);timer=window.setTimeout(async()=>{const result=await Promise.allSettled([request('/me'),request('/leaderboard')]);if(!active||mine!==version)return;if(result[0].status==='fulfilled')setMe(result[0].value);if(result[1].status==='fulfilled')setRanking(result[1].value);},100);};
+    window.addEventListener('ph-data-changed',changed);return()=>{active=false;window.clearTimeout(timer);window.removeEventListener('ph-data-changed',changed);};
+  },[me?.connected]);
   async function sync() {
     setBusy(true); setError('');
     try {
@@ -138,12 +146,15 @@ export default function Community() {
     finally { setBusy(false); }
   }
   async function logout() {
+    if(busy)return;
+    showFeedback('Encerrando sessão…','pending',{id:'logout'});
     setBusy(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/auth/logout`, { credentials: 'include' });
       if (!response.ok) throw new Error('Não foi possível sair.');
+      showFeedback('Sessão encerrada.','success',{id:'logout'});
       window.location.assign('/community');
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { showFeedback(err.message,'error',{id:'logout'}); setError(err.message); setBusy(false); }
   }
   const stats = me?.stats;
   const xp = stats?.xp || 0;
@@ -156,7 +167,7 @@ export default function Community() {
   const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   const group = parentView(tab);
   const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons'].includes(tab);
-  return <div className="ql-game ql-site-shell">
+  return <div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
     <div className="ql-site-body">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Palette, Check, Save, RotateCcw } from 'lucide-react';
 import useCommunityData, { COMMUNITY_API } from './useCommunityData';
-import { readApiResponse } from './apiResponse';
+import { mutationRequest } from './actionFeedback';
 import { CosmeticAvatar, CosmeticTitle, coverProps, DEFAULT_APPEARANCE } from './Appearance';
 export default function Cosmetics({ me, onEquipped }) {
   const { data, error } = useCommunityData('/cosmetics', me?.connected);
@@ -17,8 +17,7 @@ export default function Cosmetics({ me, onEquipped }) {
   async function equip() {
     setBusy(true); setMessage(''); setSaveError('');
     try {
-      const response = await fetch(`${COMMUNITY_API}/cosmetics`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(choice) });
-      const result = await readApiResponse(response);
+      const result = await mutationRequest(`${COMMUNITY_API}/cosmetics`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(choice) });
       onEquipped(result.appearance); setMessage('Aparência equipada. Sua identidade está pronta para aparecer na comunidade.');
     } catch (err) { setSaveError(err.message); }
     finally { setBusy(false); }

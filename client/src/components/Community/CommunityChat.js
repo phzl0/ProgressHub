@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Hash, Send, Trash2, ChevronUp, ArrowDown, MessagesSquare, RefreshCw, Paperclip, FileDown, X } from 'lucide-react';
+import { mutationRequest } from './actionFeedback';
 import MessageReactions from './MessageReactions';
 import { COMMUNITY_API } from './useCommunityData';
 import { readApiResponse } from './apiResponse';
@@ -88,10 +89,10 @@ export default function CommunityChat({ connected, channel = 'general', title = 
     if (!pending.current || pending.current.text !== text || pending.current.file !== file) pending.current = { text, file, requestId: requestId() };
     try {
       if (file && !pending.current.attachmentId) {
-        const uploaded = await readApiResponse(await fetch(`${COMMUNITY_API}/chat/attachments?channel=${encodeURIComponent(channel)}&name=${encodeURIComponent(file.name)}&requestId=${pending.current.requestId}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/octet-stream' }, body: file }));
+        const uploaded = await mutationRequest(`${COMMUNITY_API}/chat/attachments?channel=${encodeURIComponent(channel)}&name=${encodeURIComponent(file.name)}&requestId=${pending.current.requestId}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/octet-stream' }, body: file }, {quiet:false,messages:['Enviando arquivo…','Arquivo anexado.']});
         pending.current.attachmentId = uploaded.id;
       }
-      const value = await readApiResponse(await fetch(`${COMMUNITY_API}/chat`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, requestId: pending.current.requestId, ...(pending.current.attachmentId ? { attachmentId: pending.current.attachmentId } : {}), channel }) }));
+      const value = await mutationRequest(`${COMMUNITY_API}/chat`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, requestId: pending.current.requestId, ...(pending.current.attachmentId ? { attachmentId: pending.current.attachmentId } : {}), channel }) }, {quiet:true});
       if (!alive.current) return;
       epoch.current += 1; nearBottom.current = true;
       updateMessages(merge(messagesRef.current, [value.message])); setDraft(''); setFile(null); pending.current = null; setOnline(true); setLoaded(true);
@@ -103,7 +104,7 @@ export default function CommunityChat({ connected, channel = 'general', title = 
     if (deleting) return;
     setDeleting(id); setError(''); epoch.current += 1;
     try {
-      await readApiResponse(await fetch(`${COMMUNITY_API}/chat/delete`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
+      await mutationRequest(`${COMMUNITY_API}/chat/delete`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
       if (alive.current) { epoch.current += 1; updateMessages(messagesRef.current.map(message => message.id === id ? { ...message, text: '', deleted: true } : message)); setConfirmDelete(null); }
     } catch (err) { if (alive.current) setError(err.message); }
     finally { if (alive.current) setDeleting(null); }

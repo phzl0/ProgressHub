@@ -40,8 +40,13 @@ async function socialAction(db, user, input) {
   } else if (input.action === 'contact-remove') {
     await contacts.deleteOne({ _id: String(input.id), $or: [{ from: user.githubId }, { to: user.githubId }] });
   } else if (input.action === 'group-create') {
-    if (await groups.countDocuments({ owner: user.githubId }) >= 10) throw fail('Limite de 10 grupos por criador.');
-    await groups.insertOne({ name: text(input.name, 60), description: text(input.description || '', 240, true, 8), owner: user.githubId, members: [user.githubId], invited: [], createdAt: new Date() });
+    if(input.requestId!==undefined&&(typeof input.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)))throw fail('Tentativa de criação inválida.');
+    const requestKey=input.requestId?`group:${user.githubId}:${input.requestId}`:null;
+    if(requestKey&&await groups.findOne({requestKey,owner:user.githubId}))return readSocial(db,user);
+    if(await groups.countDocuments({owner:user.githubId})>=10)throw fail('Limite de 10 grupos por criador.');
+    const row={name:text(input.name,60),description:text(input.description||'',240,true,8),owner:user.githubId,members:[user.githubId],invited:[],createdAt:new Date()};
+    if(requestKey){try{await groups.updateOne({requestKey},{$setOnInsert:row},{upsert:true});}catch(e){if(e.code!==11000)throw e;}}
+    else await groups.insertOne(row);
   } else if (input.action === 'group-update') {
     if (!await groups.findOne({_id:id(input.id),owner:user.githubId})) throw fail('Apenas o dono pode editar o grupo.',403);
     const cover=input.cover||'';
@@ -106,12 +111,10 @@ async function feedAction(db, user, input) {
       if (input.liked) await db.collection('communityLikes').updateOne({ _id: key }, { $set: { reaction: input.reaction || 'heart' }, $setOnInsert: { postId, githubId: user.githubId } }, { upsert: true });
       else await db.collection('communityLikes').deleteOne({ _id: key });
     } else if (input.action === 'comment') {
-      const body = text(input.text, 600, false, 3);
-      if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Comentário inválido.');
-      await db.collection('communityComments').updateOne({ _id: `${user.githubId}:${input.requestId}` }, { $setOnInsert: { postId, githubId: user.githubId, text: body, createdAt: new Date() } }, { upsert: true });
+      await require('./comments').addComment(db,user,'post',postId,input);
     } else if (input.action === 'delete-post' && post.githubId === user.githubId) await db.collection('communityPosts').updateOne({ _id: post._id }, { $set: { deletedAt: new Date() }, $unset: { text: '', image: '' } });
     else if (input.action === 'delete-comment') {
-      await db.collection('communityComments').deleteOne({ _id: String(input.id), postId, githubId: user.githubId });
+      await require('./comments').deleteComment(db,user,'post',postId,input.id);
     } else throw fail('Ação não autorizada.', 403);
   }
   return { ok: true };

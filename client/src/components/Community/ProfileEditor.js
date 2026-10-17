@@ -1,5 +1,5 @@
 import { normalizeRepositoryURL, REPOSITORY_HELP } from './repositoryURL';
-import { readApiResponse } from './apiResponse';
+import { mutationRequest, showFeedback } from './actionFeedback';
 import React, { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Save, X } from 'lucide-react';
 import { PROJECT_ICONS, ProjectIcon } from './ProjectShowcase';
@@ -43,7 +43,7 @@ export default function ProfileEditor({ profile = {}, onSaved, onCancel }) {
   async function chooseBanner(event) {
     const file = event.target.files?.[0]; if (!file) return;
     setBusy(true); setError('');
-    try { setBanner(await prepareBanner(file)); } catch (err) { setError(err.message); }
+    try { setBanner(await prepareBanner(file)); } catch (err) { setError(err.message); showFeedback(err.message,'error'); }
     finally { setBusy(false); event.target.value = ''; }
   }
   async function save(event) {
@@ -58,10 +58,8 @@ export default function ProfileEditor({ profile = {}, onSaved, onCancel }) {
     if (Object.keys(errors).length) { setError('Confira os endereços destacados. Seus dados continuam preenchidos.'); return; }
     setBusy(true);
     try {
-      const response = await fetch(`${API}/profile`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      const data = await mutationRequest(`${API}/profile`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bio, banner, projects: featured.map(project => ({ ...project, url: normalizeRepositoryURL(project.url) })), links: filled.map(link => ({ label: link.label.trim(), url: /^https?:\/\//i.test(link.url.trim()) ? link.url.trim() : `https://${link.url.trim()}` })) }) });
-      const data = await readApiResponse(response);
-      if (!response.ok) throw new Error(data.error || 'Não foi possível salvar o perfil.');
       if (data.appearance) onSaved(data.profile, data.appearance); else onSaved(data.profile);
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
