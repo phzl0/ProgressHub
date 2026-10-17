@@ -143,3 +143,11 @@ Validação desta etapa: build de produção passou; 25 testes de backend e 8 te
 A sincronização salva evidências e atualiza o progresso, sem pagar novos bônus automaticamente. `POST /api/community/missions/claim` recebe apenas `missionId` e `periodKey`; o servidor revalida conclusão e prazo e calcula o XP. Exige sessão GitHub e mesma origem. O recibo único impede pagamento repetido e a trava compartilhada evita concorrência com sincronizações. Bônus automáticos anteriores continuam recebidos.
 
 Missões concluídas do período anterior aparecem por até 48 horas para recebimento. O XP entra na temporada do recebimento. A interface atualiza missões após sincronizar e atualiza carreira e ranking após receber.
+
+### Personalização do perfil
+
+Meu perfil permite editar descrição (até 300 caracteres), dois links opcionais com nome (até 30 caracteres) e endereço HTTP/HTTPS, e banner enviado pelo computador. O navegador recorta o centro em 1600 × 500 e converte para WebP com até 300 KB. Entradas aceitas: JPG, PNG e WebP de até 8 MB. É possível remover o banner e voltar à capa padrão.
+
+`POST /api/community/profile` exige sessão GitHub e mesma origem. Valida e grava apenas `bio`, `links` e `banner` em `users.communityProfile`, sem editar a identidade GitHub ou os pontos. O limite de JSON maior (450 KB) é restrito a esse caminho. Banner fica no MongoDB, sem serviço externo de armazenamento nesta etapa. A resposta pública inclui esses campos somente quando a participação pública está ativa.
+
+Paleta atual: grafite neutro, verde esmeralda como identidade e destaques secundários discretos. O health check do MongoDB no GitHub Actions usa aspas externas duplas para preservar o comando interno do mongosh.

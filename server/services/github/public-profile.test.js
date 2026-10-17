@@ -17,7 +17,7 @@ test('only consenting participants have a public profile', () => {
 });
 test('public profile allowlist excludes private fields and detailed activity', () => {
   const result = publicProfile(user, 4, now);
-  assert.deepEqual(Object.keys(result).sort(), ['career', 'githubId', 'login', 'picture', 'position', 'stats']);
+  assert.deepEqual(Object.keys(result).sort(), ['career', 'githubId', 'login', 'picture', 'position', 'profile', 'stats']);
   assert.equal(result.position, 4);
   assert.equal(result.stats.xp, 200);
   assert.equal(JSON.stringify(result).includes('private'), false);
@@ -30,4 +30,10 @@ test('past season stats are not presented as current progress', () => {
   assert.equal(result.stats, null);
   assert.equal(result.position, null);
   assert.equal(result.login, 'developer');
+});
+
+test('public profile includes only allowed customization for consenting users', () => {
+  const decorated = { ...user, communityProfile: { bio: 'Minha história', banner: '', links: [{ label: 'Site', url: 'https://example.com' }], email: 'hidden' } };
+  assert.deepEqual(publicProfile(decorated, 1, now).profile, { bio: 'Minha história', banner: '', links: [{ label: 'Site', url: 'https://example.com/' }] });
+  assert.equal(publicProfile({ ...decorated, communityOptIn: false }, 1, now), null);
 });

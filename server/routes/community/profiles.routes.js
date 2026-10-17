@@ -13,7 +13,7 @@ router.get('/:githubId', async (req, res) => {
     const db = await connectToDatabase();
     const users = db.collection('users');
     const user = await users.findOne({ githubId: req.params.githubId, communityOptIn: true }, {
-      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1, communityOptIn: 1, 'career.achievements': 1,
+      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1, communityOptIn: 1, communityProfile: 1, 'career.achievements': 1,
         'githubStats.period': 1, 'githubStats.xp': 1, 'githubStats.level': 1,
         'githubStats.experience': 1, 'githubStats.nextLevelXP': 1,
         'githubStats.commits': 1, 'githubStats.mergedPRs': 1,

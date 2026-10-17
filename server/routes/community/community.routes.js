@@ -8,6 +8,7 @@ const { periodFor } = require('../../services/github/scoring');
 const { tokenKey, encryptToken, githubClient } = require('../../services/github/client');
 const { readMissions, claimMission } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
+const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -90,8 +91,17 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
-      stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
+      profile: profileSettings(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
+});
+router.post('/profile', authenticateToken, sameOrigin, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para editar seu perfil.' });
+  try {
+    const profile = validateProfile(req.body);
+    const db = await connectToDatabase();
+    await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityProfile: profile } });
+    res.set('Cache-Control', 'no-store').json({ profile });
+  } catch (error) { res.status(error.status === 400 ? 400 : 503).json({ error: error.status === 400 ? error.message : 'Não foi possível salvar seu perfil.' }); }
 });
 router.post('/participation', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId || typeof req.body.optedIn !== 'boolean') return res.status(400).json({ error: 'Conecte o GitHub e informe a participação.' });

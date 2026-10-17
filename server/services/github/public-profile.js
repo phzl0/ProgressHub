@@ -1,3 +1,4 @@
+const { profileSettings } = require('./profile-settings');
 const { periodFor } = require('./scoring');
 const { summarizeCareer } = require('./career');
 
@@ -9,6 +10,7 @@ function publicProfile(user, position = null, now = new Date()) {
   return {
     career: { xp: career.xp, level: career.level, experience: career.experience, nextLevelXP: career.nextLevelXP,
       title: career.title, achievements: career.achievements || [], seasons: career.seasons, since: career.since, bestPosition: career.bestPosition },
+    profile: profileSettings(user),
     githubId: user.githubId,
     login: user.githubLogin,
     picture: user.picture,

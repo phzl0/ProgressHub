@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Github, ArrowUpRight, ArrowLeft, Trophy, GitCommitHorizontal, GitPullRequest, Award, ShieldCheck } from 'lucide-react';
 
+import ProfileDetails from './ProfileDetails';
+
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 export default function PublicProfile({ githubId }) {
   const [profile, setProfile] = useState(null);
@@ -41,10 +43,12 @@ export default function PublicProfile({ githubId }) {
   if (!profile) return <section className="ql-panel ql-empty"><ShieldCheck size={30} /><h2>Perfil indisponível</h2><p>{error || 'Este perfil não foi encontrado ou não participa do ranking público.'}</p><a href="#ranking" className="ql-button ql-button-secondary"><ArrowLeft size={16} /> Voltar ao ranking</a></section>;
   return <div className="ql-public-profile">
     <a href="#ranking" className="ql-back-link"><ArrowLeft size={15} /> Voltar ao ranking</a>
+    {profile.profile?.banner && <div className="ql-public-cover" role="img" aria-label={`Banner de ${profile.login}`} style={{ backgroundImage: `linear-gradient(0deg,rgba(0,0,0,.4),transparent),url("${profile.profile.banner}")` }} />}
     <section className="ql-panel ql-public-hero">
       <div className="ql-public-identity"><img src={profile.picture} alt={`Avatar de ${profile.login}`} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><h2>@{profile.login}</h2><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
       <div className="ql-public-actions"><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </section>
+    <ProfileDetails profile={profile.profile} />
     {error && <p className="ql-caption" role="status">{error}</p>}
     {!stats && <p className="ql-update-banner">Aguardando a primeira sincronização deste participante na temporada atual.</p>}
     <div className="ql-metrics"><PublicMetric icon={Trophy} label="Posição global" value={profile.position ? `#${profile.position}` : '—'} note="Temporada atual" tone="gold" /><PublicMetric icon={Award} label="Nível permanente" value={career?.level || 1} note={career?.title || 'Explorador'} tone="purple" /><PublicMetric icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="Contribuições públicas elegíveis" tone="blue" /><PublicMetric icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="Contribuições públicas mescladas" tone="green" /></div>
