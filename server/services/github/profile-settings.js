@@ -1,7 +1,8 @@
+const { boundedText } = require('../community/text-limits');
 const { repositoryURL } = require('./repository-url');
 const MAX_BANNER_BYTES = 300 * 1024;
 function invalid(message) { const error = new Error(message); error.status = 400; throw error; }
-function validateProfile(input) {
+function validateProfile(input, legacy = false) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) invalid('Perfil inválido.');
   const { bio = '', links = [], banner = '', projects = [] } = input;
   if (typeof bio !== 'string' || bio.length > 300) invalid('A descrição deve ter até 300 caracteres.');
@@ -25,16 +26,16 @@ function validateProfile(input) {
         typeof project.description !== 'string' || project.description.length > 180 ||
         !['star', 'fire', 'bolt', 'code', 'rocket', 'flag'].includes(project.icon) ||
         typeof project.url !== 'string' || project.url.length > 500) invalid('Confira nome, descrição, ícone e link do projeto.');
-    return { name: project.name.trim(), description: project.description.trim(), icon: project.icon, url: repositoryURL(project.url) };
+    return { name: project.name.trim(), description: legacy ? project.description.trim() : boundedText(project.description,180,8,true), icon: project.icon, url: repositoryURL(project.url) };
   });
-  return { bio: bio.trim(), links: cleanLinks, banner, projects: cleanProjects };
+  return { bio: legacy ? bio.trim() : boundedText(bio,300,8,true), links: cleanLinks, banner, projects: cleanProjects };
 }
 function profileSettings(user) {
   // Explicit allowlist for persisted custom fields.
   try {
     const stored = user?.communityProfile || {};
     const projects = (Array.isArray(stored.projects) ? stored.projects : []).filter(project => { try { repositoryURL(project?.url); return true; } catch (_) { return false; } });
-    return validateProfile({ ...stored, projects });
+    return validateProfile({ ...stored, projects }, true);
   }
   catch (_) { return { bio: '', links: [], banner: '', projects: [] }; }
 }

@@ -7,7 +7,7 @@ test('social content rejects oversized/unsafe images and cannot forge identity',
   assert.throws(() => validatePost({ text: '', requestId: 'valid-request-0001' }), { status: 400 });
   assert.throws(() => validatePost({ text: 'hello', image: 'javascript:alert(1)', requestId: 'valid-request-0001' }), { status: 400 });
   assert.throws(() => validatePost({ text: 'x'.repeat(2001), requestId: 'valid-request-0001' }), { status: 400 });
-  assert.deepEqual(validatePost({ text: '<script>plain text</script>', requestId: 'valid-request-0001', githubId: 'forged' }), { text: '<script>plain text</script>', image: '', kind: 'progress', requestId: 'valid-request-0001' });
+  assert.deepEqual(validatePost({ text: '<script>plain text</script>', requestId: 'valid-request-0001', githubId: 'forged' }), { text: '<script>plain text</script>', image: '', kind: 'feed', requestId: 'valid-request-0001' });
 });
 test('MongoDB: social feed, contacts, invitations and channel isolation', { skip: !process.env.MONGODB_TEST_URI }, async () => {
   const client = await MongoClient.connect(process.env.MONGODB_TEST_URI); const db = client.db(`social_${new ObjectId()}`);

@@ -58,6 +58,15 @@ for (const [path, read, write] of [['social', social.readSocial, social.socialAc
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível salvar. Tente novamente.' }); }
   });
 }
+router.get('/search',authenticateToken,githubOnly,async(req,res)=>{
+  try{res.set('Cache-Control','no-store').json(await require('../../services/community/search').searchCommunity(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível pesquisar.'});}
+});
+router.post('/reactions',authenticateToken,githubOnly,sameOrigin,async(req,res)=>{
+  try{res.set('Cache-Control','no-store').json(await require('../../services/community/reactions').react(await connectToDatabase(),req.user,req.body));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível reagir.'});}
+});
+router.get('/help/comments',authenticateToken,githubOnly,async(req,res)=>{
+  try{res.set('Cache-Control','no-store').json(await require('../../services/community/comments').readComments(await connectToDatabase(),req.user,{...req.query,helpId:req.query.helpId||''}));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar os comentários.'});}
+});
 router.get('/feed/comments', authenticateToken, githubOnly, async (req,res) => {
   try { res.set('Cache-Control','no-store').json(await require('../../services/community/comments').readComments(await connectToDatabase(),req.user,req.query)); }
   catch(error) { res.status(error.status||503).json({error:error.status?error.message:'Não foi possível carregar os comentários.'}); }

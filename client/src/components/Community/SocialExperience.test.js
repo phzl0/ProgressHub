@@ -44,7 +44,7 @@ test('help replaces free chat with accepted requests that open their automatic g
   global.fetch=jest.fn(async(_url,o)=>result(_url.includes('/social')?{contacts:[],groups:[]}:o?.method==='POST'?{id:post.id}:{requests:[{id:post.id,title:'Preciso de ajuda',description:'Erro na API',status:'open',count:1,limit:3,author:'bob',joined:false}],hasMore:false}));
   await act(async()=>render(<CommunitySocial me={{connected:true}}/>));
   expect(screen.queryByRole('textbox',{name:'Sua mensagem'})).not.toBeInTheDocument();
-  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'Quero ajudar'})));
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'Ajudar'})));
   expect(window.location.hash).toBe(`#community/groups/${post.id}`);
   expect(global.fetch.mock.calls.some(([,o])=>o?.body&&JSON.parse(o.body).action==='join')).toBe(true);
 });

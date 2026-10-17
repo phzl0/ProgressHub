@@ -1,3 +1,4 @@
+const { boundedText } = require('./text-limits');
 const crypto = require('crypto');
 const { repositoryURL } = require('../github/repository-url');
 const TEMPLATES = [
@@ -12,7 +13,7 @@ function validateProjectGoal(input, now = new Date()) {
   const template = input.mode === 'suggested' ? TEMPLATES.find(t => t.id === input.templateId) : null;
   if (input.mode === 'suggested' && !template) invalid('Escolha um projeto sugerido válido.');
   const title = template?.title || input.title;
-  const description = template?.description || input.description || '';
+  const description = boundedText(template?.description || input.description || '',600,8,true);
   const labels = template?.steps || input.steps;
   if (typeof title !== 'string' || !title.trim() || title.length > 80 || typeof description !== 'string' || description.length > 600) invalid('Informe título (até 80 caracteres) e descrição (até 600).');
   if (!Array.isArray(labels) || labels.length < 1 || labels.length > 12 || labels.some(label => typeof label !== 'string' || !label.trim() || label.length > 160)) invalid('Defina de 1 a 12 etapas, com até 160 caracteres cada.');

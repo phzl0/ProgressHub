@@ -1,0 +1,50 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {MongoClient,ObjectId}=require('mongodb');
+const {boundedText,normalizeLines}=require('./text-limits');const {validatePost,socialAction,readSocial}=require('./social');const {validateHelp,helpAction,readHelp}=require('./help');const {feedAction,readFeed}=require('./social');const {sendMessage,readChat,deleteMessage}=require('./chat');const {readComments}=require('./comments');const {react}=require('./reactions');const {searchCommunity}=require('./search');const {validateProfile}=require('../github/profile-settings');
+test('line limits block vertical spam and normalize repeated blank lines without removing valid code indentation',()=>{
+  assert.throws(()=>boundedText('A\nA\nA\nA',200,3),{status:400});assert.equal(normalizeLines(' A\r\n\n\n\n B '),'A\n\n B');
+  assert.equal(boundedText('function x() {\n  return 1;\n}',600,6),'function x() {\n  return 1;\n}');
+  assert.throws(()=>validatePost({text:'A\nA\nA\nA',requestId:'valid-request-0001'}),{status:400});
+  assert.equal(validatePost({text:'hello',requestId:'valid-request-0001'}).kind,'feed');
+  assert.equal(validatePost({text:'hello',kind:'learning',requestId:'valid-request-0001'}).kind,'learning');
+  assert.throws(()=>validateHelp({title:'Ajuda',description:Array(9).fill('A').join('\n'),limit:3,requestId:'valid-request-0001'}),{status:400});
+  assert.throws(()=>validateProfile({bio:Array(9).fill('A').join('\n')}),{status:400});
+});
+test('MongoDB: scoped search, continuous groups, thread reactions, saved help privacy and group settings', {skip:!process.env.MONGODB_TEST_URI},async()=>{
+  const client=await MongoClient.connect(process.env.MONGODB_TEST_URI);const db=client.db(`navigation_${new ObjectId()}`);
+  const a={_id:new ObjectId(),githubId:'11',githubLogin:'alice',communityOptIn:true,githubStats:{xp:321}};const b={_id:new ObjectId(),githubId:'12',githubLogin:'bob',communityOptIn:false};const c={_id:new ObjectId(),githubId:'13',githubLogin:'carol',communityOptIn:true};
+  try{
+    await db.collection('users').insertMany([a,b,c]);await db.collection('communityMessages').createIndex({requestKey:1},{unique:true});await db.collection('communityPosts').createIndex({requestKey:1},{unique:true});
+    await socialAction(db,a,{action:'group-create',name:'Private builders',description:'Não vazar'});let group=(await readSocial(db,a)).groups[0];
+    await assert.rejects(socialAction(db,b,{action:'group-update',id:group.id,description:'spoof'}),{status:403});
+    await socialAction(db,a,{action:'group-update',id:group.id,description:'Updated description',cover:''});group=(await readSocial(db,a)).groups[0];assert.equal(group.description,'Updated description');
+    const channel=`group:${group.id}`;
+    const now=new Date();const messages=await Promise.all(Array.from({length:5},(_,n)=>sendMessage(db,a,{channel,text:`message ${n}`,requestId:`group-message-000${n}`},now)));assert.equal(messages.length,5);
+    assert.equal((await readChat(db,a,{channel})).messages.length,5);
+    await sendMessage(db,a,{text:'General message',requestId:'general-message-01'},now);
+    await assert.rejects(sendMessage(db,a,{text:'General too soon',requestId:'general-message-02'},now),{status:429});
+    await assert.rejects(react(db,b,{kind:'chat',targetId:messages[0].id,reaction:'heart'}),{status:403});
+    await react(db,a,{kind:'chat',targetId:messages[0].id,reaction:'heart'});await react(db,a,{kind:'chat',targetId:messages[0].id,reaction:'like'});
+    assert.equal((await readChat(db,a,{channel})).messages.find(m=>m.id===messages[0].id).reaction,'like');
+    await deleteMessage(db,a,messages[0].id);await assert.rejects(react(db,a,{kind:'chat',targetId:messages[0].id,reaction:'sad'}),{status:404});
+    assert.equal((await searchCommunity(db,b,{q:'Private'})).results.filter(r=>r.type==='Grupo').length,0);
+    assert.equal((await searchCommunity(db,a,{q:'Private'})).results.filter(r=>r.type==='Grupo').length,1);
+    assert.equal((await searchCommunity(db,a,{q:'bob'})).results.length,0);
+    await feedAction(db,a,{action:'publish',text:'Literal q.* code',kind:'learning',requestId:'publish-request-001'});
+    assert.equal((await searchCommunity(db,b,{q:'q.*'})).results.length,1);assert.equal((await searchCommunity(db,b,{q:'.*'})).results.length,1);
+    const post=(await readFeed(db,b,{kind:'learning'})).posts[0];assert.equal((await readFeed(db,b,{kind:'project'})).posts.length,0);
+    await feedAction(db,b,{action:'comment',postId:post.id,text:'Suggestion',requestId:'comment-request-001'});const comment=(await readComments(db,a,{postId:post.id})).comments[0];
+    await react(db,a,{kind:'comment',targetId:comment.id,reaction:'laugh'});assert.equal((await readComments(db,b,{postId:post.id})).comments[0].likes,1);
+    const h=await helpAction(db,a,{action:'create',title:'Help with builders',description:'Details',limit:3,requestId:'help-request-00001'});
+    await helpAction(db,b,{action:'comment',id:h.id,text:'Try this first',requestId:'help-comment-00001'});
+    assert.equal((await readHelp(db,b,{id:h.id})).requests[0].joined,false);
+    const hc=(await readComments(db,a,{helpId:h.id})).comments[0];await react(db,a,{kind:'help-comment',targetId:hc.id,reaction:'like'});assert.equal((await readComments(db,b,{helpId:h.id})).comments[0].likes,1);
+    await helpAction(db,b,{action:'save',id:h.id,saved:true});await helpAction(db,b,{action:'save',id:h.id,saved:true});assert.equal((await readHelp(db,b,{tab:'saved'})).requests.length,1);assert.equal((await readHelp(db,c,{tab:'saved'})).requests.length,0);
+    await assert.rejects(readHelp(db,c,{profileId:a.githubId,tab:'saved'}),{status:403});
+    await helpAction(db,b,{action:'join',id:h.id});await socialAction(db,b,{action:'group-leave',id:h.id});assert.equal((await readHelp(db,b,{tab:'helped'})).requests.length,1);
+    const own=(await readHelp(db,a,{tab:'mine'})).requests[0];assert.equal(own.helpers[0].login,'bob');
+    const pub=(await readHelp(db,{}, {profileId:a.githubId,tab:'mine'})).requests[0];assert.equal(pub.helpers[0].login,'Participante');assert.equal(pub.saved,false);
+    assert.equal((await searchCommunity(db,c,{q:'builders'})).results.some(r=>r.type==='Pedido de ajuda'),true);
+    await assert.rejects(helpAction(db,b,{action:'status',id:h.id,status:'resolved'}),{status:403});
+    assert.equal((await db.collection('users').findOne({_id:a._id})).githubStats.xp,321);
+  }finally{await db.dropDatabase();await client.close();}
+});

@@ -1,10 +1,12 @@
 const { ObjectId } = require('mongodb');
 const { notify } = require('./notifications');
+const { boundedText } = require('./text-limits');
+const CATEGORIES = ['feed','project','learning','help','achievement','discussion'];
 const REACTIONS = ['heart', 'like', 'laugh', 'sad'];
 const { appearanceFor } = require('./cosmetics');
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const id = value => { if (typeof value !== 'string' || !/^[a-f0-9]{24}$/.test(value)) throw fail('Item indisponível.', 404); return new ObjectId(value); };
-const text = (value, max, optional = false) => { if (typeof value !== 'string' || (!optional && !value.trim()) || [...value.trim()].length > max || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value)) throw fail(`Use até ${max} caracteres.`); return value.trim(); };
+const text = (value,max,optional=false,lines=1) => boundedText(value,max,lines,optional);
 const person = user => ({ githubId: user.githubId, login: user.githubLogin, picture: user.picture || '', profileId: user.communityOptIn ? user.githubId : null, appearance: appearanceFor(user) });
 const pairKey = (a, b) => [a, b].sort().join(':');
 async function people(db, ids) { return new Map((await db.collection('users').find({ githubId: { $in: ids } }, { projection: { githubId: 1, githubLogin: 1, picture: 1, communityOptIn: 1, communityAppearance: 1 } }).toArray()).map(u => [u.githubId, person(u)])); }
@@ -19,7 +21,7 @@ async function readSocial(db, user) {
   const contacts = await db.collection('communityContacts').find({ $or: [{ from: user.githubId }, { to: user.githubId }] }).limit(100).toArray();
   const groups = await db.collection('communityGroups').find({ $or: [{ members: user.githubId }, { invited: user.githubId }] }).limit(50).toArray();
   const authors = await people(db, [...new Set(contacts.flatMap(c => [c.from, c.to]).concat(groups.flatMap(g => [g.owner, ...g.members, ...g.invited])))]);
-  return { contacts: contacts.map(c => ({ id: String(c._id), status: c.status, incoming: c.to === user.githubId, person: authors.get(c.from === user.githubId ? c.to : c.from) })), groups: groups.map(g => ({ id: g._id.toHexString(), name: g.name, description: g.description, type: g.type || 'group', owner: g.owner === user.githubId, joined: g.members.includes(user.githubId), members: g.members.map(m => authors.get(m)).filter(Boolean) })) };
+  return { contacts: contacts.map(c => ({ id: String(c._id), status: c.status, incoming: c.to === user.githubId, person: authors.get(c.from === user.githubId ? c.to : c.from) })), groups: groups.map(g => ({ id: g._id.toHexString(), name: g.name, description: g.description, cover: g.cover || '', helpStatus: g.helpStatus || null, type: g.type || 'group', owner: g.owner === user.githubId, joined: g.members.includes(user.githubId), members: g.members.map(m => authors.get(m)).filter(Boolean) })) };
 }
 async function socialAction(db, user, input) {
   const contacts = db.collection('communityContacts'); const groups = db.collection('communityGroups');
@@ -39,7 +41,12 @@ async function socialAction(db, user, input) {
     await contacts.deleteOne({ _id: String(input.id), $or: [{ from: user.githubId }, { to: user.githubId }] });
   } else if (input.action === 'group-create') {
     if (await groups.countDocuments({ owner: user.githubId }) >= 10) throw fail('Limite de 10 grupos por criador.');
-    await groups.insertOne({ name: text(input.name, 60), description: text(input.description || '', 240, true), owner: user.githubId, members: [user.githubId], invited: [], createdAt: new Date() });
+    await groups.insertOne({ name: text(input.name, 60), description: text(input.description || '', 240, true, 8), owner: user.githubId, members: [user.githubId], invited: [], createdAt: new Date() });
+  } else if (input.action === 'group-update') {
+    if (!await groups.findOne({_id:id(input.id),owner:user.githubId})) throw fail('Apenas o dono pode editar o grupo.',403);
+    const cover=input.cover||'';
+    if(typeof cover!=='string'||(cover&&(!/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(cover)||cover.length>400000)))throw fail('Envie uma capa WebP de até 300 KB.');
+    await groups.updateOne({_id:id(input.id),owner:user.githubId},{$set:{cover,description:text(input.description||'',2000,true,8)}});
   } else if (input.action === 'group-invite') {
     const group = await groups.findOne({ _id: id(input.id), owner: user.githubId });
     if (!group) throw fail('Apenas o criador pode convidar.', 403);
@@ -61,15 +68,16 @@ async function socialAction(db, user, input) {
   return readSocial(db, user);
 }
 function validatePost(input) {
-  const body = text(input.text || '', 200, true);
+  const body = text(input.text || '', 200, true, 3);
   const image = input.image || '';
   if (typeof image !== 'string' || (image && (!/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(image) || image.length > 400000))) throw fail('Envie uma imagem WebP de até 300 KB.');
   if (!body && !image) throw fail('Escreva algo ou escolha uma foto.');
   if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Publicação inválida.');
-  return { text: body, image, kind: input.kind === 'help' ? 'help' : 'progress', requestId: input.requestId };
+  return { text: body, image, kind: CATEGORIES.includes(input.kind) ? input.kind : 'feed', requestId: input.requestId };
 }
 async function readFeed(db, user, query = {}) {
   const filter = { deletedAt: { $exists: false } };
+  if(query.kind && query.kind!=='all') {if(!CATEGORIES.includes(query.kind))throw fail('Categoria inválida.');filter.kind=query.kind==='project'?{$in:['project','progress']}:query.kind;}
   if (query.before) filter._id = { $lt: id(query.before) };
   if (query.post) filter._id = id(query.post);
   const posts = await db.collection('communityPosts').find(filter).sort({ _id: -1 }).limit(21).toArray();
@@ -77,7 +85,7 @@ async function readFeed(db, user, query = {}) {
   const comments = await db.collection('communityComments').aggregate([{ $match: { postId: { $in: ids }, deletedAt: { $exists: false } } }, { $group: { _id: '$postId', rows: { $topN: { sortBy: { createdAt: -1, _id: -1 }, output: '$$ROOT', n: 10 } }, count: { $sum: 1 } } }]).toArray();
   const likes = await db.collection('communityLikes').aggregate([{ $match: { postId: { $in: ids } } }, { $group: { _id: '$postId', count: { $sum: 1 }, mine: { $max: { $cond: [{ $eq: ['$githubId', user.githubId] }, { $ifNull: ['$reaction', 'heart'] }, ''] } }, reactions: { $push: { $ifNull: ['$reaction', 'heart'] } } } }]).toArray();
   const authors = await people(db, [...new Set(page.map(p => p.githubId).concat(comments.flatMap(c => c.rows.map(r => r.githubId))))]);
-  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.find(l => l._id === p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind, createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, (l?.reactions || []).filter(r => r === key).length])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
+  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.find(l => l._id === p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, (l?.reactions || []).filter(r => r === key).length])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
 }
 async function feedAction(db, user, input) {
   if (input.action === 'publish') {
@@ -98,7 +106,7 @@ async function feedAction(db, user, input) {
       if (input.liked) await db.collection('communityLikes').updateOne({ _id: key }, { $set: { reaction: input.reaction || 'heart' }, $setOnInsert: { postId, githubId: user.githubId } }, { upsert: true });
       else await db.collection('communityLikes').deleteOne({ _id: key });
     } else if (input.action === 'comment') {
-      const body = text(input.text, 600);
+      const body = text(input.text, 600, false, 3);
       if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Comentário inválido.');
       await db.collection('communityComments').updateOne({ _id: `${user.githubId}:${input.requestId}` }, { $setOnInsert: { postId, githubId: user.githubId, text: body, createdAt: new Date() } }, { upsert: true });
     } else if (input.action === 'delete-post' && post.githubId === user.githubId) await db.collection('communityPosts').updateOne({ _id: post._id }, { $set: { deletedAt: new Date() }, $unset: { text: '', image: '' } });
@@ -108,4 +116,4 @@ async function feedAction(db, user, input) {
   }
   return { ok: true };
 }
-module.exports = { REACTIONS, channelFor, channelFilter, readSocial, socialAction, validatePost, readFeed, feedAction };
+module.exports = { CATEGORIES, REACTIONS, channelFor, channelFilter, readSocial, socialAction, validatePost, readFeed, feedAction };

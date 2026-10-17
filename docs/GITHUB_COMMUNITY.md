@@ -294,7 +294,7 @@ Identidade: troféu alado vetorial simples na marca e no favicon, com verde de d
 
 A Comunidade abre em Publicações: texto (novas publicações: até 200 caracteres; antigas preservadas), foto opcional convertida no navegador para WebP (até 300 KB), pedidos de ajuda, curtidas por conta e comentários de até 600 caracteres. Compartilhar usa o compartilhamento do dispositivo ou copia um link interno; o destinatário precisa entrar com GitHub. Há paginação de publicações e comentários em janela compacta com paginação de 30 por vez. Curtir, publicar e comentar não alteram XP. Exclusão de publicação é restrita ao autor; comentários podem ser apagados por seus autores.
 
-Publicações, Chat geral, Pedidos de ajuda, Grupos, Contatos e Convites são caminhos separados. O chat continua atualizando a cada cinco segundos quando visível, sem moldura externa, com intervalo entre envios. Mensagens gerais antigas continuam disponíveis. Grupos são privados para membros; convites precisam ser aceitos. Apenas o criador convida contatos previamente confirmados, até 50 membros/convites e dez grupos por criador. Nesta primeira versão o criador permanece no próprio grupo. Contatos são adicionados pelo login GitHub de usuários que já acessaram a plataforma. Não há indicação inventada de presença online.
+Publicações, Chat geral, Pedidos de ajuda, Grupos, Contatos e Convites são caminhos separados. O chat continua atualizando a cada cinco segundos quando visível, sem moldura externa, com intervalo entre envios somente no chat geral. Mensagens gerais antigas continuam disponíveis. Grupos são privados para membros; convites precisam ser aceitos. Apenas o criador convida contatos previamente confirmados, até 50 membros/convites e dez grupos por criador. Nesta primeira versão o criador permanece no próprio grupo. Contatos são adicionados pelo login GitHub de usuários que já acessaram a plataforma. Não há indicação inventada de presença online.
 
 O menu do avatar abre com mouse ou clique e oferece atalhos e contatos. Dados sociais reutilizam MongoDB e sessão existentes; índices são inicializados pelo servidor. Sem novos serviços, variáveis de ambiente ou dependências. Antes de uma abertura pública ampla, a moderação e as denúncias ainda precisam ser desenvolvidas.
 
@@ -318,3 +318,22 @@ Para habilitar o envio de avisos gerais, configure opcionalmente `COMMUNITY_ADMI
 O clipe permite um anexo por mensagem, com ou sem texto: JPG, PNG, WebP, PDF, TXT ou ZIP, até 10 MiB. O upload binário evita aumentar o corpo em base64, valida extensão/conteúdo e persiste em coleção MongoDB separada, abaixo do limite de documento de 16 MiB. Fotos têm prévia pequena; documentos são baixados. A leitura exige sessão GitHub, vínculo com o grupo e mensagem não apagada. O nome do arquivo é validado e o download usa tipo verificado, `nosniff` e cache privado desabilitado. ZIPs não são extraídos nem executados pelo servidor.
 
 Anexos não enviados expiram após 24 horas (índice TTL); no máximo dez uploads pendentes por conta. Apagar a própria mensagem remove seu anexo. Sair do grupo remove o acesso aos arquivos pelo servidor. Todos os dados continuam no volume MongoDB existente. Nesta versão o armazenamento de anexos usa o banco local; nenhuma cobrança ou serviço externo foi adicionado.
+
+
+### Pesquisa, grupos e histórico de ajuda
+
+A busca do cabeçalho consulta usuários com perfil público, publicações e pedidos de ajuda da comunidade, além de grupos dos quais a conta já participa. Não inclui grupos privados de terceiros nem perfis retirados do ranking. Exige sessão GitHub, de 2 a 80 caracteres, escapa caracteres especiais de expressão regular e retorna até cinco resultados por categoria. No navegador há espera de 350 ms após digitar e descarte de respostas antigas.
+
+Grupos são listados como capa/nome/Entrar. Entrar apenas abre uma conversa em que a conta já é membro; convites continuam exigindo aceite. Dentro da sala estão Membros, Detalhes e, para o dono de um grupo comum, Convidar. O dono pode trocar a capa (WebP até 300 KB, reduzida pelo navegador) e editar a descrição. Nos grupos de ajuda, o dono altera o estado do pedido dentro de Detalhes. A sala tem área maior para mensagens; o número visível varia conforme texto e anexos.
+
+O intervalo fixo de cinco segundos existe somente no chat geral, no frontend e no backend. Grupos permitem envios contínuos; os limites gerais contra excesso de requisições continuam ativos. Anexos têm reserva por envio para impedir que duas mensagens concorrentes vinculem o mesmo arquivo a destinos diferentes; tentativas repetidas recuperam o envio existente.
+
+Posts e comentários aceitam até três linhas; descrições de perfil, projetos, grupos, metas e pedidos de ajuda, até oito; mensagens, até seis. CRLF e separadores Unicode são normalizados, espaços vazios ao final são removidos e linhas vazias repetidas são reduzidas. O servidor valida os limites. Conteúdo antigo permanece salvo e áreas de texto longas têm rolagem limitada.
+
+Posts sem categoria recebem Feed. Opções: Projeto, Aprendizado, Dúvida rápida, Conquista e Discussão. O filtro usa paginação por categoria; posts antigos marcados como progress aparecem em Projeto. São classificações de conteúdo, sem XP ou conquistas automáticas.
+
+Pedidos de ajuda oferecem Ajudar, Comentar e Salvar. Comentar permite sugerir uma solução sem entrar no grupo. A estrela pertence apenas à conta que a marcou. Meu perfil inclui Meus pedidos, Ajudei e Salvos. A participação histórica continua registrada após sair do grupo, sem conservar acesso à conversa. No perfil público, apenas os pedidos criados são listados; salvos e a coleção Ajudei permanecem privados. Participantes que não têm perfil público ficam anônimos na lista pública de colaboradores. Pedidos individuais têm link #community/help/ID.
+
+Reações coração/joia/risada/triste estão disponíveis em comentários de posts, sugestões em pedidos de ajuda e mensagens do chat geral/grupos. Trocar substitui a reação; selecionar a mesma remove. Reagir em grupos exige associação atual ao grupo. Mensagens apagadas não aceitam novas reações.
+
+A janela de comentários tem estilos de avatar próprios porque seu portal fica fora do contêiner principal. Isso impede a foto de se expandir sobre os comentários e mantém o fechamento por Escape e retorno do foco.

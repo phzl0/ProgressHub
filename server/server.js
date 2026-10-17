@@ -10,6 +10,7 @@ const app = express();
 app.set('trust proxy', 1);
 app.use('/api/community/profile', express.json({ limit: '450kb' }));
 app.use('/api/community/feed', express.json({ limit: '450kb' }));
+app.use('/api/community/social', express.json({ limit: '450kb' }));
 app.use(express.json());
 
 const { connectToDatabase, initializeIndexes } = require('./db');

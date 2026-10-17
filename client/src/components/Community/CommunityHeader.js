@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Settings, UserRound, ShieldCheck, LogOut, X, Menu, BookOpen, RefreshCw } from 'lucide-react';
 import { socialRequest } from './socialAPI';
 import Inbox from './Inbox';
+import HeaderSearch from './HeaderSearch';
 import BrandMark from './BrandMark';
 import { COMMUNITY_API } from './useCommunityData';
 import { CosmeticAvatar } from './Appearance';
@@ -50,7 +51,7 @@ export default function CommunityHeader({ tab, navigate, me, sync, logout, busy,
   return <>
     <header className="ql-site-header"><div className="ql-header-inner"><a href="#home" onClick={event => navigate('home', event)} className="ql-brand" aria-label="Progress Hub · início"><span className="ql-brand-mark"><BrandMark /></span><span>PROGRESS<span className="ql-green"> HUB</span><small>EVOLUA CONSTRUINDO</small></span></a>
       <button className="ql-icon-button ql-mobile-nav-button" aria-label={navigationOpen ? 'Fechar navegação' : 'Abrir navegação'} aria-expanded={navigationOpen} aria-controls="community-primary-navigation" onClick={() => setNavigationOpen(open => !open)}>{navigationOpen ? <X size={19} /> : <Menu size={19} />}</button>
-      <nav id="community-primary-navigation" className={`ql-horizontal-nav${navigationOpen ? ' is-open' : ''}`} aria-label="Navegação principal">{PRIMARY_NAVIGATION.map(({ id, path, label, icon: Icon }) => <a key={id} href={`#${path}`} aria-label={label} aria-current={parentView(tab) === id ? 'page' : undefined} onClick={event => { navigate(path, event); if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setNavigationOpen(false); }}><Icon size={16} /><span>{label}</span></a>)}</nav>
+      <HeaderSearch connected={me?.connected} /><nav id="community-primary-navigation" className={`ql-horizontal-nav${navigationOpen ? ' is-open' : ''}`} aria-label="Navegação principal">{PRIMARY_NAVIGATION.map(({ id, path, label, icon: Icon }) => <a key={id} href={`#${path}`} aria-label={label} aria-current={parentView(tab) === id ? 'page' : undefined} onClick={event => { navigate(path, event); if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setNavigationOpen(false); }}><Icon size={16} /><span>{label}</span></a>)}</nav>
       <div className="ql-header-actions">{me?.connected && <button className={`ql-icon-button ql-compact-sync${syncWarning ? ' has-sync-warning' : ''}`} disabled={busy || loading} onClick={sync} aria-label={syncWarning ? 'Atualizar contribuições: sincronização pendente' : 'Atualizar contribuições'} title={syncWarning ? 'Atualização do GitHub pendente. A pontuação salva foi preservada. Clique para tentar novamente.' : 'Atualizar contribuições'}><RefreshCw size={16} className={busy ? 'ql-spin' : ''} />{syncWarning && <span className="ql-sync-warning-dot" aria-hidden="true" />}</button>}<Inbox connected={me?.connected} /><button className="ql-icon-button" aria-label="Abrir menu da conta" title="Configurações e conta" aria-expanded={accountOpen} aria-controls="community-account-menu" onClick={() => setAccountOpen(open => !open)}><Settings size={18} /></button><ProfileMenu me={me} navigate={navigate} /></div>
     </div></header>
     {accountOpen && <AccountDrawer tab={tab} navigate={navigate} onClose={() => setAccountOpen(false)} me={me} logout={logout} busy={busy} />}
