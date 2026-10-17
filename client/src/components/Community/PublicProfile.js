@@ -2,6 +2,7 @@ import { readApiResponse } from './apiResponse';
 import React, { useEffect, useState } from 'react';
 import { Github, ArrowUpRight, ArrowLeft, Trophy, Award, ShieldCheck, Zap, Target } from 'lucide-react';
 
+import { CosmeticAvatar, CosmeticTitle, coverProps } from './Appearance';
 import ProjectShowcase from './ProjectShowcase';
 import ProfileDetails from './ProfileDetails';
 
@@ -34,6 +35,7 @@ export default function PublicProfile({ githubId }) {
     document.addEventListener('visibilitychange', resume);
     return () => { mounted = false; controller.abort(); window.clearInterval(timer); document.removeEventListener('visibilitychange', resume); };
   }, [githubId]);
+  const cover = coverProps(profile?.appearance, profile?.profile?.banner);
   const stats = profile?.stats;
   const career = profile?.career || stats;
   const progress = Math.min(100, Math.round((career?.experience || 0) / (career?.nextLevelXP || 200) * 100));
@@ -47,9 +49,9 @@ export default function PublicProfile({ githubId }) {
   return <div className="ql-public-profile">
     <a href="#ranking" className="ql-back-link"><ArrowLeft size={15} /> Voltar ao ranking</a>
     <section className="ql-panel ql-public-profile-identity-card">
-    <div className="ql-public-cover" role="img" aria-label={`Banner de ${profile.login}`} style={profile.profile?.banner ? { backgroundImage: `linear-gradient(0deg,rgba(0,0,0,.4),transparent),url("${profile.profile.banner}")` } : undefined} />
+    <div className={`ql-public-cover ${cover.className}`} role="img" aria-label={`Banner de ${profile.login}`} style={cover.style} />
     <div className="ql-public-hero">
-      <div className="ql-public-identity"><img src={profile.picture} alt={`Avatar de ${profile.login}`} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><h2>@{profile.login}</h2><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
+      <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><h2>@{profile.login}</h2><CosmeticTitle title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
       <div className="ql-public-actions"><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </div>
     <ProfileDetails profile={profile.profile} />

@@ -37,7 +37,7 @@ jobs:
         working-directory: client
         env:
           CI: 'true'
-        run: npm test -- --watchAll=false --runInBand --runTestsByPath src/components/Community/Community.test.js src/components/Community/Missions.test.js src/components/Community/ProfileEditor.test.js src/components/Community/Engagement.test.js src/components/Community/Reliability.test.js
+        run: npm test -- --watchAll=false --runInBand --runTestsByPath src/components/Community/Community.test.js src/components/Community/Missions.test.js src/components/Community/ProfileEditor.test.js src/components/Community/Engagement.test.js src/components/Community/Reliability.test.js src/components/Community/Cosmetics.test.js
       - name: Build frontend
         working-directory: client
         run: npm run build

@@ -11,6 +11,8 @@ const { careerFor, syncSeason, seasonHistory } = require('../../services/github/
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
 const { weeklySummary, communityChallenge } = require('../../services/community/engagement');
 const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
+const { CATALOG, validateAppearance, appearanceFor } = require('../../services/community/cosmetics');
+const { contributionRanking } = require('../../services/community/contribution-ranking');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -97,16 +99,37 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
-      profile: profileSettings(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
+      profile: profileSettings(req.user), appearance: appearanceFor(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
+});
+router.get('/cosmetics', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
+  res.set('Cache-Control', 'no-store').json({ catalog: CATALOG, appearance: appearanceFor(req.user) });
+});
+router.post('/cosmetics', authenticateToken, sameOrigin, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
+  try {
+    const appearance = validateAppearance(req.body);
+    const db = await connectToDatabase();
+    await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityAppearance: appearance } });
+    res.set('Cache-Control', 'no-store').json({ appearance });
+  } catch (error) { res.status(error.status === 400 ? 400 : 503).json({ error: error.status === 400 ? error.message : 'Não foi possível salvar sua aparência.' }); }
+});
+router.get('/community-ranking', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar sua contribuição.' });
+  try { res.set('Cache-Control', 'no-store').json(await contributionRanking(await connectToDatabase(), req.user)); }
+  catch (_) { res.status(503).json({ error: 'Não foi possível carregar o ranking comunitário.' }); }
 });
 router.post('/profile', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para editar seu perfil.' });
   try {
     const profile = validateProfile(req.body);
     const db = await connectToDatabase();
-    await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityProfile: profile } });
-    res.set('Cache-Control', 'no-store').json({ profile });
+    const bannerChanged = profile.banner !== (req.user.communityProfile?.banner || '');
+    await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityProfile: profile, ...(bannerChanged ? { 'communityAppearance.cover': 'custom' } : {}) } });
+    const fresh = await db.collection('users').findOne({ _id: req.user._id }, { projection: { communityAppearance: 1 } });
+    const appearance = appearanceFor(fresh);
+    res.set('Cache-Control', 'no-store').json({ profile, appearance });
   } catch (error) { res.status(error.status === 400 ? 400 : 503).json({ error: error.status === 400 ? error.message : 'Não foi possível salvar seu perfil.' }); }
 });
 router.post('/participation', authenticateToken, sameOrigin, async (req, res) => {
@@ -198,12 +221,12 @@ router.get('/leaderboard', async (req, res) => {
     const db = await connectToDatabase();
     const period = periodFor();
     const users = await db.collection('users').find({ communityOptIn: true, 'githubStats.period': period }, {
-      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1,
+      projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1, communityAppearance: 1,
         'githubStats.xp': 1, 'githubStats.level': 1, 'githubStats.title': 1,
         'career.level': 1, 'career.title': 1 }
     }).sort({ 'githubStats.xp': -1, githubId: 1 }).limit(100).toArray();
     res.set('Cache-Control', 'no-store');
-    res.json({ period, users });
+    res.json({ period, users: users.map(({ communityAppearance, ...user }) => ({ ...user, appearance: appearanceFor({ communityAppearance }) })) });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o ranking.' }); }
 });
 module.exports = router;

@@ -19,6 +19,7 @@ beforeEach(() => {
         detectedMergedPRs: 0, ignoredCommits: 0, ignoredMergedPRs: 0 }
     };
     if (url.endsWith('/sync')) syncCount += 1;
+    if (url.endsWith('/community-ranking')) return { ok: true, json: async () => ({ users: [], participants: 0, total: 0, me: null, endsAt: '2026-10-19T00:00:00Z' }) };
     if (url.endsWith('/challenge')) return { ok: true, json: async () => ({ current: 7, target: 100, progress: 7, participants: 2, mine: 3, optedIn: true, endsAt: '2026-10-19T00:00:00Z' }) };
     if (url.endsWith('/weekly-summary')) return { ok: true, json: async () => ({ startsAt: '2026-10-12T00:00:00Z', xp: 200, commitXP: 200, prXP: 0, bonusXP: 0, commits: 20, activeDays: 2, mergedPRs: 0, reviews: 0, receivedMissions: 0 }) };
     if (url.endsWith('/goals')) return { ok: true, json: async () => ({ templates: [], goal: null, history: [] }) };
@@ -122,4 +123,15 @@ test('my profile groups career, achievements and links to mission progression', 
   expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
   expect(screen.getByText('XP de carreira')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Ganhar bônus nas missões/ })).toHaveAttribute('href', '#missions');
+});
+
+test('ranking switches between global XP and community contribution without mixing standings', async () => {
+  render(<Community />);
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('link', { name: 'Ranking', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Comunitário' }));
+  expect(await screen.findByRole('heading', { name: 'Classificação comunitária' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Classificação global' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Global', exact: true }));
+  expect(screen.getByRole('heading', { name: 'Classificação global' })).toBeInTheDocument();
 });
