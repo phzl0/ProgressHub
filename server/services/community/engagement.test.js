@@ -27,3 +27,11 @@ test('weekly summary spans months and separates action XP from bonuses received 
   assert.equal(result.xp, 475); assert.equal(result.bonusXP, 300); assert.equal(result.commits, 5); assert.equal(result.activeDays, 2); assert.equal(result.mergedPRs, 2); assert.equal(result.receivedMissions, 1); assert.equal(result.partial, false);
   assert.equal(summarizeWeek(records.slice(1), rewards, [], new Date('2026-10-03T12:00:00Z')).partial, true);
 });
+test('weekly summary counts achievement bonuses at receipt time without treating them as missions', () => {
+  const now=new Date('2026-10-17T12:00:00Z');
+  const summary=summarizeWeek([], [{xp:300,awardedAt:now}], [], now, [{xp:1000,awardedAt:now}], [
+    {xp:500,awardedAt:now}, {xp:2000,awardedAt:new Date('2026-10-10T12:00:00Z')}
+  ]);
+  assert.equal(summary.achievementBonusXP,500);assert.equal(summary.bonusXP,1800);
+  assert.equal(summary.xp,1800);assert.equal(summary.receivedMissions,1);
+});

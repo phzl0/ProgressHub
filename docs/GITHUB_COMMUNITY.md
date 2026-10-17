@@ -198,3 +198,58 @@ Evidências de missões têm `confirmedAt` para excluir dados recebidos após o 
 Missões e ranking comunitário exibem estimativa, percentual e histórico pessoal de até oito bolões (validação, pagamento, pago ou meta não atingida). Os processos Docker precisam estar ativos para sincronizar e pagar; o prazo é de validação, não promessa de execução exata em caso de indisponibilidade. A coleta limitada pode produzir cobertura parcial e só evidências confirmadas entram no fechamento. Não foram adicionados PRs/revisões à unidade deste desafio nem funcionalidades sociais.
 
 A faixa grande de sincronização foi removida. O botão de atualização manual fica na barra superior, apenas com ícone e descrição acessível; a atualização automática e o intervalo manual de 30 segundos foram preservados.
+
+## Progress Hub: conquistas permanentes e identidade
+
+A marca da comunidade passa a ser Progress Hub. Logo vetorial e favicon próprios em `client/public/progress-hub.svg`; os créditos e a licença MIT do QuestLog permanecem. Nenhum nome de repositório, volume ou variável de ambiente foi alterado.
+
+O catálogo tem 38 conquistas, incluindo os quatro marcos anteriores. Cada bônus é automático, único por conta e versão, e soma XP de carreira e da temporada do recebimento. Evidências existentes podem liberar bônus na primeira sincronização após esta atualização. Conquistas não reiniciam mensalmente. Não há recompensa por editar metas pessoais ou cosméticos.
+
+| Conquista | Critério | XP único |
+| --- | --- | ---: |
+| Primeiro commit | Acumule 1 commits elegíveis na carreira. | 300 |
+| Código em movimento | Acumule 10 commits elegíveis na carreira. | 300 |
+| Construindo o caminho | Acumule 50 commits elegíveis na carreira. | 500 |
+| Cem passos à frente | Acumule 100 commits elegíveis na carreira. | 1000 |
+| Ritmo de construção | Acumule 250 commits elegíveis na carreira. | 1500 |
+| Meio milhar de passos | Acumule 500 commits elegíveis na carreira. | 2000 |
+| Mil contribuições | Acumule 1000 commits elegíveis na carreira. | 5000 |
+| Primeiro PR mesclado | Acumule 1 PRs próprios mesclados e pontuados. | 300 |
+| Cinco entregas | Acumule 5 PRs próprios mesclados e pontuados. | 500 |
+| Dez entregas | Acumule 10 PRs próprios mesclados e pontuados. | 1000 |
+| Entrega constante | Acumule 25 PRs próprios mesclados e pontuados. | 1500 |
+| Cinquenta entregas | Acumule 50 PRs próprios mesclados e pontuados. | 2000 |
+| Cem entregas | Acumule 100 PRs próprios mesclados e pontuados. | 5000 |
+| Dia de construir | Acumule 1 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 300 |
+| Sete dias de código | Acumule 7 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 500 |
+| Quinze dias de evolução | Acumule 15 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 1000 |
+| Trinta dias de jornada | Acumule 30 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 1500 |
+| Sessenta dias em ação | Acumule 60 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 2000 |
+| Cem dias construindo | Acumule 100 dias UTC diferentes com commits pontuados; não precisam ser consecutivos. | 3000 |
+| Um olhar que ajuda | Acumule 1 PRs distintos de outras pessoas revisados e acompanhados pela plataforma. | 300 |
+| Cinco olhares | Acumule 5 PRs distintos de outras pessoas revisados e acompanhados pela plataforma. | 500 |
+| Revisor presente | Acumule 15 PRs distintos de outras pessoas revisados e acompanhados pela plataforma. | 1000 |
+| Revisor da comunidade | Acumule 30 PRs distintos de outras pessoas revisados e acompanhados pela plataforma. | 2000 |
+| Construindo junto | Acumule 1 PRs próprios mesclados por outra pessoa humana, reconhecidos pela pontuação. | 500 |
+| Cinco colaborações | Acumule 5 PRs próprios mesclados por outra pessoa humana, reconhecidos pela pontuação. | 1000 |
+| Colaboração que cresce | Acumule 15 PRs próprios mesclados por outra pessoa humana, reconhecidos pela pontuação. | 2000 |
+| Primeiro bônus de missão | Acumule 1 missões concluídas e recebidas. | 300 |
+| Dez objetivos cumpridos | Acumule 10 missões concluídas e recebidas. | 1000 |
+| Trinta objetivos cumpridos | Acumule 30 missões concluídas e recebidas. | 2000 |
+| Cem objetivos cumpridos | Acumule 100 missões concluídas e recebidas. | 5000 |
+| Uma versão para o mundo | Acumule 1 releases próprias verificadas: 20 commits, 5 PRs incluídos, README e arquivo de implementação. | 2000 |
+| Três versões entregues | Acumule 3 releases próprias verificadas: 20 commits, 5 PRs incluídos, README e arquivo de implementação. | 5000 |
+| A jornada continua | Acumule 2 meses diferentes com commits ou PRs pontuados. | 1000 |
+| Seis capítulos | Acumule 6 meses diferentes com commits ou PRs pontuados. | 3000 |
+| Nível 5 | Alcance o nível 5 de carreira. | 500 |
+| Nível 10 | Alcance o nível 10 de carreira. | 1500 |
+| Nível 20 | Alcance o nível 20 de carreira. | 3000 |
+| 50 commits no mês | Faça 50 commits pontuados em um mesmo mês, uma vez na carreira. | 500 |
+
+Commits e PRs respeitam os limites normais de pontuação. Dias são UTC distintos, não consecutivos. Revisões contam PRs distintos de outras pessoas, não várias revisões no mesmo PR. Releases exigem as evidências verificadas já usadas pelo coletor de missões. Meses ativos exigem ações pontuadas, não apenas bônus. A cobertura é a acompanhada pela plataforma; não se promete importar todo o histórico do GitHub. Níveis podem avançar com bônus, mas cada marco paga uma vez e a avaliação é limitada ao catálogo.
+
+Persistência: `achievementRewards`, chave `${githubId}:${achievementId}:v1`, valores definidos pelo servidor. A sincronização e o recebimento de missões usam a mesma trava por conta. O total é reconciliado por soma do livro de recompensas, sem incrementos repetidos. Os IDs de recompensas e seu XP ficam no mesmo snapshot mensal para recuperar interrupções, inclusive após virar o mês. Um bônus ainda não aplicado pode migrar ao mês atual; um bônus já aplicado conserva seu mês original. Temporadas fechadas não são reabertas.
+
+`GET /api/community/achievements` é autenticado, somente leitura, e retorna critérios, progresso e recibos resumidos da própria conta. A consulta de perfis públicos continua usando a lista permitida de campos.
+
+O dashboard mantém o Top 10 e acrescenta carrossel horizontal com avanço a cada 6 segundos, pausa ao interagir, controles manuais, desativação do avanço automático para movimento reduzido e interrupção em abas ocultas. Meu perfil apresenta coleção compacta com filtros. O extrato e o resumo semanal separam os bônus de conquistas dos demais ganhos.

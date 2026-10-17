@@ -19,6 +19,7 @@ beforeEach(() => {
       breakdown: { commitXP: 200, pullRequestXP: 0, detectedCommits: 20,
         detectedMergedPRs: 0, ignoredCommits: 0, ignoredMergedPRs: 0 }
     };
+    if (url.endsWith('/achievements')) return { ok: true, json: async () => ({ achievements: [], bonusXP: 0 }) };
     if (url.endsWith('/sync')) syncCount += 1;
     if (url.endsWith('/community-ranking')) return { ok: true, json: async () => ({ users: [], participants: 0, total: 0, me: null, endsAt: '2026-10-19T00:00:00Z' }) };
     if (url.endsWith('/challenge')) return { ok: true, json: async () => ({ current: 7, target: 100, progress: 7, participants: 2, mine: 3, optedIn: true, endsAt: '2026-10-19T00:00:00Z' }) };
@@ -120,7 +121,7 @@ test('missions show five numbered cards per frequency without invented names', a
 test('my profile groups career, achievements and links to mission progression', async () => {
   await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
-  fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true }));
+  await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true })); });
   expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
   expect(screen.getByText('XP de carreira')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Ganhar bônus nas missões/ })).toHaveAttribute('href', '#missions');
@@ -172,4 +173,15 @@ test('career leaders use their own total and footer information keeps the curren
   expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Fechar informações' }));
   expect(screen.queryByRole('heading', { name: 'Privacidade' })).not.toBeInTheDocument();
+});
+
+
+test('Progress Hub uses its new identity and distinct mission and personal goal icons', async () => {
+  await act(async () => { render(<Community />); });
+  expect(screen.getByRole('link', { name: 'Progress Hub · início' })).toBeInTheDocument();
+  const missions = screen.getByRole('link', { name: 'Missões', exact: true });
+  const goals = screen.getByRole('link', { name: 'Metas pessoais', exact: true });
+  expect(missions.querySelector('svg').innerHTML).not.toBe(goals.querySelector('svg').innerHTML);
+  expect(screen.getByRole('heading', { name: 'Suas conquistas' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
 });

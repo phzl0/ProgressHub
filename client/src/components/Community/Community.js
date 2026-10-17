@@ -1,6 +1,6 @@
 import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, PanelLeftClose, PanelLeftOpen, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
+import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, PanelLeftClose, PanelLeftOpen, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound, ScrollText } from 'lucide-react';
 import ProgressChart from './ProgressChart';
 import './community.css';
 import ScoreDetails from './ScoreDetails';
@@ -13,6 +13,8 @@ import { CosmeticAvatar, CosmeticTitle } from './Appearance';
 import PersonalGoals from './PersonalGoals';
 import WeeklySummary from './WeeklySummary';
 import CareerTop from './CareerTop';
+import Achievements from './Achievements';
+import BrandMark from './BrandMark';
 import CommunityFooter from './CommunityFooter';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
@@ -143,9 +145,9 @@ export default function Community() {
   const number = (value) => (value || 0).toLocaleString('pt-BR');
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'me', label: 'Meu perfil', icon: UserRound },
+    { id: 'me', label: 'Meu perfil', icon: UserRound, ScrollText },
     { id: 'goals', label: 'Metas pessoais', icon: Target },
-    { id: 'missions', label: 'Missões', icon: Target },
+    { id: 'missions', label: 'Missões', icon: ScrollText },
     { id: 'progress', label: 'Progresso', icon: ChartNoAxesCombined },
     { id: 'ranking', label: 'Ranking', icon: Trophy },
     { id: 'seasons', label: 'Temporadas', icon: History }
@@ -155,7 +157,7 @@ export default function Community() {
   return <div className={`ql-game${collapsed ? ' ql-navigation-collapsed' : ''}`}>
     <aside className="ql-sidebar">
       <button className="ql-icon-button ql-nav-toggle" onClick={toggleNavigation} aria-expanded={!collapsed} aria-controls="community-navigation" aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'} title={collapsed ? 'Expandir navegação' : 'Recolher navegação'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
-      <a href="/community" className="ql-brand"><span className="ql-brand-mark"><Github size={23} /></span><span>QUEST<span className="ql-green">LOG</span><small>DEVELOPER COMMUNITY</small></span></a>
+      <a href="/community" className="ql-brand" aria-label="Progress Hub · início"><span className="ql-brand-mark"><BrandMark /></span><span>PROGRESS<span className="ql-green"> HUB</span><small>DEVELOPER COMMUNITY</small></span></a>
       <p className="ql-nav-label">SEU PRÓXIMO NÍVEL</p>
       <nav id="community-navigation" aria-label="Navegação principal" className="ql-nav">{tabs.map(({ id, label, icon: Icon }) => <a key={id} aria-label={label} title={collapsed ? label : undefined} href={`#${id}`} aria-current={tab === id || (tab === 'profile' && id === 'ranking') ? 'page' : undefined} onClick={event => { if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); window.location.hash = id; setTab(id); if (id === 'ranking') setRankKind('global'); }} className={tab === id || (tab === 'profile' && id === 'ranking') ? 'is-active' : ''}><Icon size={19} /><span>{label}</span>{tab === id && <ChevronRight size={15} />}</a>)}</nav>
       <div className="ql-sidebar-bottom"><div className="ql-season-card"><span className="ql-live-dot" /> TEMPORADA ATUAL<strong>{ranking.period || new Date().toISOString().slice(0, 7)}</strong><p>Novas contribuições.<br />Uma nova chance de evoluir.</p><span className="ql-tag">REINÍCIO MENSAL · UTC</span></div><p className="ql-caption">Construído sobre QuestLog · MIT</p></div>
@@ -174,6 +176,7 @@ export default function Community() {
             <section className="ql-panel ql-profile-card"><div className="ql-profile-heading">{me?.picture ? <CosmeticAvatar src={me.picture} frame={me.appearance?.frame} size={44} /> : <span className="ql-avatar-placeholder"><Github size={24} /></span>}<div><strong>{me?.login ? `@${me.login}` : 'Seu perfil começa aqui'}</strong><span>{career?.title || 'Explorador'} · Nível {level}</span></div><ShieldCheck className="ql-green" size={20} /></div><div className="ql-xp-total">{number(career?.xp)} <span>XP</span><small>CARREIRA PERMANENTE</small></div><div className="ql-progress-label"><span>Nível {level}</span><strong>{progress}%</strong><span>Nível {level + 1}</span></div><div className="ql-xp-track" role="progressbar" aria-label={`Progresso para o nível ${level + 1}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Faltam {number((career?.nextLevelXP || 200) - (career?.experience || 0))} XP para seu próximo nível.</p>{me?.optedIn && me?.githubId && <a className="ql-own-profile" href={`#profile/${me.githubId}`}>Ver meu perfil público <ArrowUpRight size={13} /></a>}</section>
           </div>
           <div className="ql-metrics"><Metric tone="blue" icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="10 XP por commit elegível" /><Metric tone="purple" icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="50 XP por PR + bônus de colaboração" /><Metric icon={Zap} label="Dias com commits" value={number(activeDays)} note="Atividade reconhecida neste mês" /><Metric tone="gold" icon={Trophy} label="Sua posição global" value={position ? `#${position}` : '—'} note={me?.optedIn ? 'Ranking da temporada atual' : 'Participe na aba Ranking'} /></div>
+          <Achievements carousel connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />
           <CareerTop revision={`${stats?.syncedAt}:${stats?.xp}:${me?.optedIn}:${me?.appearance?.frame}`} login={me?.login} />
         </>}
         {tab === 'progress' && <>

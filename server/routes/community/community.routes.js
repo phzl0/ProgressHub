@@ -103,6 +103,13 @@ router.get('/me', authenticateToken, async (req, res) => {
       profile: profileSettings(req.user), appearance: appearanceFor(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
 });
+router.get('/achievements', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar as conquistas.' });
+  try {
+    const db = await connectToDatabase();
+    res.set('Cache-Control', 'no-store').json(await require('../../services/community/achievements').readAchievements(db, req.user));
+  } catch (_) { res.status(503).json({ error: 'Não foi possível carregar as conquistas.' }); }
+});
 router.get('/cosmetics', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
   res.set('Cache-Control', 'no-store').json({ catalog: CATALOG, appearance: appearanceFor(req.user) });

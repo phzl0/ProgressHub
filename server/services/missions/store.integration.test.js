@@ -27,7 +27,8 @@ test('MongoDB: mission rewards credit once and add to normal action XP', { skip:
     await syncMissions(db, user, now, collector);
     assert.equal(await db.collection('missionRewards').countDocuments({ githubId: '42' }), 1);
     const record = await db.collection('communitySeasons').findOne({ githubId: '42', period: periodFor(now) });
-    assert.equal(record.stats.xp, 350);
+    assert.equal(record.stats.xp, 950);
+    assert.equal(record.stats.achievementXP, 600);
     assert.equal(record.stats.baseXP, 50);
     assert.equal(record.stats.missionXP, 300);
     const data = await readMissions(db, user, now);

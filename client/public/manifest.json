@@ -1,16 +1,16 @@
 {
-  "name": "QuestLog",
-  "short_name": "QuestLog",
-  "start_url": ".",
+  "name": "Progress Hub",
+  "short_name": "Progress Hub",
+  "start_url": "/community",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#101815",
+  "theme_color": "#101815",
   "icons": [
     {
-      "src": "/favicon/favicon.svg",
+      "src": "/progress-hub.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
