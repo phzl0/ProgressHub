@@ -19,6 +19,9 @@ beforeEach(() => {
         detectedMergedPRs: 0, ignoredCommits: 0, ignoredMergedPRs: 0 }
     };
     if (url.endsWith('/sync')) syncCount += 1;
+    if (url.endsWith('/challenge')) return { ok: true, json: async () => ({ current: 7, target: 100, progress: 7, participants: 2, mine: 3, optedIn: true, endsAt: '2026-10-19T00:00:00Z' }) };
+    if (url.endsWith('/weekly-summary')) return { ok: true, json: async () => ({ startsAt: '2026-10-12T00:00:00Z', xp: 200, commitXP: 200, prXP: 0, bonusXP: 0, commits: 20, activeDays: 2, mergedPRs: 0, reviews: 0, receivedMissions: 0 }) };
+    if (url.endsWith('/goals')) return { ok: true, json: async () => ({ options: [{ id: 'days', label: 'Programar em dias diferentes', max: 7, unit: 'dias com commits', suggested: 3 }], goal: null, endsAt: '2026-10-19T00:00:00Z' }) };
     return { ok: true, json: async () => url.endsWith('/leaderboard')
       ? { period: '2026-10', users: [] }
       : url.endsWith('/missions') ? { startedAt: snapshot.toISOString(), missions: ['daily', 'weekly', 'monthly'].flatMap((kind) => Array.from({ length: 5 }, (_, index) => ({ id: `${kind}-${index+1}`, number: index+1, kind, xp: kind === 'monthly' ? 2000 : 300, description: `Objetivo ${kind} ${index+1}`, periodKey: '2026-10', endsAt: '2026-11-01T00:00:00Z', requirements: [{ label: 'commits', current: 0, target: 1 }], progress: 0, encouragement: 'Você está perto do próximo passo.', awarded: false }))) }

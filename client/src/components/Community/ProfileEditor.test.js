@@ -8,14 +8,14 @@ test('profile editor saves description and two labeled links with normalized add
   const saved = jest.fn();
   global.fetch = jest.fn(async (_, options) => ({ ok: true, json: async () => ({ profile: JSON.parse(options.body) }) }));
   render(<ProfileEditor onSaved={saved} onCancel={() => {}} />);
-  fireEvent.change(screen.getByLabelText(/Descrição/), { target: { value: 'Construindo ferramentas open source.' } });
+  fireEvent.change(screen.getByLabelText('Descrição do perfil'), { target: { value: 'Construindo ferramentas open source.' } });
   fireEvent.change(screen.getByLabelText('Nome do link 1'), { target: { value: 'Instagram' } });
   fireEvent.change(screen.getByLabelText('Endereço do link 1'), { target: { value: 'instagram.com/developer' } });
   fireEvent.change(screen.getByLabelText('Nome do link 2'), { target: { value: 'Portfólio' } });
   fireEvent.change(screen.getByLabelText('Endereço do link 2'), { target: { value: 'https://example.com' } });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar perfil' }));
   await screen.findByRole('button', { name: 'Salvar perfil' });
-  expect(saved).toHaveBeenCalledWith({ bio: 'Construindo ferramentas open source.', banner: '', links: [{ label: 'Instagram', url: 'https://instagram.com/developer' }, { label: 'Portfólio', url: 'https://example.com' }] });
+  expect(saved).toHaveBeenCalledWith({ bio: 'Construindo ferramentas open source.', banner: '', projects: [], links: [{ label: 'Instagram', url: 'https://instagram.com/developer' }, { label: 'Portfólio', url: 'https://example.com' }] });
 });
 test('incomplete links do not save and a banner can be removed before saving', async () => {
   global.fetch = jest.fn();
@@ -37,4 +37,16 @@ test('personal profile shows saved biography, links and opens its editor', () =>
   expect(screen.getByRole('link', { name: 'Meu site' })).toHaveAttribute('href', 'https://example.com');
   fireEvent.click(screen.getByRole('button', { name: 'Editar perfil' }));
   expect(screen.getByRole('form', { name: 'Editar meu perfil' })).toBeInTheDocument();
+});
+
+test('editor saves a featured project and its chosen icon', async () => {
+  const saved = jest.fn();
+  global.fetch = jest.fn(async (_, options) => ({ ok: true, json: async () => ({ profile: JSON.parse(options.body) }) }));
+  render(<ProfileEditor onSaved={saved} onCancel={() => {}} />);
+  fireEvent.change(screen.getByLabelText('Nome do projeto 1'), { target: { value: 'Meu app' } });
+  fireEvent.change(screen.getByLabelText('Endereço do projeto 1'), { target: { value: 'github.com/user/app' } });
+  fireEvent.change(screen.getByLabelText('Ícone do projeto 1'), { target: { value: 'fire' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar perfil' }));
+  await screen.findByRole('button', { name: 'Salvar perfil' });
+  expect(saved.mock.calls[0][0].projects).toEqual([{ name: 'Meu app', description: '', url: 'https://github.com/user/app', icon: 'fire' }]);
 });

@@ -7,6 +7,8 @@ import PublicProfile from './PublicProfile';
 import SeasonHistory from './SeasonHistory';
 import Missions from './Missions';
 import MyProfile from './MyProfile';
+import PersonalGoals from './PersonalGoals';
+import WeeklySummary from './WeeklySummary';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 async function request(path, body) {
@@ -32,7 +34,7 @@ export default function Community() {
   const [tab, setTab] = useState(() => {
     if (profileFromHash()) return 'profile';
     const value = window.location.hash.slice(1);
-    return ['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me'].includes(value) ? value : 'dashboard';
+    return ['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard';
   });
   const [boardUpdatedAt, setBoardUpdatedAt] = useState(null);
   const [syncStatus, setSyncStatus] = useState(null);
@@ -92,7 +94,7 @@ export default function Community() {
       setProfileId(profile);
       const value = window.location.hash.slice(1);
       if (profile) { setTab('profile'); return; }
-      setTab(['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me'].includes(value) ? value : 'dashboard');
+      setTab(['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard');
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -133,6 +135,7 @@ export default function Community() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'me', label: 'Meu perfil', icon: UserRound },
+    { id: 'goals', label: 'Metas pessoais', icon: Target },
     { id: 'missions', label: 'Missões', icon: Target },
     { id: 'progress', label: 'Progresso', icon: ChartNoAxesCombined },
     { id: 'ranking', label: 'Ranking', icon: Trophy },
@@ -145,7 +148,7 @@ export default function Community() {
     { name: 'Nível 5', description: 'Um novo patamar desbloqueado.' }
   ];
   const activeDays = stats?.commitDays?.length || 0;
-  const subtitle = tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
+  const subtitle = tab === 'goals' ? 'Uma meta por semana. Seu ritmo, sua evolução.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   return <div className="ql-game">
     <aside className="ql-sidebar">
       <a href="/community" className="ql-brand"><span className="ql-brand-mark"><Github size={23} /></span><span>QUEST<span className="ql-green">LOG</span><small>DEVELOPER COMMUNITY</small></span></a>
@@ -156,7 +159,7 @@ export default function Community() {
     <div className="ql-workspace">
       <header className="ql-topbar"><span className="ql-breadcrumb">Comunidade <ChevronRight size={13} /> <strong>{tab === 'profile' ? 'Perfil público' : tabs.find((item) => item.id === tab).label}</strong></span><div className="ql-topbar-right"><span className="ql-connected"><span className="ql-live-dot" /> {me?.connected ? 'GITHUB CONECTADO' : 'CONTRIBUA. EVOLUA.'}</span>{me && <button className="ql-icon-button" title="Sair da conta" aria-label="Sair da conta" onClick={logout} disabled={busy}><LogOut size={18} /></button>}</div></header>
       <main className="ql-main" id="community-main">
-        <div className="ql-page-heading"><div><p className="ql-eyebrow">{(tab === 'ranking' || tab === 'profile') ? 'ARENA DA COMUNIDADE' : 'SUA JORNADA DE DESENVOLVEDOR'}</p><h1>{tab === 'dashboard' ? <>Vamos construir{me?.login ? `, ${me.login}` : ''}<span className="ql-green">.</span></> : tab === 'progress' ? <>Cada passo é <span className="ql-green">progresso.</span></> : tab === 'missions' ? <>Seu próximo <span className="ql-green">objetivo.</span></> : tab === 'me' ? <>Meu <span className="ql-green">perfil.</span></> : tab === 'seasons' ? <>Sua <span className="ql-green">história.</span></> : tab === 'profile' ? <>Perfil de <span className="ql-green">desenvolvedor.</span></> : <>Ranking <span className="ql-green">global.</span></>}</h1><p className="ql-muted">{subtitle}</p></div>{!loading && !me?.connected && <a className="ql-button" href={`${API}/auth`}><Github size={18} /> Entrar com GitHub <ArrowUpRight size={16} /></a>}</div>
+        <div className="ql-page-heading"><div><p className="ql-eyebrow">{(tab === 'ranking' || tab === 'profile') ? 'ARENA DA COMUNIDADE' : 'SUA JORNADA DE DESENVOLVEDOR'}</p><h1>{tab === 'dashboard' ? <>Vamos construir{me?.login ? `, ${me.login}` : ''}<span className="ql-green">.</span></> : tab === 'goals' ? <>Sua próxima <span className="ql-green">meta.</span></> : tab === 'progress' ? <>Cada passo é <span className="ql-green">progresso.</span></> : tab === 'missions' ? <>Seu próximo <span className="ql-green">objetivo.</span></> : tab === 'me' ? <>Meu <span className="ql-green">perfil.</span></> : tab === 'seasons' ? <>Sua <span className="ql-green">história.</span></> : tab === 'profile' ? <>Perfil de <span className="ql-green">desenvolvedor.</span></> : <>Ranking <span className="ql-green">global.</span></>}</h1><p className="ql-muted">{subtitle}</p></div>{!loading && !me?.connected && <a className="ql-button" href={`${API}/auth`}><Github size={18} /> Entrar com GitHub <ArrowUpRight size={16} /></a>}</div>
         <div className="ql-update-banner"><Clock3 size={17} /><div><strong>Pontuação, atividades e ranking atualizados a cada 10 minutos.</strong><span>{syncStatus?.active ? 'Serviço automático ativo recentemente: atualiza mesmo com o navegador fechado.' : 'Serviço automático ainda não confirmado; a página faz a atualização de apoio enquanto estiver visível.'} {stats ? `Seu GitHub: ${new Date(stats.syncedAt).toLocaleString('pt-BR')}.` : 'Seu XP aparecerá após conectar e sincronizar.'} {boardUpdatedAt ? `Ranking consultado às ${boardUpdatedAt.toLocaleTimeString('pt-BR')}.` : ''}</span></div>{me?.connected && <button className="ql-refresh" disabled={busy || loading} onClick={sync} title="Atualização manual disponível após 30 segundos"><RefreshCw size={16} className={busy ? 'ql-spin' : ''} /><span>{busy ? 'Atualizando' : 'Atualizar agora'}</span></button>}</div>
         {error && <p role="alert" className="ql-error">{error}</p>}
         {loading && <p role="status" className="ql-muted">Carregando sua jornada e contribuições…</p>}
@@ -170,6 +173,7 @@ export default function Community() {
           <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">PEQUENAS VITÓRIAS. GRANDES PASSOS.</p><h2>Suas conquistas</h2></div><span className="ql-tag">{career?.achievements?.length || 0} / 4 DESBLOQUEADAS</span></div><div className="ql-achievements">{achievements.map((badge, index) => { const unlocked = career?.achievements?.includes(badge.name); return <div key={badge.name} className={`ql-achievement ${unlocked ? 'is-unlocked' : ''}`}><span className="ql-badge-icon"><Award size={26} /></span><span className="ql-achievement-number">0{index + 1}</span><h3>{badge.name}</h3><p>{badge.description}</p><small>{unlocked ? 'DESBLOQUEADA' : 'A CONQUISTAR'}</small></div>; })}</div></section>
         </>}
         {tab === 'progress' && <>
+          <WeeklySummary connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.missionXP}`} />
           <div className="ql-metrics ql-three-metrics"><Metric icon={Zap} label="XP da temporada" value={number(xp)} note="Commits + PRs elegíveis" /><Metric tone="blue" icon={GitCommitHorizontal} label="XP em commits" value={number(stats?.breakdown?.commitXP)} note={`${activeDays} dias com contribuições`} /><Metric tone="purple" icon={GitPullRequest} label="XP em PRs" value={number(stats?.breakdown?.pullRequestXP)} note="Contribuições públicas mescladas" /></div>
           <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">CONSTÂNCIA VIRA EVOLUÇÃO</p><h2>Seu ritmo de contribuição</h2></div><span className="ql-tag"><span className="ql-live-dot" /> XP DIÁRIO DE COMMITS</span></div><ProgressChart stats={stats} /></section>
           {me?.connected ? <ScoreDetails stats={stats} /> : <section className="ql-panel ql-empty"><Github size={30} /><h2>Seu progresso tem um ponto de partida.</h2><p>Entre com GitHub para acompanhar suas atividades e o detalhamento do XP.</p><a href={`${API}/auth`} className="ql-button">Conectar meu GitHub <ArrowUpRight size={16} /></a></section>}
@@ -179,6 +183,7 @@ export default function Community() {
           {ranking.users.length > 0 && <div className="ql-podium">{ranking.users.slice(0, 3).map((user, index) => <section key={user.githubId} className={`ql-podium-card ql-podium-${index + 1}`}><span className="ql-podium-place"><Trophy size={17} /> {String(index + 1).padStart(2, '0')}</span><img src={user.picture} alt="" /><a href={`#profile/${user.githubId}`}>@{user.githubLogin}</a><p>{user.career?.title || user.githubStats.title} · LVL {user.career?.level || user.githubStats.level}</p><strong>{number(user.githubStats.xp)} <small>XP</small></strong></section>)}</div>}
           <section className="ql-panel"><div className="ql-panel-head"><h2>Classificação global</h2><span className="ql-tag">TOP 100 · {ranking.period}</span></div>{!ranking.users.length ? <div className="ql-empty"><Trophy size={36} /><h3>A arena está aberta.</h3><p>Sincronize suas contribuições e participe para iniciar o ranking.</p></div> : <div className="ql-table-scroll"><table className="ql-ranking-table"><caption className="ql-sr-only">Ranking global mensal por XP</caption><thead><tr><th scope="col">Posição</th><th scope="col">Desenvolvedor</th><th scope="col">Nível</th><th scope="col">XP da temporada</th></tr></thead><tbody>{ranking.users.map((user, index) => <tr key={user.githubId} className={user.githubLogin === me?.login ? 'ql-my-row' : ''}><th scope="row">#{String(index + 1).padStart(2, '0')}</th><td><div className="ql-table-profile"><img src={user.picture} alt="" /><div><a href={`#profile/${user.githubId}`}>@{user.githubLogin}{user.githubLogin === me?.login && <span className="ql-you">VOCÊ</span>}</a><small>{user.career?.title || user.githubStats.title}</small></div></div></td><td><span className="ql-level-chip">LVL {user.career?.level || user.githubStats.level}</span></td><td className="ql-green">{number(user.githubStats.xp)} XP</td></tr>)}</tbody></table></div>}<p className="ql-caption">Participar torna seu resumo de progresso e conquistas públicos. Ao sair, seu perfil fica indisponível para novas consultas. Empates seguem o identificador estável da conta. A posição considera todos os participantes, mesmo fora do Top 100.</p></section>
         </>}
+        {tab === 'goals' && <PersonalGoals connected={me?.connected} revision={stats?.syncedAt} />}
         {tab === 'missions' && <Missions connected={me?.connected} revision={stats?.syncedAt} onClaimed={async () => { setMe(await request('/me')); await loadRanking(); }} />}
         {tab === 'me' && <MyProfile me={me} onSaved={profile => setMe(current => ({ ...current, profile }))} />}
         {tab === 'seasons' && <SeasonHistory connected={me?.connected} career={career} />}

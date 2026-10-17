@@ -8,6 +8,7 @@ test('incomplete rewards are disabled, complete rewards require a click, receive
   let claimed = false;
   const onClaimed = jest.fn();
   global.fetch = jest.fn(async (url) => {
+    if (url.endsWith('/challenge')) return { ok: true, json: async () => ({ current: 0, target: 100, progress: 0, participants: 0, mine: 0, optedIn: false, endsAt: '2026-10-19T00:00:00Z' }) };
     if (url.endsWith('/claim')) claimed = true;
     return { ok: true, json: async () => ({ missions: [mission(1, false), mission(2, true, claimed), mission(3, true, true)] }) };
   });
@@ -16,16 +17,16 @@ test('incomplete rewards are disabled, complete rewards require a click, receive
   expect(screen.getByRole('button', { name: 'Recebido bônus da missão 3' })).toBeDisabled();
   const receive = screen.getByRole('button', { name: 'Receber bônus da missão 2' });
   expect(receive).toBeEnabled();
-  expect(global.fetch).toHaveBeenCalledTimes(1);
+  expect(global.fetch.mock.calls.filter(([url]) => url.endsWith('/missions'))).toHaveLength(1);
   fireEvent.click(receive);
   expect(await screen.findByRole('button', { name: 'Recebido bônus da missão 2' })).toBeDisabled();
   await waitFor(() => expect(onClaimed).toHaveBeenCalledTimes(1));
   const post = global.fetch.mock.calls.find(([url]) => url.endsWith('/claim'));
   expect(JSON.parse(post[1].body)).toEqual({ missionId: 'daily-2', periodKey: '2026-10-17' });
-  expect(screen.getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '100');
+  expect(screen.getByRole('progressbar', { name: 'Progresso da missão 2 Diárias' })).toHaveAttribute('aria-valuenow', '100');
 });
 test('failed claims keep the objective available and show the server message', async () => {
-  global.fetch = jest.fn(async (url) => url.endsWith('/claim')
+  global.fetch = jest.fn(async (url) => url.endsWith('/challenge') ? { ok: true, json: async () => ({ current: 0, target: 100, progress: 0, participants: 0, mine: 0, optedIn: false, endsAt: '2026-10-19T00:00:00Z' }) } : url.endsWith('/claim')
     ? { ok: false, json: async () => ({ error: 'Sincronização em andamento.' }) }
     : { ok: true, json: async () => ({ missions: [mission(2, true)] }) });
   render(<Missions connected />);

@@ -1,0 +1,8 @@
+import React from 'react';
+import { Star, Flame, Zap, Code2, Rocket, Flag, ArrowUpRight } from 'lucide-react';
+export const PROJECT_ICONS = { star: { label: 'Estrela', icon: Star }, fire: { label: 'Fogo', icon: Flame }, bolt: { label: 'Raio', icon: Zap }, code: { label: 'Código', icon: Code2 }, rocket: { label: 'Foguete', icon: Rocket }, flag: { label: 'Bandeira', icon: Flag } };
+export function ProjectIcon({ name, size = 20 }) { const Icon = (PROJECT_ICONS[name] || PROJECT_ICONS.star).icon; return <Icon size={size} aria-hidden="true" />; }
+export default function ProjectShowcase({ projects = [], own = false, onEdit }) {
+  if (!own && !projects.length) return null;
+  return <section className="ql-panel ql-project-showcase"><div className="ql-panel-head"><div><p className="ql-eyebrow">CÓDIGO COM HISTÓRIA</p><h2>Projetos em destaque</h2></div>{own && <button className="ql-refresh" onClick={onEdit}>{projects.length ? 'Editar projetos' : 'Adicionar projeto'}<ArrowUpRight size={15} /></button>}</div>{projects.length ? <div className="ql-project-grid">{projects.map((project, index) => <a className={`ql-project-card ql-project-${project.icon}`} key={index} href={project.url} target="_blank" rel="noopener noreferrer"><span className="ql-project-icon"><ProjectIcon name={project.icon} /></span><div><h3>{project.name}</h3>{project.description && <p>{project.description}</p>}</div><ArrowUpRight size={16} className="ql-project-arrow" /></a>)}</div> : <p className="ql-caption">Mostre o que você está construindo. Destaque até três projetos e escolha um ícone para cada um.</p>}<p className="ql-caption ql-project-note">Projetos selecionados pelo participante; exibição na vitrine não concede XP ou comprova conclusão.</p></section>;
+}

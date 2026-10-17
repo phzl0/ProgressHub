@@ -9,6 +9,7 @@ const { tokenKey, encryptToken, githubClient } = require('../../services/github/
 const { readMissions, claimMission } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
+const { readGoal, createGoal, weeklySummary, communityChallenge } = require('../../services/community/engagement');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -16,7 +17,9 @@ const saveSession = (req) => new Promise((resolve, reject) => req.session.save((
 const limiter = rateLimit({ windowMs: 60000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 // Separate public browsing limit avoids consuming login/sync quota when opening profiles.
 router.use('/profiles', require('./profiles.routes'));
-router.use(limiter);
+const engagementLimiter = rateLimit({ windowMs: 60000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false });
+router.use((req, res, next) => req.method === 'GET' && ['/goals', '/weekly-summary', '/challenge'].includes(req.path)
+  ? engagementLimiter(req, res, next) : limiter(req, res, next));
 
 // Mutations are only accepted from the configured frontend (also prevents CSRF).
 function sameOrigin(req, res, next) {
@@ -122,6 +125,26 @@ router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
     res.status(error.status === 429 ? 429 : 502).json({ error: error.status === 429
       ? error.message : 'Não foi possível sincronizar. Reconecte o GitHub se necessário; sua pontuação foi preservada.' });
   }
+});
+router.get('/goals', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar metas.' });
+  try { res.set('Cache-Control', 'no-store').json(await readGoal(await connectToDatabase(), req.user)); }
+  catch (_) { res.status(503).json({ error: 'Não foi possível carregar sua meta.' }); }
+});
+router.post('/goals', authenticateToken, sameOrigin, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para definir sua meta.' });
+  try { res.set('Cache-Control', 'no-store').json(await createGoal(await connectToDatabase(), req.user, req.body)); }
+  catch (error) { res.status([400, 409].includes(error.status) ? error.status : 503).json({ error: error.status ? error.message : 'Não foi possível salvar sua meta.' }); }
+});
+router.get('/weekly-summary', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para ver seu resumo.' });
+  try { res.set('Cache-Control', 'no-store').json(await weeklySummary(await connectToDatabase(), req.user)); }
+  catch (_) { res.status(503).json({ error: 'Não foi possível carregar o resumo semanal.' }); }
+});
+router.get('/challenge', authenticateToken, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar o desafio.' });
+  try { res.set('Cache-Control', 'no-store').json(await communityChallenge(await connectToDatabase(), req.user)); }
+  catch (_) { res.status(503).json({ error: 'Não foi possível carregar o desafio coletivo.' }); }
 });
 router.get('/missions', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar as missões.' });

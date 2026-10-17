@@ -1,3 +1,4 @@
+import CommunityChallenge from './CommunityChallenge';
 import React, { useEffect, useState } from 'react';
 import { Target, CheckCircle2, Clock3, Zap, ArrowUpRight } from 'lucide-react';
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
@@ -45,6 +46,7 @@ export default function Missions({ connected, revision, onClaimed }) {
   const selected = data?.missions?.filter((mission) => mission.kind === kind) || [];
   const earned = data?.missions?.filter((mission) => mission.awarded).reduce((sum, mission) => sum + mission.xp, 0) || 0;
   return <div className="ql-missions">
+    <CommunityChallenge revision={revision} />
     <section className="ql-panel ql-mission-intro"><div><p className="ql-eyebrow">CADA OBJETIVO É UM PASSO A MAIS</p><h2>Você programa. Seu progresso aparece.</h2><p className="ql-muted">Ganhe XP pelas suas ações normalmente e receba estes bônus extras ao completar os objetivos.</p></div><div className="ql-mission-earned"><Zap size={19} /><strong>+{earned.toLocaleString('pt-BR')} XP</strong><span>recebidos nas missões ativas</span></div></section>
     <div className="ql-mission-tabs" role="group" aria-label="Frequência das missões">{Object.entries(labels).map(([id, label]) => <button key={id} aria-pressed={kind === id} className={kind === id ? 'is-active' : ''} onClick={() => setKind(id)}>{label}<span>{data?.missions?.filter((mission) => mission.kind === id && !mission.previousPeriod && mission.awarded).length || 0}/5</span></button>)}</div>
     {error && <p className="ql-error" role="alert">{error}</p>}{!data && !error && <p className="ql-muted" role="status">Carregando seus objetivos…</p>}

@@ -33,7 +33,7 @@ test('past season stats are not presented as current progress', () => {
 });
 
 test('public profile includes only allowed customization for consenting users', () => {
-  const decorated = { ...user, communityProfile: { bio: 'Minha história', banner: '', links: [{ label: 'Site', url: 'https://example.com' }], email: 'hidden' } };
-  assert.deepEqual(publicProfile(decorated, 1, now).profile, { bio: 'Minha história', banner: '', links: [{ label: 'Site', url: 'https://example.com/' }] });
+  const decorated = { ...user, communityProfile: { bio: 'Minha história', banner: '', projects: [], links: [{ label: 'Site', url: 'https://example.com' }], email: 'hidden' } };
+  assert.deepEqual(publicProfile(decorated, 1, now).profile, { bio: 'Minha história', banner: '', projects: [], links: [{ label: 'Site', url: 'https://example.com/' }] });
   assert.equal(publicProfile({ ...decorated, communityOptIn: false }, 1, now), null);
 });
