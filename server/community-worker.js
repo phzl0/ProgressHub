@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { connectToDatabase, initializeIndexes } = require('./db');
 const { periodFor, periodBounds } = require('./services/github/scoring');
 const { ensureLegacy, syncSeason, finalizeSeason } = require('./services/github/league');
+const { ensurePool, settlePools } = require('./services/community/pool');
 const INTERVAL = 10 * 60 * 1000;
 let running = false;
 let stopping = false;
@@ -30,6 +31,7 @@ async function runCycle() {
         if (!result.matchedCount) ownsLease = false;
       } catch (_) { ownsLease = false; }
     }, 30000);
+    await ensurePool(db);
     let synced = 0;
     let failures = 0;
     const users = db.collection('users');
@@ -67,6 +69,7 @@ async function runCycle() {
         if (!ownsLease || stopping) break;
         await finalizeSeason(db, period);
       }
+      await settlePools(db);
       // No token or raw API error goes into logs or job status.
       await jobs.updateOne({ _id: 'github-sync', owner }, { $set: { status: failures ? 'partial' : 'ok',
         completedAt: new Date(), synced, failures } });

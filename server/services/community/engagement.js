@@ -49,7 +49,7 @@ async function createGoal(db, user, input, now = new Date()) {
   await db.collection('users').updateOne({ _id: user._id, missionsStartedAt: { $exists: false } }, { $set: { missionsStartedAt: now } });
   return readGoal(db, user, now);
 }
-function summarizeWeek(records, rewards, events, now = new Date()) {
+function summarizeWeek(records, rewards, events, now = new Date(), communityRewards = []) {
   const week = windowFor('weekly', now);
   const inWeek = date => new Date(date) >= week.start && new Date(date) < week.end && new Date(date) <= now;
   const days = new Map(); const prs = new Map(); const reviews = new Set();
@@ -64,22 +64,24 @@ function summarizeWeek(records, rewards, events, now = new Date()) {
   const received = rewards.filter(r => inWeek(r.awardedAt));
   const commitXP = [...days.values()].reduce((sum, d) => sum + (d.xp || 0), 0);
   const prXP = [...prs.values()].reduce((sum, pr) => sum + (pr.xp || 0), 0);
-  const bonusXP = received.reduce((sum, r) => sum + r.xp, 0);
+  const communityBonusXP = communityRewards.filter(reward => inWeek(reward.awardedAt)).reduce((sum, reward) => sum + reward.xp, 0);
+  const bonusXP = received.reduce((sum, r) => sum + r.xp, 0) + communityBonusXP;
   const requiredPeriods = new Set([week.key.slice(0, 7), now.toISOString().slice(0, 7)]);
   const partial = [...requiredPeriods].some(period => !records.some(r => r.period === period && r.stats?.detailsVersion >= 2));
-  return { startsAt: week.start, endsAt: week.end, syncedAt: latest, partial, commitXP, prXP, bonusXP,
+  return { startsAt: week.start, endsAt: week.end, syncedAt: latest, partial, commitXP, prXP, bonusXP, communityBonusXP,
     xp: commitXP + prXP + bonusXP, commits: [...days.values()].reduce((sum, d) => sum + (d.credited || 0), 0),
     mergedPRs: prs.size, activeDays: [...days.values()].filter(d => d.credited > 0).length, reviews: reviews.size, receivedMissions: received.length };
 }
 async function weeklySummary(db, user, now = new Date()) {
   const week = windowFor('weekly', now);
   const periods = [...new Set([week.key.slice(0, 7), now.toISOString().slice(0, 7)])];
-  const [records, rewards, events] = await Promise.all([
+  const [records, rewards, events, communityRewards] = await Promise.all([
     db.collection('communitySeasons').find({ githubId: user.githubId, period: { $in: periods } }).toArray(),
     db.collection('missionRewards').find({ githubId: user.githubId, awardedAt: { $gte: week.start, $lt: week.end } }).toArray(),
-    db.collection('missionEvents').find({ githubId: user.githubId, kind: 'review', at: { $gte: week.start.toISOString(), $lt: week.end.toISOString() } }).toArray()
+    db.collection('missionEvents').find({ githubId: user.githubId, kind: 'review', at: { $gte: week.start.toISOString(), $lt: week.end.toISOString() } }).toArray(),
+    db.collection('communityPoolShares').find({ githubId: user.githubId, status: 'paid', awardedAt: { $gte: week.start, $lt: week.end } }).toArray()
   ]);
-  const summary = summarizeWeek(records, rewards, events, now);
+  const summary = summarizeWeek(records, rewards, events, now, communityRewards);
   summary.partial = summary.partial || Boolean(user.missionsPartial || user.missionsError);
   return summary;
 }

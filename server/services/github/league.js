@@ -48,7 +48,8 @@ async function syncSeason(db, user, period = periodFor(), { force = false, colle
     if (missions) user = await enroll(db, user, now);
     const raw = await collect(user, period, now);
     const base = preserveLegacy(raw, existing?.protectedXP || 0);
-    let stats = addMissionBonus(base, existing?.stats?.missionXP || 0);
+    let stats = addMissionBonus(base, existing?.stats?.missionXP || 0, existing?.stats?.communityXP || 0);
+    stats.communityRewardIds = existing?.stats?.communityRewardIds || [];
     const stillOwnsLease = await users.findOne({ _id: user._id, syncLockId: lockId, syncLockUntil: { $gt: new Date() } });
     if (!stillOwnsLease) throw new Error('Synchronization lease expired');
     const update = {

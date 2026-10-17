@@ -17,6 +17,7 @@ export default function ScoreDetails({ stats }) {
       {!pullRequests.length ? <p className="ql-empty">Seus PRs mesclados aparecerão aqui.</p> : <ul className="ql-pr-list">{pullRequests.map((pr) => <li key={pr.url}><a href={pr.url} target="_blank" rel="noreferrer">{pr.title} ↗</a><p className="ql-caption">{pr.repository} · <time dateTime={pr.mergedAt}>{dateLabel(pr.mergedAt)} UTC</time></p></li>)}</ul>}
     </details>
     {(stats.missionXP || 0) > 0 && <div className="ql-inset"><span className="ql-muted">Bônus de missões</span><strong>+{stats.missionXP.toLocaleString('pt-BR')} <small>XP</small></strong><p>Extras às contribuições normais, já incluídos no total da temporada e na carreira.</p><a className="ql-text-link" href="#missions">Acompanhar minhas missões →</a></div>}
+    {(stats.communityXP || 0) > 0 && <div className="ql-inset"><span className="ql-muted">Bolões comunitários</span><strong>+{stats.communityXP.toLocaleString('pt-BR')} <small>XP</small></strong><p>Bônus pagos automaticamente, já incluídos na carreira e na temporada.</p><a className="ql-text-link" href="#ranking/community">Ver os resultados comunitários →</a></div>}
     {breakdown.legacyAdjustment > 0 && <p className="ql-caption">{breakdown.legacyAdjustment} XP de ajuste para preservar sua pontuação anterior à migração.</p>}
     <p className="ql-caption">Retrato do mês atual. PRs mesclados por outro usuário humano recebem 25 XP extras; bots e autor não geram bônus. Mudanças nas contribuições reconhecidas pelo GitHub podem alterar o total.</p>
   </section>;

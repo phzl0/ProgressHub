@@ -135,3 +135,11 @@ test('ranking switches between global XP and community contribution without mixi
   fireEvent.click(screen.getByRole('button', { name: 'Global', exact: true }));
   expect(screen.getByRole('heading', { name: 'Classificação global' })).toBeInTheDocument();
 });
+
+test('update control is compact and the large synchronization notice is absent', async () => {
+  render(<Community />);
+  await screen.findByText('@developer');
+  expect(screen.getByRole('button', { name: 'Atualizar contribuições' })).toBeInTheDocument();
+  expect(screen.queryByText(/Pontuação, atividades e ranking atualizados/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Ranking consultado às/)).not.toBeInTheDocument();
+});

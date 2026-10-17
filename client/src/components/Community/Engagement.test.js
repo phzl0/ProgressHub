@@ -56,3 +56,13 @@ test('project showcase renders selected icons and safe external links without cl
   expect(screen.getByRole('link', { name: /Meu app/ })).toHaveAttribute('href', 'https://github.com/user/app');
   expect(screen.getByText(/não concede XP/)).toBeInTheDocument();
 });
+
+test('community pool shows a conditional proportional estimate and previous payment', async () => {
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ current: 100, target: 100, poolXP: 40000, progress: 100, participants: 3, mine: 30, me: { estimatedXP: 12000, percentage: 30 }, completed: true, optedIn: true, endsAt: '2026-10-19T00:00:00Z', closesAt: '2026-10-21T00:00:00Z', history: [{ periodKey: '2026-10-05', status: 'paid', total: 200, xp: 5000, paid: true }] }) }));
+  render(<CommunityChallenge />);
+  expect(await screen.findByText('40.000 XP')).toBeInTheDocument();
+  expect(screen.getByText('12.000 XP')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Resultados dos bolões anteriores'));
+  expect(screen.getByText('+5.000 XP')).toBeInTheDocument();
+  expect(screen.getByText(/A meta coletiva precisa ser atingida/)).toBeInTheDocument();
+});

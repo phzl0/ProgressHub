@@ -9,10 +9,10 @@ const { tokenKey, encryptToken, githubClient } = require('../../services/github/
 const { readMissions, claimMission } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
-const { weeklySummary, communityChallenge } = require('../../services/community/engagement');
+const { weeklySummary } = require('../../services/community/engagement');
 const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
 const { CATALOG, validateAppearance, appearanceFor } = require('../../services/community/cosmetics');
-const { contributionRanking } = require('../../services/community/contribution-ranking');
+const { poolView, setParticipation, ensurePool } = require('../../services/community/pool');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
@@ -117,7 +117,7 @@ router.post('/cosmetics', authenticateToken, sameOrigin, async (req, res) => {
 });
 router.get('/community-ranking', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar sua contribuição.' });
-  try { res.set('Cache-Control', 'no-store').json(await contributionRanking(await connectToDatabase(), req.user)); }
+  try { res.set('Cache-Control', 'no-store').json(await poolView(await connectToDatabase(), req.user)); }
   catch (_) { res.status(503).json({ error: 'Não foi possível carregar o ranking comunitário.' }); }
 });
 router.post('/profile', authenticateToken, sameOrigin, async (req, res) => {
@@ -136,7 +136,7 @@ router.post('/participation', authenticateToken, sameOrigin, async (req, res) =>
   if (!req.user.githubId || typeof req.body.optedIn !== 'boolean') return res.status(400).json({ error: 'Conecte o GitHub e informe a participação.' });
   try {
     const db = await connectToDatabase();
-    await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityOptIn: req.body.optedIn } });
+    await setParticipation(db, req.user, req.body.optedIn);
     await db.collection('communitySeasons').updateOne({ githubId: req.user.githubId, period: periodFor(), status: 'open' }, { $set: { eligible: req.body.optedIn } });
     res.json({ optedIn: req.body.optedIn });
   } catch (_) { res.status(500).json({ error: 'Não foi possível atualizar sua participação.' }); }
@@ -145,6 +145,7 @@ router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para sincronizar.' });
   try {
     const db = await connectToDatabase();
+    await ensurePool(db);
     const result = await syncSeason(db, req.user);
     res.json(result.stats || { skipped: true });
   } catch (error) {
@@ -174,7 +175,11 @@ router.get('/weekly-summary', authenticateToken, async (req, res) => {
 });
 router.get('/challenge', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar o desafio.' });
-  try { res.set('Cache-Control', 'no-store').json(await communityChallenge(await connectToDatabase(), req.user)); }
+  try {
+    const value = await poolView(await connectToDatabase(), req.user);
+    res.set('Cache-Control', 'no-store').json({ ...value, current: value.total, completed: value.total >= value.target,
+      progress: Math.min(100, Math.round(value.total / value.target * 100)), mine: value.me?.contributions || 0, optedIn: Boolean(req.user.communityOptIn) });
+  }
   catch (_) { res.status(503).json({ error: 'Não foi possível carregar o desafio coletivo.' }); }
 });
 router.get('/missions', authenticateToken, async (req, res) => {

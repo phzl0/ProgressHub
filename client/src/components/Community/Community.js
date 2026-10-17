@@ -1,6 +1,6 @@
 import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, Award, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, Clock3, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
+import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, Award, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
 import ProgressChart from './ProgressChart';
 import './community.css';
 import ScoreDetails from './ScoreDetails';
@@ -40,15 +40,13 @@ export default function Community() {
     if (value === 'ranking/community') return 'ranking';
     return ['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard';
   });
-  const [boardUpdatedAt, setBoardUpdatedAt] = useState(null);
-  const [syncStatus, setSyncStatus] = useState(null);
   const [me, setMe] = useState(null);
   const [rankKind, setRankKind] = useState(() => window.location.hash === '#ranking/community' ? 'community' : 'global');
   const [ranking, setRanking] = useState({ users: [], period: '' });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(oauthErrors[new URLSearchParams(window.location.search).get('error')] || '');
-  const loadRanking = useCallback(async () => { setRanking(await request('/leaderboard')); setBoardUpdatedAt(new Date()); }, []);
+  const loadRanking = useCallback(async () => { setRanking(await request('/leaderboard'));  }, []);
   useEffect(() => {
     let mounted = true;
     let inFlight = false;
@@ -59,11 +57,10 @@ export default function Community() {
       try {
         const status = await request('/sync-status');
         workerActive = Boolean(status.active);
-        if (mounted) setSyncStatus(status);
-      } catch (_) { if (mounted) setSyncStatus(null); }
+      } catch (_) { /* The visible page remains a synchronization fallback. */ }
       try {
         const board = await request('/leaderboard');
-        if (mounted) { setRanking(board); setBoardUpdatedAt(new Date()); }
+        if (mounted) { setRanking(board);  }
       } catch (err) { if (mounted) setError(err.message); }
       try {
         const user = await request('/me');
@@ -74,7 +71,7 @@ export default function Community() {
             await request('/sync', {});
             const profile = await request('/me');
             const board = await request('/leaderboard');
-            if (mounted) { setMe(profile); setRanking(board); setBoardUpdatedAt(new Date()); }
+            if (mounted) { setMe(profile); setRanking(board);  }
           } catch (err) { if (mounted && err.status !== 429) setError(err.message); }
         }
       } catch (err) {
@@ -165,10 +162,10 @@ export default function Community() {
       <div className="ql-sidebar-bottom"><div className="ql-season-card"><span className="ql-live-dot" /> TEMPORADA ATUAL<strong>{ranking.period || new Date().toISOString().slice(0, 7)}</strong><p>Novas contribuições.<br />Uma nova chance de evoluir.</p><span className="ql-tag">REINÍCIO MENSAL · UTC</span></div><p className="ql-caption">Construído sobre QuestLog · MIT</p></div>
     </aside>
     <div className="ql-workspace">
-      <header className="ql-topbar"><span className="ql-breadcrumb">Comunidade <ChevronRight size={13} /> <strong>{tab === 'profile' ? 'Perfil público' : tabs.find((item) => item.id === tab).label}</strong></span><div className="ql-topbar-right"><span className="ql-connected"><span className="ql-live-dot" /> {me?.connected ? 'GITHUB CONECTADO' : 'CONTRIBUA. EVOLUA.'}</span>{me && <button className="ql-icon-button" title="Sair da conta" aria-label="Sair da conta" onClick={logout} disabled={busy}><LogOut size={18} /></button>}</div></header>
+      <header className="ql-topbar"><span className="ql-breadcrumb">Comunidade <ChevronRight size={13} /> <strong>{tab === 'profile' ? 'Perfil público' : tabs.find((item) => item.id === tab).label}</strong></span><div className="ql-topbar-right"><span className="ql-connected"><span className="ql-live-dot" /> {me?.connected ? 'GITHUB CONECTADO' : 'CONTRIBUA. EVOLUA.'}</span>{me?.connected && <button className="ql-icon-button ql-compact-sync" disabled={busy || loading} onClick={sync} aria-label="Atualizar contribuições" title="Atualizar contribuições · atualização automática a cada 10 minutos"><RefreshCw size={18} className={busy ? 'ql-spin' : ''} /></button>}{me && <button className="ql-icon-button" title="Sair da conta" aria-label="Sair da conta" onClick={logout} disabled={busy}><LogOut size={18} /></button>}</div></header>
       <main className="ql-main" id="community-main">
         <div className="ql-page-heading"><div><p className="ql-eyebrow">{(tab === 'ranking' || tab === 'profile') ? 'ARENA DA COMUNIDADE' : 'SUA JORNADA DE DESENVOLVEDOR'}</p><h1>{tab === 'dashboard' ? <>Vamos construir{me?.login ? `, ${me.login}` : ''}<span className="ql-green">.</span></> : tab === 'goals' ? <>Sua próxima <span className="ql-green">meta.</span></> : tab === 'progress' ? <>Cada passo é <span className="ql-green">progresso.</span></> : tab === 'missions' ? <>Seu próximo <span className="ql-green">objetivo.</span></> : tab === 'me' ? <>Meu <span className="ql-green">perfil.</span></> : tab === 'seasons' ? <>Sua <span className="ql-green">história.</span></> : tab === 'profile' ? <>Perfil de <span className="ql-green">desenvolvedor.</span></> : <>Ranking <span className="ql-green">global.</span></>}</h1><p className="ql-muted">{subtitle}</p></div>{!loading && !me?.connected && <a className="ql-button" href={`${API}/auth`}><Github size={18} /> Entrar com GitHub <ArrowUpRight size={16} /></a>}</div>
-        <div className="ql-update-banner"><Clock3 size={17} /><div><strong>Pontuação, atividades e ranking atualizados a cada 10 minutos.</strong><span>{syncStatus?.active ? 'Serviço automático ativo recentemente: atualiza mesmo com o navegador fechado.' : 'Serviço automático ainda não confirmado; a página faz a atualização de apoio enquanto estiver visível.'} {stats ? `Seu GitHub: ${new Date(stats.syncedAt).toLocaleString('pt-BR')}.` : 'Seu XP aparecerá após conectar e sincronizar.'} {boardUpdatedAt ? `Ranking consultado às ${boardUpdatedAt.toLocaleTimeString('pt-BR')}.` : ''}</span></div>{me?.connected && <button className="ql-refresh" disabled={busy || loading} onClick={sync} title="Atualização manual disponível após 30 segundos"><RefreshCw size={16} className={busy ? 'ql-spin' : ''} /><span>{busy ? 'Atualizando' : 'Atualizar agora'}</span></button>}</div>
+
         {error && <p role="alert" className="ql-error">{error}</p>}
         {loading && <p role="status" className="ql-muted">Carregando sua jornada e contribuições…</p>}
         {me && !me.connected && <p className="ql-muted">Sua sessão atual é do Google. Entre com GitHub para usar o perfil competitivo separado.</p>}

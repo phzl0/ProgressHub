@@ -29,25 +29,27 @@ async function readMissions(db, user, now = new Date()) {
     partial: Boolean(user.missionsPartial), error: user.missionsError || null,
     recentRewards: recent.map(({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod }) => ({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod })) };
 }
-function addMissionBonus(stats, bonus) {
-  const baseXP = stats.baseXP ?? stats.xp - (stats.missionXP || 0);
-  const xp = baseXP + bonus;
-  return { ...stats, baseXP, missionXP: bonus, xp, ...progression(xp), breakdown: { ...stats.breakdown, missionXP: bonus } };
+function addMissionBonus(stats, bonus, communityBonus = stats.communityXP || 0) {
+  const baseXP = stats.baseXP ?? stats.xp - (stats.missionXP || 0) - (stats.communityXP || 0);
+  const xp = baseXP + bonus + communityBonus;
+  return { ...stats, baseXP, missionXP: bonus, communityXP: communityBonus, xp, ...progression(xp), breakdown: { ...stats.breakdown, missionXP: bonus, communityXP: communityBonus } };
 }
-async function updateBonuses(db, user, now = new Date()) {
-  const period = periodFor(now);
+async function updateBonuses(db, user, now = new Date(), period = periodFor(now)) {
   const rewards = await db.collection('missionRewards').find({ githubId: user.githubId, creditedPeriod: period }).toArray();
-  if (!rewards.length) return;
+  const communityRewards = await db.collection('communityPoolShares').find({ githubId: user.githubId, creditedPeriod: period }).toArray();
+  if (!rewards.length && !communityRewards.length) return false;
   const total = rewards.reduce((sum, reward) => sum + reward.xp, 0);
   const seasons = db.collection('communitySeasons');
   const existing = await seasons.findOne({ githubId: user.githubId, period });
-  if (existing?.status === 'closed') return;
-  const stats = addMissionBonus(existing?.stats || { ...scoreContributions([], 0), period, syncedAt: now }, total);
+  if (existing?.status === 'closed') return false;
+  const stats = addMissionBonus(existing?.stats || { ...scoreContributions([], 0), period, syncedAt: now }, total, communityRewards.reduce((sum, reward) => sum + reward.xp, 0));
+  stats.communityRewardIds = communityRewards.map(reward => reward._id);
   await seasons.updateOne({ githubId: user.githubId, period, status: { $ne: 'closed' } }, {
     $set: { stats, updatedAt: now },
     $setOnInsert: { githubId: user.githubId, period, status: 'open', eligible: Boolean(user.communityOptIn),
       protectedXP: 0, createdAt: now, completeness: 'partial', note: 'Bônus confirmado; contribuições do período aguardam reconciliação.' }
   }, { upsert: true });
+  return true;
 }
 async function syncMissions(db, user, now = new Date(), collector = collectMissionEvents) {
   user = await enroll(db, user, now);
@@ -60,10 +62,11 @@ async function syncMissions(db, user, now = new Date(), collector = collectMissi
       await events.updateOne({ _id: key }, { $set: { ...event, githubId: user.githubId, checkedAt: now } }, { upsert: true });
     } else {
       const { collaborative, issueClosed, ...stable } = event;
-      await events.updateOne({ _id: key }, { $setOnInsert: { ...stable, githubId: user.githubId },
+      await events.updateOne({ _id: key }, { $setOnInsert: { ...stable, githubId: user.githubId, confirmedAt: new Date() },
         ...(event.kind === 'merged' ? { $max: { collaborative: Boolean(collaborative), issueClosed: Boolean(issueClosed) } } : {}) }, { upsert: true });
     }
   }
+  await events.updateMany({ githubId: user.githubId, confirmedAt: { $exists: false } }, { $set: { confirmedAt: new Date() } });
   await updateBonuses(db, user, now);
   await db.collection('users').updateOne({ _id: user._id }, { $set: { missionsSyncedAt: now, missionsPartial: collection.partial, missionsError: null } });
 }

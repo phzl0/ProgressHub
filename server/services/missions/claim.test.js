@@ -20,6 +20,7 @@ function database({ complete = true, locked = false } = {}) {
         return { modifiedCount: 1 };
       }
     },
+    communityPoolShares: { find: () => cursor([]) },
     missionEvents: { find: () => cursor(events) },
     missionRewards: {
       findOne: async filter => rewards.find(r => r._id === filter._id),
