@@ -6,7 +6,7 @@ test('MongoDB: shared chat persists, throttles concurrent sends, retries once, p
   const client=await MongoClient.connect(process.env.MONGODB_TEST_URI);
   const db=client.db(`progresshub_chat_${new ObjectId().toHexString()}`);
   const now=new Date();
-  const alice={_id:new ObjectId(),githubId:'42',githubLogin:'alice',communityOptIn:true,picture:'',communityAppearance:{frame:'crystal',title:'building'},githubToken:'secret',email:'secret@example.com',githubStats:{xp:123}};
+  const alice={_id:new ObjectId(),githubId:'42',githubLogin:'alice',communityOptIn:true,picture:'',communityAppearance:{frame:'crystal',cover:'custom',title:'building'},githubToken:'secret',email:'secret@example.com',githubStats:{xp:123}};
   const bob={_id:new ObjectId(),githubId:'43',githubLogin:'bob',communityOptIn:false};
   try {
     await db.collection('users').insertMany([alice,bob]);
