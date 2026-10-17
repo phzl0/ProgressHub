@@ -252,4 +252,14 @@ Persistência: `achievementRewards`, chave `${githubId}:${achievementId}:v1`, va
 
 `GET /api/community/achievements` é autenticado, somente leitura, e retorna critérios, progresso e recibos resumidos da própria conta. A consulta de perfis públicos continua usando a lista permitida de campos.
 
-O dashboard mantém o Top 10 e acrescenta carrossel horizontal com avanço a cada 6 segundos, pausa ao interagir, controles manuais, desativação do avanço automático para movimento reduzido e interrupção em abas ocultas. Meu perfil apresenta coleção compacta com filtros. O extrato e o resumo semanal separam os bônus de conquistas dos demais ganhos.
+A coleção de conquistas fica em Progresso → Conquistas, com filtros. Meu perfil mostra a quantidade desbloqueada junto ao título e um link para a coleção. O extrato e o resumo semanal separam os bônus de conquistas dos demais ganhos.
+
+## Navegação horizontal e interface compacta
+
+O shell da comunidade agora ocupa toda a largura: cabeçalho global, conteúdo e rodapé como irmãos, sem coluna lateral permanente. Menu principal: Tela inicial, Ranking, Missões, Progresso e Metas pessoais. Meu perfil é um atalho com avatar à direita. As subabas aparecem nas respectivas áreas: Ranking → Temporadas e Progresso → Conquistas. Links anteriores `#dashboard`, `#seasons`, `#ranking/community` e `#profile/<id>` continuam válidos. Os novos links são `#home`, `#ranking/seasons` e `#progress/achievements`.
+
+O botão de configurações abre uma lateral temporária para Configurações, Conta, Privacidade, Regras e ajuda e Sair. O menu começa fechado, mantém o foco enquanto aberto e pode ser fechado com Escape, botão ou clique fora. Conta mostra apenas a identidade GitHub disponível, sem campo de e-mail. Privacidade usa o controle de participação já existente. Nenhuma informação nova de autenticação é solicitada.
+
+A tela inicial mantém Top 10 de carreira e cards resumidos. O antigo bloco de conquistas foi movido. Três banners internos em `HomeBanners.js` apresentam a comunidade, o desafio e as metas. Trocam a cada 3 segundos, com controles, pausa ao passar o mouse, ao usar teclado e em aba oculta. Movimento reduzido desativa a troca automática. Configurações oferece uma preferência persistida neste navegador (`ph-banner-autoplay`). Os banners são slots de conteúdo local, sem provedor externo de anúncios ou painel de administração nesta versão.
+
+`site-layout.css` contém a composição nova e os ajustes de densidade: margens, preenchimentos e espaços menores, conteúdo sem o recuo da antiga lateral, cards de perfil, metas, missões e ranking compactos. Em telas menores o menu horizontal recolhe em um botão, preservando acesso às cinco áreas.

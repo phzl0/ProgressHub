@@ -1,8 +1,9 @@
 import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, PanelLeftClose, PanelLeftOpen, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound, ScrollText } from 'lucide-react';
+import { Github, Trophy, GitCommitHorizontal, GitPullRequest, ArrowUpRight, Zap, ShieldCheck } from 'lucide-react';
 import ProgressChart from './ProgressChart';
 import './community.css';
+import './site-layout.css';
 import ScoreDetails from './ScoreDetails';
 import PublicProfile from './PublicProfile';
 import SeasonHistory from './SeasonHistory';
@@ -14,7 +15,10 @@ import PersonalGoals from './PersonalGoals';
 import WeeklySummary from './WeeklySummary';
 import CareerTop from './CareerTop';
 import Achievements from './Achievements';
-import BrandMark from './BrandMark';
+import CommunityHeader from './CommunityHeader';
+import HomeBanners from './HomeBanners';
+import AccountPages from './AccountPages';
+import { viewFromHash, PAGE_LABELS, parentView } from './navigation';
 import CommunityFooter from './CommunityFooter';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
@@ -38,14 +42,18 @@ const oauthErrors = {
 };
 export default function Community() {
   const [profileId, setProfileId] = useState(profileFromHash);
-  const [tab, setTab] = useState(() => {
-    if (profileFromHash()) return 'profile';
-    const value = window.location.hash.slice(1);
-    if (value === 'ranking/community') return 'ranking';
-    return ['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard';
-  });
-  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem('ql-navigation-collapsed') === 'true'; } catch (_) { return false; } });
-  function toggleNavigation() { setCollapsed(value => { try { localStorage.setItem('ql-navigation-collapsed', String(!value)); } catch (_) { /* Storage is optional. */ } return !value; }); }
+  const [tab, setTab] = useState(() => viewFromHash());
+  const [bannerAutoplay, setBannerAutoplay] = useState(() => { try { return localStorage.getItem('ph-banner-autoplay') !== 'false'; } catch (_) { return true; } });
+  function changeBannerAutoplay(value) { setBannerAutoplay(value); try { localStorage.setItem('ph-banner-autoplay', String(value)); } catch (_) { /* Storage is optional. */ } }
+  function navigate(path, event) {
+    if (event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button > 0)) return;
+    event?.preventDefault();
+    window.location.hash = path;
+    setTab(viewFromHash(path));
+    setProfileId(path.match(/^profile\/(\d{1,20})$/)?.[1] || null);
+    if (path === 'ranking/community') setRankKind('community');
+    else if (path === 'ranking') setRankKind('global');
+  }
   const [me, setMe] = useState(null);
   const [rankKind, setRankKind] = useState(() => window.location.hash === '#ranking/community' ? 'community' : 'global');
   const [ranking, setRanking] = useState({ users: [], period: '' });
@@ -99,13 +107,10 @@ export default function Community() {
   }, []);
   useEffect(() => {
     const onHash = () => {
-      const profile = profileFromHash();
-      setProfileId(profile);
-      const value = window.location.hash.slice(1);
-      if (profile) { setTab('profile'); return; }
-      if (value === 'ranking/community') { setTab('ranking'); setRankKind('community'); return; }
-      if (value === 'ranking') setRankKind('global');
-      setTab(['dashboard', 'progress', 'ranking', 'seasons', 'missions', 'me', 'goals'].includes(value) ? value : 'dashboard');
+      setProfileId(profileFromHash());
+      setTab(viewFromHash());
+      if (window.location.hash === '#ranking/community') setRankKind('community');
+      else if (window.location.hash === '#ranking') setRankKind('global');
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -143,42 +148,30 @@ export default function Community() {
   const progress = Math.min(100, Math.round((career?.experience || 0) / (career?.nextLevelXP || 200) * 100));
   const position = me?.position;
   const number = (value) => (value || 0).toLocaleString('pt-BR');
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'me', label: 'Meu perfil', icon: UserRound, ScrollText },
-    { id: 'goals', label: 'Metas pessoais', icon: Target },
-    { id: 'missions', label: 'Missões', icon: ScrollText },
-    { id: 'progress', label: 'Progresso', icon: ChartNoAxesCombined },
-    { id: 'ranking', label: 'Ranking', icon: Trophy },
-    { id: 'seasons', label: 'Temporadas', icon: History }
-  ];
   const activeDays = stats?.commitDays?.length || 0;
-  const subtitle = tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
-  return <div className={`ql-game${collapsed ? ' ql-navigation-collapsed' : ''}`}>
-    <aside className="ql-sidebar">
-      <button className="ql-icon-button ql-nav-toggle" onClick={toggleNavigation} aria-expanded={!collapsed} aria-controls="community-navigation" aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'} title={collapsed ? 'Expandir navegação' : 'Recolher navegação'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
-      <a href="/community" className="ql-brand" aria-label="Progress Hub · início"><span className="ql-brand-mark"><BrandMark /></span><span>PROGRESS<span className="ql-green"> HUB</span><small>DEVELOPER COMMUNITY</small></span></a>
-      <p className="ql-nav-label">SEU PRÓXIMO NÍVEL</p>
-      <nav id="community-navigation" aria-label="Navegação principal" className="ql-nav">{tabs.map(({ id, label, icon: Icon }) => <a key={id} aria-label={label} title={collapsed ? label : undefined} href={`#${id}`} aria-current={tab === id || (tab === 'profile' && id === 'ranking') ? 'page' : undefined} onClick={event => { if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); window.location.hash = id; setTab(id); if (id === 'ranking') setRankKind('global'); }} className={tab === id || (tab === 'profile' && id === 'ranking') ? 'is-active' : ''}><Icon size={19} /><span>{label}</span>{tab === id && <ChevronRight size={15} />}</a>)}</nav>
-      <div className="ql-sidebar-bottom"><div className="ql-season-card"><span className="ql-live-dot" /> TEMPORADA ATUAL<strong>{ranking.period || new Date().toISOString().slice(0, 7)}</strong><p>Novas contribuições.<br />Uma nova chance de evoluir.</p><span className="ql-tag">REINÍCIO MENSAL · UTC</span></div><p className="ql-caption">Construído sobre QuestLog · MIT</p></div>
-    </aside>
-    <div className="ql-workspace">
-      <header className="ql-topbar"><span className="ql-breadcrumb">Comunidade <ChevronRight size={13} /> <strong>{tab === 'profile' ? 'Perfil público' : tabs.find((item) => item.id === tab).label}</strong></span><div className="ql-topbar-right"><span className="ql-connected"><span className="ql-live-dot" /> {me?.connected ? 'GITHUB CONECTADO' : 'CONTRIBUA. EVOLUA.'}</span>{me?.connected && <button className="ql-icon-button ql-compact-sync" disabled={busy || loading} onClick={sync} aria-label="Atualizar contribuições" title="Atualizar contribuições · atualização automática a cada 10 minutos"><RefreshCw size={18} className={busy ? 'ql-spin' : ''} /></button>}{me && <button className="ql-icon-button" title="Sair da conta" aria-label="Sair da conta" onClick={logout} disabled={busy}><LogOut size={18} /></button>}</div></header>
-      <main className="ql-main" id="community-main">
-        <div className="ql-page-heading"><div><p className="ql-eyebrow">{(tab === 'ranking' || tab === 'profile') ? 'ARENA DA COMUNIDADE' : 'SUA JORNADA DE DESENVOLVEDOR'}</p><h1>{tab === 'dashboard' ? <>Vamos construir{me?.login ? `, ${me.login}` : ''}<span className="ql-green">.</span></> : tab === 'goals' ? <>Sua próxima <span className="ql-green">meta.</span></> : tab === 'progress' ? <>Cada passo é <span className="ql-green">progresso.</span></> : tab === 'missions' ? <>Seu próximo <span className="ql-green">objetivo.</span></> : tab === 'me' ? <>Meu <span className="ql-green">perfil.</span></> : tab === 'seasons' ? <>Sua <span className="ql-green">história.</span></> : tab === 'profile' ? <>Perfil de <span className="ql-green">desenvolvedor.</span></> : <>Ranking <span className="ql-green">global.</span></>}</h1><p className="ql-muted">{subtitle}</p></div>{!loading && !me?.connected && <a className="ql-button" href={`${API}/auth`}><Github size={18} /> Entrar com GitHub <ArrowUpRight size={16} /></a>}</div>
+  const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
+  const group = parentView(tab);
+  return <div className="ql-game ql-site-shell">
+    <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
+    <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} />
+    <div className="ql-site-body">
+      <main className="ql-main" id="community-main" tabIndex={-1}>
+        <div className="ql-page-heading"><div><p className="ql-eyebrow">{(group === 'ranking' || tab === 'profile') ? 'ARENA DA COMUNIDADE' : 'SUA JORNADA DE DESENVOLVEDOR'}</p><h1>{PAGE_LABELS[tab] || 'Tela inicial'}<span className="ql-green">.</span></h1><p className="ql-muted">{subtitle}</p></div>{!loading && !me?.connected && <a className="ql-button" href={`${API}/auth`}><Github size={18} /> Entrar com GitHub <ArrowUpRight size={16} /></a>}</div>
+        {group === 'ranking' && <nav className="ql-section-navigation" aria-label="Navegação do ranking"><a href="#ranking" aria-current={tab === 'ranking' ? 'page' : undefined} onClick={event => navigate('ranking', event)}>Classificação</a><a href="#ranking/seasons" aria-current={tab === 'seasons' ? 'page' : undefined} onClick={event => navigate('ranking/seasons', event)}>Temporadas</a></nav>}
+        {group === 'progress' && <nav className="ql-section-navigation" aria-label="Navegação do progresso"><a href="#progress" aria-current={tab === 'progress' ? 'page' : undefined} onClick={event => navigate('progress', event)}>Visão geral</a><a href="#progress/achievements" aria-current={tab === 'achievements' ? 'page' : undefined} onClick={event => navigate('progress/achievements', event)}>Conquistas</a></nav>}
 
         {error && <p role="alert" className="ql-error">{error}</p>}
         {loading && <p role="status" className="ql-muted">Carregando sua jornada e contribuições…</p>}
-        {me && !me.connected && <p className="ql-muted">Sua sessão atual é do Google. Entre com GitHub para usar o perfil competitivo separado.</p>}
         {tab === 'dashboard' && <>
           <div className="ql-dashboard-top">
-            <section className="ql-hero-card"><div className="ql-hero-grid" aria-hidden="true" /><div className="ql-hero-content"><span className="ql-tag ql-purple-tag"><Zap size={12} /> {career?.title || 'Explorador'}</span><h2>Seu código.<br />Seu próximo nível.</h2><p>Transforme contribuições reais em uma jornada que vale acompanhar.</p><a href="#progress" className="ql-text-link" onClick={() => setTab('progress')}>Explorar meu progresso <ArrowUpRight size={17} /></a></div><div className="ql-level-emblem"><span>LVL</span><strong>{String(level).padStart(2, '0')}</strong><small>{career?.title || 'EXPLORADOR'}</small></div></section>
+            <HomeBanners navigate={navigate} autoplay={bannerAutoplay} />
             <section className="ql-panel ql-profile-card"><div className="ql-profile-heading">{me?.picture ? <CosmeticAvatar src={me.picture} frame={me.appearance?.frame} size={44} /> : <span className="ql-avatar-placeholder"><Github size={24} /></span>}<div><strong>{me?.login ? `@${me.login}` : 'Seu perfil começa aqui'}</strong><span>{career?.title || 'Explorador'} · Nível {level}</span></div><ShieldCheck className="ql-green" size={20} /></div><div className="ql-xp-total">{number(career?.xp)} <span>XP</span><small>CARREIRA PERMANENTE</small></div><div className="ql-progress-label"><span>Nível {level}</span><strong>{progress}%</strong><span>Nível {level + 1}</span></div><div className="ql-xp-track" role="progressbar" aria-label={`Progresso para o nível ${level + 1}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Faltam {number((career?.nextLevelXP || 200) - (career?.experience || 0))} XP para seu próximo nível.</p>{me?.optedIn && me?.githubId && <a className="ql-own-profile" href={`#profile/${me.githubId}`}>Ver meu perfil público <ArrowUpRight size={13} /></a>}</section>
           </div>
           <div className="ql-metrics"><Metric tone="blue" icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="10 XP por commit elegível" /><Metric tone="purple" icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="50 XP por PR + bônus de colaboração" /><Metric icon={Zap} label="Dias com commits" value={number(activeDays)} note="Atividade reconhecida neste mês" /><Metric tone="gold" icon={Trophy} label="Sua posição global" value={position ? `#${position}` : '—'} note={me?.optedIn ? 'Ranking da temporada atual' : 'Participe na aba Ranking'} /></div>
-          <Achievements carousel connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />
           <CareerTop revision={`${stats?.syncedAt}:${stats?.xp}:${me?.optedIn}:${me?.appearance?.frame}`} login={me?.login} />
         </>}
+        {tab === 'achievements' && <Achievements connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />}
+        {['settings', 'account', 'privacy', 'information'].includes(tab) && <AccountPages tab={tab} me={me} autoplay={bannerAutoplay} onAutoplayChange={changeBannerAutoplay} participate={participate} busy={busy} api={API} />}
         {tab === 'progress' && <>
           <WeeklySummary connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.missionXP}`} />
           <div className="ql-metrics ql-three-metrics"><Metric icon={Zap} label="XP da temporada" value={number(xp)} note="Commits + PRs elegíveis" /><Metric tone="blue" icon={GitCommitHorizontal} label="XP em commits" value={number(stats?.breakdown?.commitXP)} note={`${activeDays} dias com contribuições`} /><Metric tone="purple" icon={GitPullRequest} label="XP em PRs" value={number(stats?.breakdown?.pullRequestXP)} note="Contribuições públicas mescladas" /></div>
@@ -199,9 +192,9 @@ export default function Community() {
         {tab === 'seasons' && <SeasonHistory connected={me?.connected} career={career} />}
         {me?.backgroundSyncError && <p className="ql-caption">{me.backgroundSyncError}</p>}
         {tab === 'profile' && profileId && <PublicProfile key={profileId} githubId={profileId} />}
-        <CommunityFooter />
       </main>
     </div>
+    <div className="ql-site-footer"><CommunityFooter /></div>
   </div>;
 }
 function Metric({ icon: Icon, label, value, note, tone = 'green' }) {

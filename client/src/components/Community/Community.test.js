@@ -66,7 +66,7 @@ test('public profile supports a direct link inside the community', async () => {
   await screen.findByRole('heading', { name: '@peer' });
   expect(screen.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('href', 'https://github.com/peer');
   expect(screen.getByText('#3')).toBeInTheDocument();
-  await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Dashboard', exact: true })); });
+  await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Tela inicial', exact: true })); });
   expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
 });
 
@@ -85,6 +85,7 @@ test('an unavailable public profile does not render participant details', async 
 test('season history keeps final standings and labels partial records', async () => {
   await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('link', { name: 'Ranking', exact: true }));
   fireEvent.click(screen.getByRole('link', { name: 'Temporadas', exact: true }));
   await screen.findByText('2026-09');
   expect(screen.getByText('#3 de 12')).toBeInTheDocument();
@@ -122,7 +123,9 @@ test('my profile groups career, achievements and links to mission progression', 
   await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
   await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true })); });
-  expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Minha coleção de conquistas' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /Ver conquistas/ })).toHaveAttribute('href', '#progress/achievements');
+  expect(screen.getByText('0 conquistas desbloqueadas')).toBeInTheDocument();
   expect(screen.getByText('XP de carreira')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Ganhar bônus nas missões/ })).toHaveAttribute('href', '#missions');
 });
@@ -146,18 +149,19 @@ test('update control is compact and the large synchronization notice is absent',
   expect(screen.queryByText(/Ranking consultado às/)).not.toBeInTheDocument();
 });
 
-test('navigation collapses, retains accessible links and remembers the preference', async () => {
-  let view;
-  await act(async () => { view = render(<Community />); });
-  await screen.findByText('@developer');
-  fireEvent.click(screen.getByRole('button', { name: 'Recolher navegação' }));
-  expect(screen.getByRole('button', { name: 'Expandir navegação' })).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.getByRole('link', { name: 'Metas pessoais' })).toHaveAttribute('title', 'Metas pessoais');
-  view.unmount();
+test('account drawer starts closed, traps focus and closes with Escape', async () => {
   await act(async () => { render(<Community />); });
-  expect(screen.getByRole('button', { name: 'Expandir navegação' })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Expandir navegação' }));
-  expect(localStorage.getItem('ql-navigation-collapsed')).toBe('false');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  const trigger = screen.getByRole('button', { name: 'Abrir menu da conta' });
+  trigger.focus(); fireEvent.click(trigger);
+  expect(screen.getByRole('dialog', { name: 'Sua conta' })).toBeInTheDocument();
+  const close = screen.getByRole('button', { name: 'Fechar menu da conta' });
+  expect(close).toHaveFocus();
+  fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+  expect(screen.getByRole('button', { name: 'Sair da conta' })).toHaveFocus();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(trigger).toHaveFocus();
 });
 
 test('career leaders use their own total and footer information keeps the current view', async () => {
@@ -182,6 +186,48 @@ test('Progress Hub uses its new identity and distinct mission and personal goal 
   const missions = screen.getByRole('link', { name: 'Missões', exact: true });
   const goals = screen.getByRole('link', { name: 'Metas pessoais', exact: true });
   expect(missions.querySelector('svg').innerHTML).not.toBe(goals.querySelector('svg').innerHTML);
-  expect(screen.getByRole('heading', { name: 'Suas conquistas' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Suas conquistas' })).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Top 10 de carreira' })).toBeInTheDocument();
+});
+
+
+test('five primary links, profile shortcut and separate nested achievements view', async () => {
+  await act(async () => { render(<Community />); });
+  const { within } = require('@testing-library/react');
+  const navigation = screen.getByRole('navigation', { name: 'Navegação principal' });
+  expect(within(navigation).getAllByRole('link').map(a => a.textContent)).toEqual(['Tela inicial', 'Ranking', 'Missões', 'Progresso', 'Metas pessoais']);
+  expect(within(navigation).queryByRole('link', { name: 'Meu perfil' })).not.toBeInTheDocument();
+  expect(screen.getByRole('banner')).not.toContainElement(screen.getByRole('main'));
+  expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('contentinfo'));
+  fireEvent.click(screen.getByRole('link', { name: 'Progresso', exact: true }));
+  await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Conquistas', exact: true })); });
+  expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Seu ritmo de contribuição' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Progresso', exact: true })).toHaveAttribute('aria-current', 'page');
+});
+
+test('direct nested links and legacy season links retain parent navigation', async () => {
+  window.history.replaceState(null, '', '/community#progress/achievements');
+  await act(async () => { render(<Community />); });
+  expect(screen.getByRole('heading', { name: 'Minha coleção de conquistas' })).toBeInTheDocument();
+  await act(async () => { window.location.hash = 'seasons'; window.dispatchEvent(new HashChangeEvent('hashchange')); });
+  expect(await screen.findByText('#3 de 12')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Ranking', exact: true })).toHaveAttribute('aria-current', 'page');
+});
+
+test('account shows GitHub identity without an email field and settings remember banner preference', async () => {
+  const view = render(<Community />);
+  await screen.findByText('@developer');
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir menu da conta' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Conta', exact: true }));
+  expect(screen.getByText('GitHub conectado')).toBeInTheDocument();
+  expect(screen.queryByText(/e-mail|email/i)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir menu da conta' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Configurações', exact: true }));
+  const preference = screen.getByRole('checkbox', { name: /Banners automáticos/ });
+  expect(preference).toBeChecked(); fireEvent.click(preference);
+  expect(localStorage.getItem('ph-banner-autoplay')).toBe('false');
+  view.unmount();
+  await act(async () => { render(<Community />); });
+  expect(screen.getByRole('checkbox', { name: /Banners automáticos/ })).not.toBeChecked();
 });

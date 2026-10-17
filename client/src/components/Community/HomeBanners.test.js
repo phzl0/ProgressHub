@@ -1,0 +1,53 @@
+import React from 'react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import HomeBanners from './HomeBanners';
+beforeEach(() => {
+  jest.useFakeTimers();
+  window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+});
+afterEach(() => { cleanup(); jest.useRealTimers(); delete window.matchMedia; });
+test('three announcement banners rotate every three seconds, wrap and pause on hover or focus', () => {
+  render(<HomeBanners navigate={jest.fn()} />);
+  expect(screen.getByRole('heading', { name: 'Seu código abre novos caminhos.' })).toBeInTheDocument();
+  act(() => { jest.advanceTimersByTime(2999); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  act(() => { jest.advanceTimersByTime(1); });
+  expect(screen.getByText('Banner 2 de 3')).toBeInTheDocument();
+  act(() => { jest.advanceTimersByTime(3000); });
+  expect(screen.getByText('Banner 3 de 3')).toBeInTheDocument();
+  act(() => { jest.advanceTimersByTime(3000); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  const region = screen.getByRole('region', { name: 'Destaques da comunidade' });
+  fireEvent.mouseEnter(region);
+  act(() => { jest.advanceTimersByTime(6000); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  fireEvent.mouseLeave(region);
+  fireEvent.focus(screen.getByRole('link', { name: /Ver meu progresso/ }));
+  act(() => { jest.advanceTimersByTime(6000); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+});
+test('manual controls pause playback and links use the selected destination', () => {
+  const navigate = jest.fn();
+  render(<HomeBanners navigate={navigate} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Mostrar banner 3' }));
+  act(() => { jest.advanceTimersByTime(6000); });
+  expect(screen.getByText('Banner 3 de 3')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('link', { name: /Escolher uma meta/ }));
+  expect(navigate).toHaveBeenCalledWith('goals', expect.anything());
+  fireEvent.click(screen.getByRole('button', { name: 'Próximo banner' }));
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+});
+test('reduced motion and the saved preference prevent automatic rotation', () => {
+  render(<HomeBanners navigate={jest.fn()} autoplay={false} />);
+  act(() => { jest.advanceTimersByTime(9000); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Iniciar banners automáticos' })).toBeDisabled();
+  cleanup();
+  window.matchMedia = jest.fn(() => ({ matches: true, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+  render(<HomeBanners navigate={jest.fn()} />);
+  act(() => { jest.advanceTimersByTime(9000); });
+  expect(screen.getByText('Banner 1 de 3')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Próximo banner' }));
+  expect(screen.getByText('Banner 2 de 3')).toBeInTheDocument();
+});
