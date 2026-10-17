@@ -289,3 +289,11 @@ A aba Comunidade (`#community`) abre o Chat geral para contas GitHub autenticada
 Persistência nova: `communityMessages`, índice único `requestKey`. O banco e o Docker existentes são reaproveitados; não são necessárias variáveis de ambiente novas. Testes de serviço cobrem validação, concorrência, repetição, exclusão, paginação e ausência de XP; testes HTTP cobrem sessão e origem.
 
 Identidade: troféu alado vetorial simples na marca e no favicon, com verde de destaque. Base geral preta/grafite, superfícies neutras e acentos variados. A introdução de Meu perfil foi removida. Os textos de apoio e roteiro de Metas pessoais ficam sem card ou borda; controles e projeto ativo mantêm agrupamento. As missões foram compactadas novamente, preservando progresso, prazos e recebimento.
+
+### Comunidade social
+
+A Comunidade abre em Publicações: texto (até 2.000 caracteres), foto opcional convertida no navegador para WebP (até 300 KB), pedidos de ajuda, curtidas por conta e comentários de até 600 caracteres. Compartilhar usa o compartilhamento do dispositivo ou copia um link interno; o destinatário precisa entrar com GitHub. Há paginação de publicações e os dez comentários mais recentes de cada publicação. Curtir, publicar e comentar não alteram XP. Exclusão de publicação é restrita ao autor; comentários podem ser apagados por seus autores.
+
+Chat geral, Chat de ajuda e Grupos e contatos são caminhos separados. O chat continua atualizando a cada cinco segundos quando visível, sem moldura externa, com intervalo entre envios. Mensagens gerais antigas continuam disponíveis. Grupos são privados para membros; convites precisam ser aceitos. Apenas o criador convida contatos previamente confirmados, até 50 membros/convites e dez grupos por criador. Nesta primeira versão o criador permanece no próprio grupo. Contatos são adicionados pelo login GitHub de usuários que já acessaram a plataforma. Não há indicação inventada de presença online.
+
+O menu do avatar abre com mouse ou clique e oferece atalhos e contatos. Dados sociais reutilizam MongoDB e sessão existentes; índices são inicializados pelo servidor. Sem novos serviços, variáveis de ambiente ou dependências. Antes de uma abertura pública ampla, a moderação e as denúncias ainda precisam ser desenvolvidas.

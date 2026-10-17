@@ -47,6 +47,17 @@ router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (re
   try { res.set('Cache-Control', 'no-store').json(await chat.deleteMessage(await connectToDatabase(), req.user, req.body.id)); }
   catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
 });
+const social = require('../../services/community/social');
+for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction]]) {
+  router.get(`/${path}`, authenticateToken, githubOnly, async (req, res) => {
+    try { res.set('Cache-Control', 'no-store').json(await read(await connectToDatabase(), req.user, req.query)); }
+    catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar. Tente novamente.' }); }
+  });
+  router.post(`/${path}`, authenticateToken, githubOnly, sameOrigin, async (req, res) => {
+    try { res.set('Cache-Control', 'no-store').json(await write(await connectToDatabase(), req.user, req.body)); }
+    catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível salvar. Tente novamente.' }); }
+  });
+}
 router.get('/auth', async (req, res) => {
   try {
     if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) throw new Error('Missing configuration');

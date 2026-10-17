@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongodb');
 const { appearanceFor } = require('./cosmetics');
+const { channelFor, channelFilter } = require('./social');
 const PAGE = 30;
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 function validateMessage(input) {
@@ -27,21 +28,24 @@ async function present(db, rows, viewer) {
   });
 }
 async function readChat(db, user, query = {}) {
+  const channel = await channelFor(db, user, query.channel);
+  const scope = channelFilter(channel);
   const before = parseIds(query.before);
   if (before.length > 1) throw fail('Página inválida.');
   const known = parseIds(query.known);
   const messages = db.collection('communityMessages');
-  const page = await messages.find(before.length ? { _id: { $lt: before[0] } } : {}).sort({ _id: -1 }).limit(PAGE + 1).toArray();
+  const page = await messages.find({ ...scope, ...(before.length ? { _id: { $lt: before[0] } } : {}) }).sort({ _id: -1 }).limit(PAGE + 1).toArray();
   const history = page.slice(0, PAGE);
   // Refresh loaded messages too, so another user's deletion removes its text from the open chat.
-  const loaded = !before.length && known.length ? await messages.find({ _id: { $in: known } }).toArray() : [];
+  const loaded = !before.length && known.length ? await messages.find({ ...scope, _id: { $in: known } }).toArray() : [];
   const rows = [...new Map([...loaded, ...history].map(row => [row._id.toHexString(), row])).values()].sort((a, b) => a._id.toHexString().localeCompare(b._id.toHexString()));
   return { messages: await present(db, rows, user), hasOlder: page.length > PAGE, oldest: history.at(-1)?._id.toHexString() || null };
 }
 async function sendMessage(db, user, input, now = new Date()) {
+  const channel = await channelFor(db, user, input.channel);
   const { text, requestId } = validateMessage(input);
   const messages = db.collection('communityMessages');
-  const requestKey = `${user.githubId}:${requestId}`;
+  const requestKey = `${user.githubId}:${channel}:${requestId}`;
   const previous = await messages.findOne({ requestKey });
   if (previous) return (await present(db, [previous], user))[0];
   const lock = await db.collection('users').updateOne({ _id: user._id, $or: [{ chatLastSentAt: { $exists: false } }, { chatLastSentAt: { $lte: new Date(now.getTime() - 5000) } }] }, { $set: { chatLastSentAt: now } });
@@ -50,7 +54,7 @@ async function sendMessage(db, user, input, now = new Date()) {
     if (repeated) return (await present(db, [repeated], user))[0];
     throw fail('Aguarde 5 segundos antes de enviar outra mensagem.', 429);
   }
-  const row = { _id: new ObjectId(), requestKey, githubId: user.githubId, text, createdAt: now };
+  const row = { _id: new ObjectId(), requestKey, githubId: user.githubId, channel, text, createdAt: now };
   try { await messages.insertOne(row); }
   catch (error) { if (error.code !== 11000) throw error; return (await present(db, [await messages.findOne({ requestKey })], user))[0]; }
   return (await present(db, [row], user))[0];

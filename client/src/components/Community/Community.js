@@ -18,7 +18,7 @@ import Achievements from './Achievements';
 import CommunityHeader from './CommunityHeader';
 import HomeBanners from './HomeBanners';
 import RankingPodium from './RankingPodium';
-import CommunityChat from './CommunityChat';
+import CommunitySocial from './CommunitySocial';
 import AccountPages from './AccountPages';
 import { viewFromHash, PAGE_LABELS, parentView } from './navigation';
 import CommunityFooter from './CommunityFooter';
@@ -186,12 +186,12 @@ export default function Community() {
         {tab === 'ranking' && <>
           <div className="ql-ranking-kind" role="group" aria-label="Tipo de ranking"><button aria-pressed={rankKind === 'global'} onClick={() => { setRankKind('global'); window.location.hash = 'ranking'; }}>Global</button><button aria-pressed={rankKind === 'community'} onClick={() => { setRankKind('community'); window.location.hash = 'ranking/community'; }}>Comunitário</button></div>
           {rankKind === 'community' ? <CommunityRanking connected={me?.connected} revision={stats?.syncedAt} /> : <>
-          <section className="ql-rank-intro"><div><span className="ql-tag ql-green-tag"><Trophy size={13} /> TEMPORADA {ranking.period}</span><h2>Quem constrói, sobe.</h2><p className="ql-muted">Top 100 da comunidade. Clique em um desenvolvedor para conhecer seu perfil público.</p></div>{me?.connected && <div className="ql-ranking-position"><small>SUA POSIÇÃO</small><strong>{position ? `#${position}` : '—'}</strong><button className="ql-button ql-button-secondary" disabled={busy || loading} onClick={participate}>{me.optedIn ? 'Sair do ranking' : 'Participar do ranking'}<ArrowUpRight size={15} /></button></div>}</section>
+          <section className="ql-rank-intro"><div><span className="ql-tag ql-green-tag"><Trophy size={13} /> TEMPORADA {ranking.period}</span></div>{me?.connected && <div className="ql-ranking-position"><small>SUA POSIÇÃO</small><strong>{position ? `#${position}` : '—'}</strong><button className="ql-button ql-button-secondary" disabled={busy || loading} onClick={participate}>{me.optedIn ? 'Sair do ranking' : 'Participar do ranking'}<ArrowUpRight size={15} /></button></div>}</section>
           <RankingPodium users={ranking.users} />
           <section className="ql-panel"><div className="ql-panel-head"><h2>Classificação global</h2><span className="ql-tag">TOP 100 · {ranking.period}</span></div>{!ranking.users.length ? <div className="ql-empty"><Trophy size={36} /><h3>A arena está aberta.</h3><p>Sincronize suas contribuições e participe para iniciar o ranking.</p></div> : <div className="ql-table-scroll"><table className="ql-ranking-table"><caption className="ql-sr-only">Ranking global mensal por XP</caption><thead><tr><th scope="col">Posição</th><th scope="col">Desenvolvedor</th><th scope="col">Nível</th><th scope="col">XP da temporada</th></tr></thead><tbody>{ranking.users.map((user, index) => <tr key={user.githubId} className={user.githubLogin === me?.login ? 'ql-my-row' : ''}><th scope="row">#{String(index + 1).padStart(2, '0')}</th><td><div className="ql-table-profile"><CosmeticAvatar src={user.picture} frame={user.appearance?.frame} size={42} /><div><a href={`#profile/${user.githubId}`}>@{user.githubLogin}{user.githubLogin === me?.login && <span className="ql-you">VOCÊ</span>}</a><small>{user.career?.title || user.githubStats.title}</small><CosmeticTitle title={user.appearance?.title} /></div></div></td><td><span className="ql-level-chip">LVL {user.career?.level || user.githubStats.level}</span></td><td className="ql-green">{number(user.githubStats.xp)} XP</td></tr>)}</tbody></table></div>}<p className="ql-caption">Participar torna seu resumo de progresso e conquistas públicos. Ao sair, seu perfil fica indisponível para novas consultas. Empates seguem o identificador estável da conta. A posição considera todos os participantes, mesmo fora do Top 100.</p></section>
           </>}
         </>}
-        {tab === 'community' && <CommunityChat connected={me?.connected} />}
+        {tab === 'community' && <CommunitySocial me={me} />}
         {tab === 'goals' && <PersonalGoals connected={me?.connected} revision={stats?.syncedAt} />}
         {tab === 'missions' && <Missions connected={me?.connected} revision={stats?.syncedAt} onClaimed={async () => { setMe(await request('/me')); await loadRanking(); }} />}
         {tab === 'me' && <MyProfile me={me} onSaved={(profile, appearance) => setMe(current => ({ ...current, profile, ...(appearance ? { appearance } : {}) }))} onAppearanceSaved={appearance => { setMe(current => ({ ...current, appearance })); setRanking(current => ({ ...current, users: current.users.map(user => user.githubId === me.githubId ? { ...user, appearance } : user) })); }} />}

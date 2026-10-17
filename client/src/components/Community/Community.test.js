@@ -122,6 +122,7 @@ test('missions show five numbered cards per frequency without invented names', a
 test('my profile groups career, achievements and links to mission progression', async () => {
   await act(async () => { render(<Community />); });
   await screen.findByText('@developer');
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Perfil e contatos' })); });
   await act(async () => { fireEvent.click(screen.getByRole('link', { name: 'Meu perfil', exact: true })); });
   expect(screen.queryByRole('heading', { name: 'Minha coleção de conquistas' })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Ver conquistas/ })).toHaveAttribute('href', '#progress/achievements');
