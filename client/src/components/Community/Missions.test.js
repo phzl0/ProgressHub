@@ -34,3 +34,18 @@ test('failed claims keep the objective available and show the server message', a
   expect(await screen.findByRole('alert')).toHaveTextContent('Sincronização em andamento.');
   await waitFor(() => expect(screen.getByRole('button', { name: 'Receber bônus da missão 2' })).toBeEnabled());
 });
+test('received missions stay in place and old pending bonuses are kept in a separate disclosure', async () => {
+  const current = mission(1, true, true);
+  const pending = { ...mission(1, true), periodKey: '2026-10-16', endsAt: '2026-10-17T00:00:00Z', previousPeriod: true };
+  global.fetch = jest.fn(async url => ({ ok: true, json: async () => url.endsWith('/challenge')
+    ? { current: 0, target: 100, progress: 0, participants: 0, mine: 0, optedIn: false, endsAt: '2026-10-19T00:00:00Z' }
+    : { missions: [current], pendingRewards: [pending] } }));
+  render(<Missions connected />);
+  expect(await screen.findByRole('button', { name: 'Recebido bônus da missão 1' })).toBeDisabled();
+  expect(screen.getByText('Bloqueada até a renovação')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Receber bônus pendente/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText('Bônus pendentes'));
+  expect(screen.getByRole('button', { name: 'Receber bônus pendente da missão 1 Diárias' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Recebido bônus da missão 1' })).toBeDisabled();
+  expect(screen.queryByText(/Período anterior/)).not.toBeInTheDocument();
+});

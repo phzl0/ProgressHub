@@ -1,3 +1,4 @@
+import { readApiResponse } from './apiResponse';
 import React, { useEffect, useState } from 'react';
 import { History, Trophy } from 'lucide-react';
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
@@ -13,7 +14,7 @@ export default function SeasonHistory({ connected, career }) {
       if (document.visibilityState === 'hidden') return;
       try {
         const response = await fetch(`${API}/seasons`, { credentials: 'include', signal: controller.signal });
-        const data = await response.json();
+        const data = await readApiResponse(response);
         if (!response.ok) throw new Error(data.error || 'Não foi possível carregar as temporadas.');
         if (mounted) { setSeasons(data.seasons); setError(''); }
       } catch (err) { if (mounted && err.name !== 'AbortError') setError(err.message); }

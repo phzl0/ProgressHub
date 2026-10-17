@@ -1,3 +1,4 @@
+const { repositoryURL } = require('./repository-url');
 const MAX_BANNER_BYTES = 300 * 1024;
 function invalid(message) { const error = new Error(message); error.status = 400; throw error; }
 function validateProfile(input) {
@@ -24,16 +25,17 @@ function validateProfile(input) {
         typeof project.description !== 'string' || project.description.length > 180 ||
         !['star', 'fire', 'bolt', 'code', 'rocket', 'flag'].includes(project.icon) ||
         typeof project.url !== 'string' || project.url.length > 500) invalid('Confira nome, descrição, ícone e link do projeto.');
-    let url;
-    try { url = new URL(project.url); } catch (_) { invalid('Endereço de projeto inválido.'); }
-    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) invalid('Use um endereço HTTP ou HTTPS para o projeto.');
-    return { name: project.name.trim(), description: project.description.trim(), icon: project.icon, url: url.href };
+    return { name: project.name.trim(), description: project.description.trim(), icon: project.icon, url: repositoryURL(project.url) };
   });
   return { bio: bio.trim(), links: cleanLinks, banner, projects: cleanProjects };
 }
 function profileSettings(user) {
   // Explicit allowlist for persisted custom fields.
-  try { return validateProfile(user?.communityProfile || {}); }
+  try {
+    const stored = user?.communityProfile || {};
+    const projects = (Array.isArray(stored.projects) ? stored.projects : []).filter(project => { try { repositoryURL(project?.url); return true; } catch (_) { return false; } });
+    return validateProfile({ ...stored, projects });
+  }
   catch (_) { return { bio: '', links: [], banner: '', projects: [] }; }
 }
 module.exports = { validateProfile, profileSettings };

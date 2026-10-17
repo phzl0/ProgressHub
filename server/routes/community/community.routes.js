@@ -9,17 +9,20 @@ const { tokenKey, encryptToken, githubClient } = require('../../services/github/
 const { readMissions, claimMission } = require('../../services/missions/store');
 const { careerFor, syncSeason, seasonHistory } = require('../../services/github/league');
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
-const { readGoal, createGoal, weeklySummary, communityChallenge } = require('../../services/community/engagement');
+const { weeklySummary, communityChallenge } = require('../../services/community/engagement');
+const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
 const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
 const saveSession = (req) => new Promise((resolve, reject) => req.session.save((err) => err ? reject(err) : resolve()));
-const limiter = rateLimit({ windowMs: 60000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
-// Separate public browsing limit avoids consuming login/sync quota when opening profiles.
+const limitOptions = { windowMs: 60000, standardHeaders: 'draft-7', legacyHeaders: false,
+  message: { error: 'Muitas consultas em pouco tempo. Aguarde um minuto e tente novamente.' } };
+const writeLimiter = rateLimit({ ...limitOptions, limit: 30 });
+const authLimiter = rateLimit({ ...limitOptions, limit: 10 });
+const readLimiter = rateLimit({ ...limitOptions, limit: 120 });
 router.use('/profiles', require('./profiles.routes'));
-const engagementLimiter = rateLimit({ windowMs: 60000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false });
-router.use((req, res, next) => req.method === 'GET' && ['/goals', '/weekly-summary', '/challenge'].includes(req.path)
-  ? engagementLimiter(req, res, next) : limiter(req, res, next));
+router.use((req, res, next) => req.path.startsWith('/auth') ? authLimiter(req, res, next)
+  : req.method === 'GET' ? readLimiter(req, res, next) : writeLimiter(req, res, next));
 
 // Mutations are only accepted from the configured frontend (also prevents CSRF).
 function sameOrigin(req, res, next) {
@@ -128,13 +131,18 @@ router.post('/sync', authenticateToken, sameOrigin, async (req, res) => {
 });
 router.get('/goals', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar metas.' });
-  try { res.set('Cache-Control', 'no-store').json(await readGoal(await connectToDatabase(), req.user)); }
+  try { res.set('Cache-Control', 'no-store').json(await readProjectGoal(await connectToDatabase(), req.user)); }
   catch (_) { res.status(503).json({ error: 'Não foi possível carregar sua meta.' }); }
 });
 router.post('/goals', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para definir sua meta.' });
-  try { res.set('Cache-Control', 'no-store').json(await createGoal(await connectToDatabase(), req.user, req.body)); }
+  try { res.set('Cache-Control', 'no-store').json(await createProjectGoal(await connectToDatabase(), req.user, req.body)); }
   catch (error) { res.status([400, 409].includes(error.status) ? error.status : 503).json({ error: error.status ? error.message : 'Não foi possível salvar sua meta.' }); }
+});
+router.post('/goals/update', authenticateToken, sameOrigin, async (req, res) => {
+  if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para atualizar metas.' });
+  try { res.set('Cache-Control', 'no-store').json(await updateProjectGoal(await connectToDatabase(), req.user, req.body)); }
+  catch (error) { res.status([400, 409].includes(error.status) ? error.status : 503).json({ error: error.status ? error.message : 'Não foi possível salvar a etapa.' }); }
 });
 router.get('/weekly-summary', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para ver seu resumo.' });

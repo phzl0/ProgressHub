@@ -1,3 +1,4 @@
+import { readApiResponse } from './apiResponse';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Github, Trophy, RefreshCw, GitCommitHorizontal, GitPullRequest, Award, LayoutDashboard, ChartNoAxesCombined, ArrowUpRight, Clock3, ChevronRight, Zap, LogOut, ShieldCheck, History, Target, UserRound } from 'lucide-react';
 import ProgressChart from './ProgressChart';
@@ -16,7 +17,7 @@ async function request(path, body) {
     credentials: 'include',
     ...(body !== undefined ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
   });
-  const data = await response.json();
+  const data = await readApiResponse(response);
   if (!response.ok) {
     const error = new Error(data.error || 'Falha ao acessar a comunidade.');
     error.status = response.status;
@@ -62,7 +63,7 @@ export default function Community() {
       } catch (err) { if (mounted) setError(err.message); }
       try {
         const user = await request('/me');
-        if (mounted) setMe(user);
+        if (mounted) { setMe(user); setError(previous => previous.startsWith('Muitas consultas') ? '' : previous); }
         // Refresh while visible; no unattended server scheduling yet.
         if (!workerActive && user.connected && (!user.stats || Date.now() - new Date(user.stats.syncedAt).getTime() >= 600000)) {
           try {
@@ -80,7 +81,8 @@ export default function Community() {
     }
     load();
     const timer = window.setInterval(load, 600000);
-    const resume = () => { if (document.visibilityState === 'visible') load(); };
+    let lastResume = 0;
+    const resume = () => { if (document.visibilityState === 'visible' && Date.now() - lastResume > 10000) { lastResume = Date.now(); load(); } };
     document.addEventListener('visibilitychange', resume);
     return () => {
       mounted = false;
@@ -148,7 +150,7 @@ export default function Community() {
     { name: 'Nível 5', description: 'Um novo patamar desbloqueado.' }
   ];
   const activeDays = stats?.commitDays?.length || 0;
-  const subtitle = tab === 'goals' ? 'Uma meta por semana. Seu ritmo, sua evolução.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
+  const subtitle = tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   return <div className="ql-game">
     <aside className="ql-sidebar">
       <a href="/community" className="ql-brand"><span className="ql-brand-mark"><Github size={23} /></span><span>QUEST<span className="ql-green">LOG</span><small>DEVELOPER COMMUNITY</small></span></a>
@@ -189,7 +191,7 @@ export default function Community() {
         {tab === 'seasons' && <SeasonHistory connected={me?.connected} career={career} />}
         {me?.backgroundSyncError && <p className="ql-caption">{me.backgroundSyncError}</p>}
         {tab === 'profile' && profileId && <PublicProfile key={profileId} githubId={profileId} />}
-        <details className="ql-rules"><summary><ShieldCheck size={16} /> Regras da temporada e atualização</summary><p>10 XP por commit público reconhecido pelo GitHub, até 20 por dia UTC. 50 XP por PR público mesclado, mais 25 XP se outro usuário humano fizer o merge, até 100 PRs por mês (selecionados pela data de criação mais antiga). Tarefas manuais não pontuam. Missões concedem bônus extras, uma vez por período, tanto para carreira quanto para o ranking da temporada em que o bônus for confirmado. Quantidade não mede qualidade técnica.</p><p>Apenas o XP e a classificação da temporada reiniciam mensalmente. XP de carreira, nível, títulos e conquistas continuam acumulados. Atualização automática a cada 10 minutos enquanto a página estiver visível, com verificação ao voltar à aba. A atualização manual tem intervalo mínimo de 30 segundos. Com o Docker e o computador ligados, o serviço automático continua com o navegador fechado.</p><p>O GitHub pode demorar para reconhecer contribuições. Importação limitada a menos de 100 repositórios por mês. Alterações nas contribuições reconhecidas podem reduzir a pontuação.</p></details>
+        <details className="ql-rules"><summary><ShieldCheck size={16} /> Regras da temporada e atualização</summary><p>10 XP por commit público reconhecido pelo GitHub, até 20 por dia UTC. 50 XP por PR público mesclado, mais 25 XP se outro usuário humano fizer o merge, até 100 PRs por mês (selecionados pela data de criação mais antiga). Tarefas manuais não pontuam. Missões concedem bônus extras, uma vez por período, tanto para carreira quanto para o ranking da temporada em que o bônus for recebido. Quantidade não mede qualidade técnica.</p><p>Apenas o XP e a classificação da temporada reiniciam mensalmente. XP de carreira, nível, títulos e conquistas continuam acumulados. Atualização automática a cada 10 minutos enquanto a página estiver visível, com verificação ao voltar à aba. A atualização manual tem intervalo mínimo de 30 segundos. Com o Docker e o computador ligados, o serviço automático continua com o navegador fechado.</p><p>O GitHub pode demorar para reconhecer contribuições. Importação limitada a menos de 100 repositórios por mês. Alterações nas contribuições reconhecidas podem reduzir a pontuação.</p></details>
         <footer className="ql-footer"><span>QUESTLOG COMMUNITY <span className="ql-green">/</span> EVOLUA CONSTRUINDO.</span><span>Temporada mensal · Contribuições reais</span></footer>
       </main>
     </div>

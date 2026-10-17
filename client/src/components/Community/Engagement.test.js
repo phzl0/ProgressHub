@@ -5,16 +5,37 @@ import PersonalGoals from './PersonalGoals';
 import WeeklySummary from './WeeklySummary';
 import CommunityChallenge from './CommunityChallenge';
 import ProjectShowcase from './ProjectShowcase';
-const goalData = { options: [{ id: 'days', label: 'Programar em dias diferentes', unit: 'dias com commits', max: 7, suggested: 3 }], goal: null, endsAt: '2026-10-19T00:00:00Z' };
+const goalData = { templates: [{ id: 'commerce', title: 'E-commerce', description: 'Construa uma loja', steps: ['Planejar', 'Entregar'] }], goal: null, history: [] };
 afterEach(() => { delete global.fetch; });
-test('choosing a personal goal persists it and replaces the form with verified progress', async () => {
-  global.fetch = jest.fn(async (url, options) => ({ ok: true, json: async () => options?.method === 'POST' ? { ...goalData, goal: { metric: 'days', label: 'Programar em dias diferentes', target: 3, current: 0, progress: 0, unit: 'dias com commits', createdAt: '2026-10-16T12:00:00Z', endsAt: goalData.endsAt } } : goalData }));
+test('suggested project persists its roadmap and marks stages as self-reported progress', async () => {
+  let goal = null;
+  global.fetch = jest.fn(async (url, options) => {
+    if (options?.method === 'POST') {
+      if (url.endsWith('/update')) goal = { ...goal, steps: [{ id: '1', label: 'Planejar', done: true }, { id: '2', label: 'Entregar', done: false }], current: 1, progress: 50, version: 2 };
+      else goal = { id: 'goal', title: 'E-commerce', description: 'Construa uma loja', steps: [{ id: '1', label: 'Planejar', done: false }, { id: '2', label: 'Entregar', done: false }], current: 0, target: 2, progress: 0, status: 'active', version: 1 };
+    }
+    return { ok: true, json: async () => ({ ...goalData, goal }) };
+  });
   render(<PersonalGoals connected />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Assumir minha meta' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Começar projeto' }));
   expect(await screen.findByRole('progressbar', { name: 'Progresso da meta pessoal' })).toHaveAttribute('aria-valuenow', '0');
-  expect(screen.queryByRole('button', { name: 'Assumir minha meta' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Planejar' }));
+  await screen.findByText('1/2 etapas');
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50');
+  const post = global.fetch.mock.calls.find(([url, options]) => url.endsWith('/update') && options.method === 'POST');
+  expect(JSON.parse(post[1].body)).toEqual({ goalId: 'goal', version: 1, action: 'step', stepId: '1', done: true });
+});
+test('custom goal allows a title, free deadline and user-defined stages', async () => {
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => goalData }));
+  render(<PersonalGoals connected />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Meta própria' }));
+  fireEvent.change(screen.getByLabelText('Título da meta'), { target: { value: 'Sistema de estoque' } });
+  fireEvent.change(screen.getByLabelText(/Etapas da meta/), { target: { value: 'Modelar produtos\nTestar saldo' } });
+  fireEvent.change(screen.getByLabelText(/Prazo desejado/), { target: { value: '2026-12-31' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Começar projeto' }));
+  await screen.findByRole('button', { name: 'Começar projeto' });
   const post = global.fetch.mock.calls.find(([, options]) => options.method === 'POST');
-  expect(JSON.parse(post[1].body)).toEqual({ metric: 'days', target: 3 });
+  expect(JSON.parse(post[1].body)).toMatchObject({ mode: 'custom', title: 'Sistema de estoque', steps: ['Modelar produtos', 'Testar saldo'], dueDate: '2026-12-31' });
 });
 test('weekly summary explains action XP, received bonuses and incomplete coverage', async () => {
   global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ startsAt: '2026-10-12T00:00:00Z', xp: 475, commitXP: 50, prXP: 125, bonusXP: 300, commits: 5, mergedPRs: 2, activeDays: 2, reviews: 1, receivedMissions: 1, partial: true }) }));

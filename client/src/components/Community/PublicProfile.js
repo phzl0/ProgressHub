@@ -1,3 +1,4 @@
+import { readApiResponse } from './apiResponse';
 import React, { useEffect, useState } from 'react';
 import { Github, ArrowUpRight, ArrowLeft, Trophy, Award, ShieldCheck, Zap, Target } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export default function PublicProfile({ githubId }) {
       inFlight = true;
       try {
         const response = await fetch(`${API}/profiles/${encodeURIComponent(githubId)}`, { signal: controller.signal });
-        const data = await response.json();
+        const data = await readApiResponse(response);
         if (!response.ok) throw new Error(data.error || 'Perfil indisponível.');
         if (mounted) { setProfile(data); setError(''); }
       } catch (err) {
@@ -28,7 +29,8 @@ export default function PublicProfile({ githubId }) {
     }
     load();
     const timer = window.setInterval(load, 600000);
-    const resume = () => { if (document.visibilityState === 'visible') load(); };
+    let lastResume = 0;
+    const resume = () => { if (document.visibilityState === 'visible' && Date.now() - lastResume > 10000) { lastResume = Date.now(); load(); } };
     document.addEventListener('visibilitychange', resume);
     return () => { mounted = false; controller.abort(); window.clearInterval(timer); document.removeEventListener('visibilitychange', resume); };
   }, [githubId]);

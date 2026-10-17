@@ -34,3 +34,22 @@ test('MongoDB: mission rewards credit once and add to normal action XP', { skip:
     assert.equal(data.missions.find((mission) => mission.id === 'daily-1').awarded, true);
   } finally { await db.dropDatabase(); await client.close(); }
 });
+
+test('MongoDB: previous-period bonuses are separate and disappear from pending after claiming', { skip: !process.env.MONGODB_TEST_URI }, async () => {
+  const client = await MongoClient.connect(process.env.MONGODB_TEST_URI);
+  const db = client.db(`questlog_pending_test_${new ObjectId().toHexString()}`);
+  const now = new Date('2026-10-17T12:00:00Z');
+  const user = { _id: new ObjectId(), githubId: '44', missionsStartedAt: new Date('2026-10-16T00:00:00Z') };
+  try {
+    await db.collection('users').insertOne(user);
+    await db.collection('missionEvents').insertOne({ githubId: '44', kind: 'commit', id: 'sha', at: '2026-10-16T12:00:00Z' });
+    let data = await readMissions(db, user, now);
+    assert.equal(data.missions.length, 15); assert.equal(data.missions.filter(m => m.id === 'daily-1').length, 1);
+    assert.equal(data.pendingRewards.filter(m => m.id === 'daily-1').length, 1);
+    const pending = data.pendingRewards.find(m => m.id === 'daily-1');
+    await claimMission(db, user, pending.id, pending.periodKey, now);
+    data = await readMissions(db, user, now);
+    assert.equal(data.pendingRewards.length, 0); assert.equal(data.missions.find(m => m.id === 'daily-1').awarded, false);
+    assert.equal(data.recentRewards.length, 1);
+  } finally { await db.dropDatabase(); await client.close(); }
+});

@@ -24,7 +24,8 @@ async function readMissions(db, user, now = new Date()) {
       requirements: reward?.requirements || mission.requirements, progress: reward ? 100 : mission.progress, completedAt: reward?.completedAt || mission.completedAt,
       encouragement: reward ? `Bônus de ${mission.xp.toLocaleString('pt-BR')} XP recebido. Continue construindo!` : mission.encouragement };
   });
-  return { missions, startedAt: user.missionsStartedAt, syncedAt: user.missionsSyncedAt || null,
+  return { missions: missions.filter(mission => !mission.previousPeriod),
+    pendingRewards: missions.filter(mission => mission.previousPeriod && !mission.awarded), startedAt: user.missionsStartedAt, syncedAt: user.missionsSyncedAt || null,
     partial: Boolean(user.missionsPartial), error: user.missionsError || null,
     recentRewards: recent.map(({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod }) => ({ missionId, kind, number, xp, periodKey, awardedAt, creditedPeriod })) };
 }

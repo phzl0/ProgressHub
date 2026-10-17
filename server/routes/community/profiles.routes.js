@@ -5,7 +5,7 @@ const { periodFor } = require('../../services/github/scoring');
 const { careerFor } = require('../../services/github/league');
 const { publicProfile } = require('../../services/github/public-profile');
 const router = express.Router();
-router.use(rateLimit({ windowMs: 60000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false }));
+router.use(rateLimit({ windowMs: 60000, limit: 60, message: { error: 'Muitas consultas de perfis. Aguarde um minuto e tente novamente.' }, standardHeaders: 'draft-7', legacyHeaders: false }));
 router.get('/:githubId', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   if (!/^\d{1,20}$/.test(req.params.githubId)) return res.status(404).json({ error: 'Perfil indisponível.' });
