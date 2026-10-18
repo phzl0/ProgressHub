@@ -23,11 +23,11 @@ async function present(db, rows, viewer) {
   const ids = [...new Set(rows.map(row => row.githubId))];
   const people = await db.collection('users').find({ githubId: { $in: ids } }, { projection: { _id: 0, githubId: 1, githubLogin: 1, picture: 1, communityOptIn: 1, communityAppearance: 1 } }).toArray();
   const authors = new Map(people.map(person => [person.githubId, person]));
-  const reactions = await reactionSummaries(db,'chat',rows.filter(r=>!r.deletedAt).map(r=>r._id.toHexString()),viewer);
+  const reactions = await reactionSummaries(db,'chat',rows.filter(r=>!r.deletedAt&&!r.moderationHidden).map(r=>r._id.toHexString()),viewer);
   return rows.map(row => {
     const author = authors.get(row.githubId);
-    return { ...(reactions.get(row._id.toHexString()) || {likes:0,liked:false,reaction:null,reactions:{}}), id: row._id.toHexString(), text: row.deletedAt ? '' : row.text, deleted: Boolean(row.deletedAt), createdAt: row.createdAt,
-      attachment: !row.deletedAt ? row.attachment || null : null, own: row.githubId === viewer.githubId, author: { githubId: row.githubId, login: author?.githubLogin || 'Participante', picture: author?.picture || '',
+    return { ...(reactions.get(row._id.toHexString()) || {likes:0,liked:false,reaction:null,reactions:{}}), id: row._id.toHexString(), text: row.deletedAt||row.moderationHidden ? '' : row.text, deleted: Boolean(row.deletedAt||row.moderationHidden), createdAt: row.createdAt,
+      attachment: !row.deletedAt&&!row.moderationHidden ? row.attachment || null : null, own: row.githubId === viewer.githubId, author: { githubId: row.githubId, login: author?.githubLogin || 'Participante', picture: author?.picture || '',
         profileId: author?.communityOptIn ? author.githubId : null, appearance: appearanceFor(author || {}) } };
   });
 }

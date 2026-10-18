@@ -311,7 +311,7 @@ Pedidos de ajuda usam título de 80 e descrição de 2.000 caracteres. Criar o p
 
 O ícone ao lado de atualizar consulta notificações ao entrar, a cada minuto enquanto a página está visível e após ações sociais. Mostra até 50 avisos recentes, total de não lidas e marcação de leitura do conjunto consultado. Convites de contato/grupo, aceitação de contato, entrada de voluntários e conclusão de ajuda geram avisos individuais. Mensagens não aparecem para outras contas. Avisos gerais são visíveis aos usuários conectados.
 
-Para habilitar o envio de avisos gerais, configure opcionalmente `COMMUNITY_ADMIN_GITHUB_IDS=ID_NUMERICO_DO_GITHUB` em `.env.test` e reconstrua/recrie o servidor pelo Compose. IDs adicionais podem ser separados por vírgula. O ID aparece nas informações da conta; não use o login textual. Contas com `communityRole: "admin"` ou `"moderator"` atribuído diretamente no banco por um administrador também têm essa permissão. Nenhuma API permite promover a própria conta. O formulário de envio aparece dentro da caixa de correio apenas para contas autorizadas. As demais funcionalidades não precisam de novas variáveis.
+Para habilitar o envio de avisos gerais, configure opcionalmente `COMMUNITY_ADMIN_GITHUB_IDS=ID_NUMERICO_DO_GITHUB` em `.env.test` e reconstrua/recrie o servidor pelo Compose. IDs adicionais podem ser separados por vírgula. O ID aparece nas informações da conta; não use o login textual. Contas com `communityRole: "admin"` ou `"moderator"` atribuído diretamente no banco por um administrador também têm essa permissão. Nenhuma API permite promover a própria conta. A caixa de correio oferece um atalho para o painel administrativo apenas às contas autorizadas. O envio de avisos exige confirmação e justificativa, com registro no histórico. As demais funcionalidades não precisam de novas variáveis.
 
 ### Arquivos em grupos
 
@@ -355,8 +355,30 @@ Esta etapa não altera hospedagem, permissões administrativas ou moderação. A
 
 ### Segurança da comunidade
 
-Configurações inclui uma central pessoal de bloqueios, grupos silenciados e denúncias enviadas. Publicações, comentários, mensagens, pedidos de ajuda e perfis têm opções de denúncia/bloqueio. O servidor valida autoria, existência e acesso ao conteúdo, inclusive a participação no grupo para mensagens privadas. Denúncias guardam um registro privado do conteúdo, motivo e explicação opcional (1.000 caracteres, até 8 linhas), com envio idempotente e histórico paginado de 20 registros. A pessoa denunciada não recebe a identidade do denunciante. Nesta etapa o status é **Recebida**; não há punição automática nem painel administrativo de análise.
+Configurações inclui uma central pessoal de bloqueios, grupos silenciados e denúncias enviadas. Publicações, comentários, mensagens, pedidos de ajuda e perfis têm opções de denúncia/bloqueio. O servidor valida autoria, existência e acesso ao conteúdo, inclusive a participação no grupo para mensagens privadas. Denúncias guardam um registro privado do conteúdo, motivo e explicação opcional (1.000 caracteres, até 8 linhas), com envio idempotente e histórico paginado de 20 registros. A pessoa denunciada não recebe a identidade do denunciante. O status começa como **Recebida** e pode ser alterado pela equipe para **Em análise**, **Resolvida** ou **Descartada**. Não há punição automática.
 
 O bloqueio é uma preferência pessoal: oculta conteúdo do autor, impede convites entre as duas contas e cancela convites pendentes. Grupos compartilhados, ranking e XP continuam intactos. Contatos aceitos ficam ocultos, sem exclusão, e reaparecem ao desbloquear. Até 500 bloqueios por conta. O silenciamento esconde notificações existentes do grupo e impede novas notificações individuais dele; não remove membros, mensagens nem avisos gerais do sistema. Desbloquear e reativar notificações estão disponíveis na central e nos controles correspondentes.
 
 Dados: `communityBlocks`, `communityGroupMutes` e `communityReports`, com índices por proprietário e chaves únicas para impedir duplicações. Leituras e alterações usam a sessão GitHub e as mesmas verificações de origem das demais ações da comunidade. O cliente não escolhe denunciante, autor denunciado ou status. Anexos de autores bloqueados também são protegidos na rota de download.
+
+
+### Painel administrativo
+
+Acesse `http://localhost:3000/#admin` ou o item **Administração** no menu da conta. A interface é separada da navegação da comunidade e o servidor verifica a permissão em cada leitura e alteração. Sem permissão, a rota retorna 403 mesmo que o usuário abra a URL ou tente chamar a API diretamente.
+
+**Ativar o primeiro administrador:** copie seu **Identificador GitHub** na tela Conta e adicione em `.env.test`:
+
+```dotenv
+COMMUNITY_ADMIN_GITHUB_IDS=SEU_ID_NUMERICO
+```
+
+Opcionalmente, configure `COMMUNITY_MODERATOR_GITHUB_IDS=ID_NUMERICO_DO_MODERADOR`. Vários IDs são separados por vírgula. Recrie o servidor com `sudo docker compose --env-file .env.test up -d --build`. Nenhuma conta é promovida automaticamente; os papéis também podem ser atribuídos por um operador diretamente no banco (`communityRole`), nunca pelo frontend ou por uma API de autoatribuição. Para revogar, remova o ID da configuração e o papel eventualmente existente no banco. Contas suspensas não podem usar o painel.
+
+Funcionalidades:
+- Denúncias paginadas por estado, com explicação, registro do conteúdo no momento da denúncia e conteúdo atual. A identidade do denunciante permanece oculta, inclusive na apresentação aos moderadores. A equipe pode analisar o texto denunciado de uma conversa privada sem ganhar acesso geral ao grupo nem aos arquivos anexados.
+- Ocultar/restaurar publicações, comentários, mensagens e pedidos de ajuda. Textos não são apagados pela moderação; a restauração não recupera conteúdo excluído pelo próprio autor. Mensagens ocultadas ficam como removidas, inclusive nas consultas de mensagens já carregadas. Anexos de mensagens ocultas não podem ser baixados. Pedidos ocultos e seus grupos deixam de estar disponíveis até restauração.
+- Buscar usuários pelo login GitHub, advertir e suspender por 1, 3, 7 ou 30 dias; reativação antecipada e expiração automática. Não se aplicam advertências/suspensões à própria conta ou às contas da equipe por este painel. A suspensão bloqueia alterações da comunidade, incluindo publicação, comentários, reações, uploads, perfil e resgates; mantém consulta, leitura de notificações e controles pessoais de segurança. Não altera XP, posições, participações nem histórico de carreira.
+- Avisos oficiais com prévia, confirmação e justificativa. São entregues na caixa de notificações da comunidade.
+- Histórico de ações com autor, papel, data, alvo, justificativa, estado de execução e estados resumidos anterior/posterior. Não existe endpoint para apagar ou editar o histórico. `communityAdminAudit` registra a operação antes da alteração; chaves estáveis tornam reenvios idempotentes. Uma operação pendente pode ser retomada repetindo a mesma tentativa. Controle de revisão impede sobrescrever silenciosamente uma decisão concorrente. Operações interrompidas permanecem visíveis como pendentes até serem retomadas; falhas por revisão aparecem como conflito.
+
+Os papéis administrador e moderador têm as mesmas ferramentas desta primeira versão; configuração de papéis continua restrita ao operador do servidor. Não há edição de XP/ranking. Endpoints `GET/POST /api/community/admin` exigem sessão GitHub; alterações exigem origem autorizada, justificativa e requestId. O painel não publica nem implanta a aplicação.

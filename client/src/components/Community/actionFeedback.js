@@ -8,6 +8,7 @@ export function showFeedback(message,type='success',options={}){
   notices=[...notices.filter(n=>n.id!==notice.id),notice].slice(-3);listeners.forEach(fn=>fn());return notice.id;
 }
 const messages={
+  'admin:hide':['Ocultando conteúdo…','Conteúdo ocultado.'], 'admin:restore':['Restaurando conteúdo…','Conteúdo restaurado.'], 'admin:warn':['Enviando advertência…','Advertência enviada.'], 'admin:suspend':['Suspendendo participação…','Participação suspensa.'], 'admin:unsuspend':['Reativando participação…','Participação reativada.'], 'admin:report-status':['Atualizando denúncia…','Denúncia atualizada.'], 'admin:announce':['Enviando aviso…','Aviso oficial enviado.'],
   'safety:report':['Enviando denúncia…','Denúncia recebida.'], 'safety:block':['Bloqueando usuário…','Usuário bloqueado.'], 'safety:unblock':['Desbloqueando usuário…','Usuário desbloqueado.'], 'safety:mute-group':['Silenciando grupo…','Notificações do grupo silenciadas.'], 'safety:unmute-group':['Reativando notificações…','Notificações do grupo reativadas.'],
   'social:contact-request':['Enviando convite…','Convite enviado.'], 'social:contact-accept':['Aceitando convite…','Contato adicionado.'], 'social:contact-remove':['Atualizando contato…','Contato atualizado.'],
   'social:group-create':['Criando grupo…','Grupo criado.'], 'social:group-update':['Salvando detalhes…','Detalhes do grupo salvos.'], 'social:group-invite':['Convidando…','Convite para o grupo enviado.'], 'social:group-accept':['Aceitando convite…','Você entrou no grupo.'], 'social:group-leave':['Atualizando grupo…','Participação atualizada.'],
@@ -19,6 +20,7 @@ const messages={
 export function domainsFor(path){
   const base=path.replace(/^\//,'').split('?')[0];
   if(['profile','cosmetics','participation','sync','missions/claim'].includes(base))return base==='missions/claim'||base==='sync'?['me','leaderboard','missions','achievements']:['me','leaderboard'];
+  if(base==='admin')return ['admin','safety','feed','help','chat','social','inbox'];
   if(base==='safety')return ['safety','feed','help','chat','social','inbox'];
   if(base==='social')return ['social','inbox'];if(base==='help')return ['help','social','inbox'];if(base==='feed')return ['feed'];if(base.startsWith('goals'))return ['goals'];if(base==='inbox')return ['inbox'];return [];
 }

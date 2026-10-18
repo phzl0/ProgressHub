@@ -14,7 +14,7 @@ async function people(db, ids) { return new Map((await db.collection('users').fi
 async function channelFor(db, user, value = 'general') {
   if (['general', 'help'].includes(value)) return value;
   if (typeof value !== 'string' || !value.startsWith('group:')) throw fail('Conversa indisponível.', 404);
-  if (!await db.collection('communityGroups').findOne({ _id: id(value.slice(6)), members: user.githubId })) throw fail('Você não participa deste grupo.', 403);
+  if (!await db.collection('communityGroups').findOne({ _id: id(value.slice(6)), moderationHidden: {$ne:true}, members: user.githubId })) throw fail('Você não participa deste grupo.', 403);
   return value;
 }
 function channelFilter(channel) { return channel === 'general' ? { $or: [{ channel: 'general' }, { channel: { $exists: false } }] } : { channel }; }
@@ -22,7 +22,7 @@ async function readSocial(db, user) {
   const hidden=await blockedIds(db,user);const reciprocal=(await db.collection('communityBlocks').find({blockedId:user.githubId},{projection:{githubId:1}}).toArray()).map(r=>r.githubId);const excluded=[...new Set([...hidden,...reciprocal])];
   const muted=(await db.collection('communityGroupMutes').find({githubId:user.githubId},{projection:{groupId:1}}).toArray()).map(r=>r.groupId);
   const contacts = await db.collection('communityContacts').find({ $or: [{ from: user.githubId }, { to: user.githubId }] }).limit(100).toArray();
-  const groups = await db.collection('communityGroups').find({ $or: [{ members: user.githubId }, { invited: user.githubId }] }).limit(50).toArray();
+  const groups = await db.collection('communityGroups').find({ moderationHidden:{$ne:true}, $or: [{ members: user.githubId }, { invited: user.githubId }] }).limit(50).toArray();
   const authors = await people(db, [...new Set(contacts.flatMap(c => [c.from, c.to]).concat(groups.flatMap(g => [g.owner, ...g.members, ...g.invited])))]);
   return { contacts: contacts.filter(c=>!excluded.includes(c.from===user.githubId?c.to:c.from)).map(c => ({ id: String(c._id), status: c.status, incoming: c.to === user.githubId, person: authors.get(c.from === user.githubId ? c.to : c.from) })), groups: groups.filter(g=>g.members.includes(user.githubId)||!excluded.includes(g.owner)).map(g => ({ id: g._id.toHexString(), name: g.name, description: g.description, cover: g.cover || '', muted: muted.includes(g._id.toHexString()), helpStatus: g.helpStatus || null, type: g.type || 'group', owner: g.owner === user.githubId, joined: g.members.includes(user.githubId), members: g.members.map(m => authors.get(m)).filter(Boolean) })) };
 }
@@ -90,13 +90,13 @@ function validatePost(input) {
 }
 async function readFeed(db, user, query = {}) {
   const hidden=await blockedIds(db,user);
-  const filter = { deletedAt: { $exists: false }, githubId: {$nin:hidden} };
+  const filter = { deletedAt: { $exists: false }, moderationHidden: { $ne: true }, githubId: {$nin:hidden} };
   if(query.kind && query.kind!=='all') {if(!CATEGORIES.includes(query.kind))throw fail('Categoria inválida.');filter.kind=query.kind==='project'?{$in:['project','progress']}:query.kind;}
   if (query.before) filter._id = { $lt: id(query.before) };
   if (query.post) filter._id = id(query.post);
   const posts = await db.collection('communityPosts').find(filter).sort({ _id: -1 }).limit(21).toArray();
   const page = posts.slice(0, 20); const ids = page.map(p => p._id.toHexString());
-  const comments = await db.collection('communityComments').aggregate([{ $match: { postId: { $in: ids }, githubId: {$nin:hidden}, deletedAt: { $exists: false } } }, { $group: { _id: '$postId', rows: { $topN: { sortBy: { createdAt: -1, _id: -1 }, output: '$$ROOT', n: 10 } }, count: { $sum: 1 } } }]).toArray();
+  const comments = await db.collection('communityComments').aggregate([{ $match: { postId: { $in: ids }, githubId: {$nin:hidden}, deletedAt: { $exists: false }, moderationHidden: { $ne: true } } }, { $group: { _id: '$postId', rows: { $topN: { sortBy: { createdAt: -1, _id: -1 }, output: '$$ROOT', n: 10 } }, count: { $sum: 1 } } }]).toArray();
   const likes = await db.collection('communityLikes').aggregate([{ $match: { postId: { $in: ids } } }, { $group: { _id: '$postId', count: { $sum: 1 }, mine: { $max: { $cond: [{ $eq: ['$githubId', user.githubId] }, { $ifNull: ['$reaction', 'heart'] }, ''] } }, reactions: { $push: { $ifNull: ['$reaction', 'heart'] } } } }]).toArray();
   const authors = await people(db, [...new Set(page.map(p => p.githubId).concat(comments.flatMap(c => c.rows.map(r => r.githubId))))]);
   return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.find(l => l._id === p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, (l?.reactions || []).filter(r => r === key).length])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
@@ -112,7 +112,7 @@ async function feedAction(db, user, input) {
     }
   } else {
     const postId = id(input.postId).toHexString();
-    const post = await db.collection('communityPosts').findOne({ _id: new ObjectId(postId), deletedAt: { $exists: false } });
+    const post = await db.collection('communityPosts').findOne({ _id: new ObjectId(postId), deletedAt: { $exists: false }, moderationHidden: { $ne: true } });
     if (!post) throw fail('Publicação indisponível.', 404);
     await requireVisible(db,user,post.githubId);
     if (input.action === 'like') {

@@ -14,7 +14,7 @@ function validateHelp(input) {
 }
 async function readHelp(db, user, query = {}) {
   const hidden=await blockedIds(db,user);
-  const filter = { type: 'help',$and:[{owner:{$nin:hidden}}] }; const viewer=user?.githubId;
+  const filter = { type: 'help',moderationHidden:{$ne:true},$and:[{owner:{$nin:hidden}}] }; const viewer=user?.githubId;
   if(query.id) { if(typeof query.id!=='string'||!/^[a-f0-9]{24}$/.test(query.id))throw fail('Pedido indisponível.',404);filter._id=new ObjectId(query.id); }
   if(query.profileId) {
     if(typeof query.profileId!=='string'||!/^\d{1,20}$/.test(query.profileId)||!await db.collection('users').findOne({githubId:query.profileId,communityOptIn:true}))throw fail('Perfil indisponível.',404);
@@ -29,7 +29,7 @@ async function readHelp(db, user, query = {}) {
   const users=await db.collection('users').find({githubId:{$in:[...new Set(rows.flatMap(r=>[r.owner,...helpersFor(r)]))]}},{projection:{githubId:1,githubLogin:1,communityOptIn:1}}).toArray();
   const ids=rows.map(r=>r._id.toHexString());
   const saved=viewer?await db.collection('communityHelpSaves').find({githubId:viewer,helpId:{$in:ids}}).toArray():[];
-  const counts=await db.collection('communityHelpComments').aggregate([{$match:{helpId:{$in:ids},githubId:{$nin:hidden},deletedAt:{$exists:false}}},{$group:{_id:'$helpId',count:{$sum:1}}}]).toArray();
+  const counts=await db.collection('communityHelpComments').aggregate([{$match:{helpId:{$in:ids},githubId:{$nin:hidden},deletedAt:{$exists:false},moderationHidden:{$ne:true}}},{$group:{_id:'$helpId',count:{$sum:1}}}]).toArray();
   return {requests:rows.slice(0,20).map(r=>({id:r._id.toHexString(),title:r.name,description:r.description,status:r.helpStatus,limit:r.helpLimit,count:r.members.length,joined:r.members.includes(viewer),own:r.owner===viewer,authorId:r.owner,author:users.find(u=>u.githubId===r.owner)?.githubLogin||'Participante',createdAt:r.createdAt,saved:saved.some(s=>s.helpId===r._id.toHexString()),commentCount:counts.find(c=>c._id===r._id.toHexString())?.count||0,helpers:helpersFor(r).map(m=>{const u=users.find(u=>u.githubId===m);return {login:u?.communityOptIn||r.owner===viewer||m===viewer?u?.githubLogin||'Participante':'Participante',profileId:u?.communityOptIn?m:null};})})),hasMore:rows.length>20};
 }
 async function helpAction(db, user, input) {
@@ -42,7 +42,7 @@ async function helpAction(db, user, input) {
     const row = result.upsertedId ? { _id: result.upsertedId } : await groups.findOne({ requestKey }); return { id: row._id.toHexString() };
   }
   if (typeof input.id !== 'string' || !/^[a-f0-9]{24}$/.test(input.id)) throw fail('Pedido indisponível.',404);
-  const _id = new ObjectId(input.id); const group = await groups.findOne({ _id, type: 'help' });
+  const _id = new ObjectId(input.id); const group = await groups.findOne({ _id, type: 'help',moderationHidden:{$ne:true} });
   if (!group) throw fail('Pedido indisponível.',404);
   await requireVisible(db,user,group.owner);
   if (input.action === 'join') {

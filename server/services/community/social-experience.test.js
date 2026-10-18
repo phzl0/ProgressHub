@@ -44,7 +44,7 @@ test('MongoDB: reactions replace, comments paginate, invitations notify, help ca
     await socialAction(db,alice,{action:'contact-request',login:'bob'});assert.equal((await readInbox(db,bob)).unread,1);
     await inboxAction(db,bob,{action:'read',checkedAt:inbox.checkedAt});assert.equal((await readInbox(db,bob)).unread,0);assert.equal((await readInbox(db,carol)).items.length,0);
     await assert.rejects(inboxAction(db,bob,{action:'announce',title:'Spoof',message:'No'}),{status:403});
-    await inboxAction(db,mod,{action:'announce',title:'Bem-vindos',message:'Aviso oficial'});assert.ok((await readInbox(db,carol)).items.some(n=>n.title==='Bem-vindos'));
+    await inboxAction(db,mod,{action:'announce',title:'Bem-vindos',message:'Aviso oficial',reason:'Boas-vindas à comunidade.',requestId:'official-notice-001'});assert.ok((await readInbox(db,carol)).items.some(n=>n.title==='Bem-vindos'));
     await assert.rejects(inboxAction(db,bob,{action:'read',checkedAt:'2099-01-01'}),{status:400});
     const create={action:'create',title:'Como corrigir este bug?',description:'Detalhes do problema',limit:2,requestId:'help-request-00001'};
     const help=await helpAction(db,alice,create);assert.equal((await helpAction(db,alice,create)).id,help.id);

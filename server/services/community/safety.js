@@ -18,10 +18,10 @@ async function resolveReport(db,user,type,targetId){
   let row,parentId=null;
   if(type==='post'||type==='help'||type==='message'){
     if(!hex(targetId))throw fail('Conteúdo indisponível.',404);
-    row=await db.collection(type==='post'?'communityPosts':type==='help'?'communityGroups':'communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false},...(type==='help'?{type:'help'}:{})});
+    row=await db.collection(type==='post'?'communityPosts':type==='help'?'communityGroups':'communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false},moderationHidden:{$ne:true},...(type==='help'?{type:'help'}:{})});
   }else{
-    row=await db.collection(type==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false}});
-    if(row){parentId=type==='comment'?row.postId:row.helpId;const parent=hex(parentId)?await db.collection(type==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(parentId),deletedAt:{$exists:false},...(type==='help-comment'?{type:'help'}:{})}):null;if(!parent)row=null;}
+    row=await db.collection(type==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false},moderationHidden:{$ne:true}});
+    if(row){parentId=type==='comment'?row.postId:row.helpId;const parent=hex(parentId)?await db.collection(type==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(parentId),deletedAt:{$exists:false},moderationHidden:{$ne:true},...(type==='help-comment'?{type:'help'}:{})}):null;if(!parent)row=null;}
   }
   if(!row)throw fail('Conteúdo indisponível.',404);
   if(type==='message'){await require('./social').channelFor(db,user,row.channel||'general');parentId=row.channel?.startsWith('group:')?row.channel.slice(6):'general';}

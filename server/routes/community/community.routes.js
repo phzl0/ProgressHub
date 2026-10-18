@@ -27,6 +27,13 @@ router.use('/profiles', require('./profiles.routes'));
 router.use((req, res, next) => req.path.startsWith('/auth') ? authLimiter(req, res, next)
   : req.method === 'GET' ? readLimiter(req, res, next) : writeLimiter(req, res, next));
 
+// Suspensions restrict community mutations, while preserving browsing and safety controls.
+router.use(async(req,res,next)=>{
+  if(req.method!=='POST'||req.path.startsWith('/auth')||['/safety','/inbox'].includes(req.path)||!req.isAuthenticated?.()||!req.user?.githubId||req.get('Origin')!==new URL(clientURL()).origin)return next();
+  try{await require('../../services/community/permissions').assertCanWrite(await connectToDatabase(),req.user);next();}
+  catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível verificar sua conta.'});}
+});
+
 // Mutations are only accepted from the configured frontend (also prevents CSRF).
 function sameOrigin(req, res, next) {
   if (req.get('Origin') !== new URL(clientURL()).origin) return res.status(403).json({ error: 'Origem não autorizada.' });
@@ -48,7 +55,7 @@ router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (re
   catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
 });
 const social = require('../../services/community/social');
-for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction], ['safety', require('../../services/community/safety').readSafety, require('../../services/community/safety').safetyAction]]) {
+for (const [path, read, write] of [['admin', require('../../services/community/admin').readAdmin, require('../../services/community/admin').adminAction], ['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction], ['safety', require('../../services/community/safety').readSafety, require('../../services/community/safety').safetyAction]]) {
   router.get(`/${path}`, authenticateToken, githubOnly, async (req, res) => {
     try { res.set('Cache-Control', 'no-store').json(await read(await connectToDatabase(), req.user, req.query)); }
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar. Tente novamente.' }); }
@@ -153,7 +160,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     const career = req.user.githubId ? await careerFor(db, req.user) : null;
     res.set('Cache-Control', 'no-store');
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
-      name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
+      adminRole: require('../../services/community/permissions').roleFor(req.user), suspension: require('../../services/community/permissions').suspensionFor(req.user), name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
       profile: profileSettings(req.user), appearance: appearanceFor(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
   } catch (_) { res.status(500).json({ error: 'Não foi possível carregar o perfil.' }); }
 });

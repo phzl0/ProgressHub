@@ -7,7 +7,7 @@ export const PRIMARY_NAVIGATION = [
   { id: 'goals', path: 'goals', label: 'Metas pessoais', icon: Target },
   { id: 'community', path: 'community', label: 'Comunidade', icon: MessagesSquare }
 ];
-export const PAGE_LABELS = { dashboard: 'Tela inicial', ranking: 'Ranking', missions: 'Missões', progress: 'Progresso', goals: 'Metas pessoais', community: 'Comunidade', me: 'Meu perfil', profile: 'Perfil público', seasons: 'Temporadas', achievements: 'Conquistas', settings: 'Configurações', account: 'Conta', privacy: 'Privacidade', information: 'Regras e ajuda' };
+export const PAGE_LABELS = { admin: 'Administração', dashboard: 'Tela inicial', ranking: 'Ranking', missions: 'Missões', progress: 'Progresso', goals: 'Metas pessoais', community: 'Comunidade', me: 'Meu perfil', profile: 'Perfil público', seasons: 'Temporadas', achievements: 'Conquistas', settings: 'Configurações', account: 'Conta', privacy: 'Privacidade', information: 'Regras e ajuda' };
 export function viewFromHash(hash = window.location.hash) {
   const path = hash.replace(/^#/, '').split('?')[0];
   if (/^profile\/\d{1,20}$/.test(path)) return 'profile';

@@ -77,6 +77,8 @@ async function initializeIndexes() {
     await db.collection('missionRewards').createIndex({ githubId: 1, awardedAt: -1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, creditedPeriod: 1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, status: 1 });
+    await db.collection('communityAdminAudit').createIndex({ sequence: -1 });
+    await db.collection('communityReports').createIndex({ status: 1, _id: -1 });
     await db.collection('communityBlocks').createIndex({ githubId: 1, blockedId: 1 });
     await db.collection('communityGroupMutes').createIndex({ githubId: 1, groupId: 1 });
     await db.collection('communityReports').createIndex({ requestKey: 1 }, { unique: true });

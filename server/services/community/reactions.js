@@ -12,16 +12,16 @@ async function requireTarget(db,user,kind,targetId) {
   if(typeof targetId!=='string'||targetId.length>200)throw fail('Mensagem indisponível.',404);
   if(kind==='chat') {
     if(!/^[a-f0-9]{24}$/.test(targetId))throw fail('Mensagem indisponível.',404);
-    const message=await db.collection('communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false}});
+    const message=await db.collection('communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false},moderationHidden:{$ne:true}});
     if(message)await require('./safety').requireVisible(db,user,message.githubId);
     if(!message)throw fail('Mensagem indisponível.',404);
     await require('./social').channelFor(db,user,message.channel||'general');return message;
   }
   if(!['comment','help-comment'].includes(kind))throw fail('Tipo de reação inválido.');
-  const message=await db.collection(kind==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false}});
+  const message=await db.collection(kind==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false},moderationHidden:{$ne:true}});
   if(message)await require('./safety').requireVisible(db,user,message.githubId);
   if(!message)throw fail('Comentário indisponível.',404);
-  const parent=await db.collection(kind==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(kind==='comment'?message.postId:message.helpId),...(kind==='comment'?{deletedAt:{$exists:false}}:{type:'help'})});
+  const parent=await db.collection(kind==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(kind==='comment'?message.postId:message.helpId),...(kind==='comment'?{deletedAt:{$exists:false},moderationHidden:{$ne:true}}:{type:'help',moderationHidden:{$ne:true}})});
   if(parent)await require('./safety').requireVisible(db,user,kind==='comment'?parent.githubId:parent.owner);
   if(!parent)throw fail('Conteúdo indisponível.',404);return message;
 }

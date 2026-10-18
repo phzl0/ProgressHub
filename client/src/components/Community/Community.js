@@ -1,3 +1,4 @@
+import AdminPanel from './AdminPanel';
 import {SafetyProvider} from './SafetyContext';
 import ActionToasts from './ActionToasts';
 import { mutationRequest, showFeedback } from './actionFeedback';
@@ -168,6 +169,7 @@ export default function Community() {
   const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   const group = parentView(tab);
   const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons'].includes(tab);
+  if(tab==='admin')return <div className="ql-game ql-site-shell"><ActionToasts/><AdminPanel connected={me?.connected}/></div>;
   return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
@@ -177,6 +179,7 @@ export default function Community() {
         {group === 'ranking' && <nav className="ql-section-navigation" aria-label="Navegação do ranking"><a href="#ranking" aria-current={tab === 'ranking' ? 'page' : undefined} onClick={event => navigate('ranking', event)}>Classificação</a><a href="#ranking/seasons" aria-current={tab === 'seasons' ? 'page' : undefined} onClick={event => navigate('ranking/seasons', event)}>Temporadas</a></nav>}
         {group === 'progress' && <nav className="ql-section-navigation" aria-label="Navegação do progresso"><a href="#progress" aria-current={tab === 'progress' ? 'page' : undefined} onClick={event => navigate('progress', event)}>Visão geral</a><a href="#progress/achievements" aria-current={tab === 'achievements' ? 'page' : undefined} onClick={event => navigate('progress/achievements', event)}>Conquistas</a></nav>}
 
+        {me?.suspension&&<p role="status" className="ph-admin-warning">Sua participação está suspensa até {new Date(me.suspension.until).toLocaleString('pt-BR')}. {me.suspension.reason} Você pode consultar o site e usar a Central de segurança.</p>}
         {error && <p role="alert" className="ql-error">{error}</p>}
         {loading && <p role="status" className="ql-muted">Carregando sua jornada e contribuições…</p>}
         {tab === 'dashboard' && <>

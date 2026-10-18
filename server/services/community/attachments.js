@@ -34,7 +34,7 @@ async function readFile(db, user, value) {
   if (!row) throw fail('Anexo indisponível.',404);
   await channelFor(db,user,row.channel);
   await require('./safety').requireVisible(db,user,row.githubId);
-  if (!row.messageId || !await db.collection('communityMessages').findOne({ _id: new ObjectId(row.messageId), deletedAt: { $exists: false }, 'attachment.id': value })) throw fail('Anexo indisponível.',404);
+  if (!row.messageId || !await db.collection('communityMessages').findOne({ _id: new ObjectId(row.messageId), deletedAt: { $exists: false }, moderationHidden: { $ne: true }, 'attachment.id': value })) throw fail('Anexo indisponível.',404);
   return row;
 }
 module.exports = { MAX_BYTES, validateFile, uploadFile, readFile };
