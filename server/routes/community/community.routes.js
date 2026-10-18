@@ -48,7 +48,7 @@ router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (re
   catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
 });
 const social = require('../../services/community/social');
-for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction]]) {
+for (const [path, read, write] of [['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction], ['safety', require('../../services/community/safety').readSafety, require('../../services/community/safety').safetyAction]]) {
   router.get(`/${path}`, authenticateToken, githubOnly, async (req, res) => {
     try { res.set('Cache-Control', 'no-store').json(await read(await connectToDatabase(), req.user, req.query)); }
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar. Tente novamente.' }); }

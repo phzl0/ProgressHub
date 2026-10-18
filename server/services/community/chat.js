@@ -3,6 +3,7 @@ const { appearanceFor } = require('./cosmetics');
 const { channelFor, channelFilter } = require('./social');
 const { boundedText } = require('./text-limits');
 const { reactionSummaries } = require('./reactions');
+const {blockedIds}=require('./safety');
 const PAGE = 30;
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 function validateMessage(input) {
@@ -26,13 +27,14 @@ async function present(db, rows, viewer) {
   return rows.map(row => {
     const author = authors.get(row.githubId);
     return { ...(reactions.get(row._id.toHexString()) || {likes:0,liked:false,reaction:null,reactions:{}}), id: row._id.toHexString(), text: row.deletedAt ? '' : row.text, deleted: Boolean(row.deletedAt), createdAt: row.createdAt,
-      attachment: !row.deletedAt ? row.attachment || null : null, own: row.githubId === viewer.githubId, author: { login: author?.githubLogin || 'Participante', picture: author?.picture || '',
+      attachment: !row.deletedAt ? row.attachment || null : null, own: row.githubId === viewer.githubId, author: { githubId: row.githubId, login: author?.githubLogin || 'Participante', picture: author?.picture || '',
         profileId: author?.communityOptIn ? author.githubId : null, appearance: appearanceFor(author || {}) } };
   });
 }
 async function readChat(db, user, query = {}) {
   const channel = await channelFor(db, user, query.channel);
-  const scope = channelFilter(channel);
+  const hidden=await blockedIds(db,user);
+  const scope = {...channelFilter(channel),githubId:{$nin:hidden}};
   const before = parseIds(query.before);
   if (before.length > 1) throw fail('Página inválida.');
   const known = parseIds(query.known);
@@ -42,7 +44,8 @@ async function readChat(db, user, query = {}) {
   // Refresh loaded messages too, so another user's deletion removes its text from the open chat.
   const loaded = !before.length && known.length ? await messages.find({ ...scope, _id: { $in: known } }).toArray() : [];
   const rows = [...new Map([...loaded, ...history].map(row => [row._id.toHexString(), row])).values()].sort((a, b) => a._id.toHexString().localeCompare(b._id.toHexString()));
-  return { messages: await present(db, rows, user), hasOlder: page.length > PAGE, oldest: history.at(-1)?._id.toHexString() || null };
+  const hiddenRows=hidden.length&&known.length?await messages.find({...channelFilter(channel),_id:{$in:known},githubId:{$in:hidden}},{projection:{_id:1}}).toArray():[];
+  return { hiddenIds:hiddenRows.map(r=>r._id.toHexString()), messages: await present(db, rows, user), hasOlder: page.length > PAGE, oldest: history.at(-1)?._id.toHexString() || null };
 }
 async function sendMessage(db, user, input, now = new Date()) {
   const channel = await channelFor(db, user, input.channel);

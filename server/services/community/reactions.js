@@ -13,13 +13,16 @@ async function requireTarget(db,user,kind,targetId) {
   if(kind==='chat') {
     if(!/^[a-f0-9]{24}$/.test(targetId))throw fail('Mensagem indisponível.',404);
     const message=await db.collection('communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false}});
+    if(message)await require('./safety').requireVisible(db,user,message.githubId);
     if(!message)throw fail('Mensagem indisponível.',404);
     await require('./social').channelFor(db,user,message.channel||'general');return message;
   }
   if(!['comment','help-comment'].includes(kind))throw fail('Tipo de reação inválido.');
   const message=await db.collection(kind==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false}});
+  if(message)await require('./safety').requireVisible(db,user,message.githubId);
   if(!message)throw fail('Comentário indisponível.',404);
   const parent=await db.collection(kind==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(kind==='comment'?message.postId:message.helpId),...(kind==='comment'?{deletedAt:{$exists:false}}:{type:'help'})});
+  if(parent)await require('./safety').requireVisible(db,user,kind==='comment'?parent.githubId:parent.owner);
   if(!parent)throw fail('Conteúdo indisponível.',404);return message;
 }
 async function react(db,user,input) {

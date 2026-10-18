@@ -8,6 +8,7 @@ export function showFeedback(message,type='success',options={}){
   notices=[...notices.filter(n=>n.id!==notice.id),notice].slice(-3);listeners.forEach(fn=>fn());return notice.id;
 }
 const messages={
+  'safety:report':['Enviando denúncia…','Denúncia recebida.'], 'safety:block':['Bloqueando usuário…','Usuário bloqueado.'], 'safety:unblock':['Desbloqueando usuário…','Usuário desbloqueado.'], 'safety:mute-group':['Silenciando grupo…','Notificações do grupo silenciadas.'], 'safety:unmute-group':['Reativando notificações…','Notificações do grupo reativadas.'],
   'social:contact-request':['Enviando convite…','Convite enviado.'], 'social:contact-accept':['Aceitando convite…','Contato adicionado.'], 'social:contact-remove':['Atualizando contato…','Contato atualizado.'],
   'social:group-create':['Criando grupo…','Grupo criado.'], 'social:group-update':['Salvando detalhes…','Detalhes do grupo salvos.'], 'social:group-invite':['Convidando…','Convite para o grupo enviado.'], 'social:group-accept':['Aceitando convite…','Você entrou no grupo.'], 'social:group-leave':['Atualizando grupo…','Participação atualizada.'],
   'feed:publish':['Publicando…','Publicação criada.'], 'feed:comment':['Enviando comentário…','Comentário enviado.'], 'feed:delete-comment':['Excluindo comentário…','Comentário excluído.'], 'feed:delete-post':['Excluindo publicação…','Publicação excluída.'],
@@ -18,6 +19,7 @@ const messages={
 export function domainsFor(path){
   const base=path.replace(/^\//,'').split('?')[0];
   if(['profile','cosmetics','participation','sync','missions/claim'].includes(base))return base==='missions/claim'||base==='sync'?['me','leaderboard','missions','achievements']:['me','leaderboard'];
+  if(base==='safety')return ['safety','feed','help','chat','social','inbox'];
   if(base==='social')return ['social','inbox'];if(base==='help')return ['help','social','inbox'];if(base==='feed')return ['feed'];if(base.startsWith('goals'))return ['goals'];if(base==='inbox')return ['inbox'];return [];
 }
 // A single explicit mutation path: no fetch interception and no automatic replay of writes.
@@ -34,7 +36,7 @@ export function mutationRequest(url,options={},metadata={}){
     try{
       const data=await readApiResponse(await fetch(url,options));
       if(!quiet)showFeedback(copy[1],'success',{id:toastId});else dismissFeedback(toastId);
-      const domains=domainsFor(base);if(domains.length)window.dispatchEvent(new CustomEvent('ph-data-changed',{detail:{domains,path:base,action:body.action||'',id:body.id||body.postId||null}}));
+      const domains=domainsFor(base);if(domains.length)window.dispatchEvent(new CustomEvent('ph-data-changed',{detail:{domains,path:base,action:body.action||'',id:body.id||body.postId||null,targetId:body.githubId||null,groupId:body.groupId||null}}));
       return data;
     }catch(error){
       showFeedback(error.message||'Não foi possível concluir. Confira os dados e tente novamente.','error',{id:toastId,onReview:trigger?.isConnected?()=>{if(trigger.isConnected){trigger.scrollIntoView?.({block:'center',behavior:'smooth'});trigger.focus();}}:null});throw error;

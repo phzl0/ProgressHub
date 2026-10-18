@@ -1,3 +1,4 @@
+const {blockedIds}=require('./safety');
 const {ACHIEVEMENTS}=require('./achievements');
 const {tokensFor,scoreEntry,catalogSearch,normalize}=require('./search-catalog');
 const escape=value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -8,13 +9,14 @@ const intents={users:['usuario','usuarios','pessoa','pessoas','perfil'],groups:[
 function scopedTokens(tokens){const filtered=tokens.filter(t=>!Object.values(intents).flat().includes(t));return filtered.length?filtered:tokens;}
 async function searchCommunity(db,user,query){
   if(typeof query.q!=='string'||query.q.trim().length<2||query.q.trim().length>80)throw Object.assign(new Error('Digite de 2 a 80 caracteres.'),{status:400});
+  const hidden=await blockedIds(db,user);
   const tokens=tokensFor(query.q);const catalogs=catalogSearch(query.q);
   const achievements=ACHIEVEMENTS.map(a=>({id:`achievement:${a.id}`,type:'Conquista',label:a.name,description:`${a.description} Recompensa: ${a.xp} XP.`,aliases:`conquista conquistas medalha medalhas experiencia exp xp ${a.category} ${a.metric}`,path:`#progress/achievements?achievement=${a.id}`})).map(r=>({...r,score:scoreEntry(r,tokens)})).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
   const [users,groups,posts,help]=await Promise.all([
-    db.collection('users').find({communityOptIn:true,...textFilter(['githubLogin','name'],scopedTokens(tokens,'users'))},{projection:{githubId:1,githubLogin:1}}).limit(12).toArray(),
+    db.collection('users').find({communityOptIn:true,githubId:{$nin:hidden},...textFilter(['githubLogin','name'],scopedTokens(tokens,'users'))},{projection:{githubId:1,githubLogin:1}}).limit(12).toArray(),
     db.collection('communityGroups').find({members:user.githubId,...textFilter(['name','description'],scopedTokens(tokens,'groups'))},{projection:{name:1,description:1}}).limit(12).toArray(),
-    db.collection('communityPosts').find({deletedAt:{$exists:false},...textFilter(['text'],scopedTokens(tokens,'posts'))},{projection:{text:1}}).sort({_id:-1}).limit(12).toArray(),
-    db.collection('communityGroups').find({type:'help',...textFilter(['name','description'],scopedTokens(tokens,'help'))},{projection:{name:1,description:1,helpStatus:1}}).sort({_id:-1}).limit(12).toArray()
+    db.collection('communityPosts').find({deletedAt:{$exists:false},githubId:{$nin:hidden},...textFilter(['text'],scopedTokens(tokens,'posts'))},{projection:{text:1}}).sort({_id:-1}).limit(12).toArray(),
+    db.collection('communityGroups').find({type:'help',owner:{$nin:hidden},...textFilter(['name','description'],scopedTokens(tokens,'help'))},{projection:{name:1,description:1,helpStatus:1}}).sort({_id:-1}).limit(12).toArray()
   ]);
   const rank=(rows,key)=>rows.map(r=>({...r,score:scoreEntry(r,scopedTokens(tokens,key))+(tokens.some(t=>intents[key].includes(t))?40:0)})).sort((a,b)=>b.score-a.score).slice(0,5);
   const results=[...catalogs,...achievements,

@@ -1,3 +1,4 @@
+import {SafetyProvider} from './SafetyContext';
 import ActionToasts from './ActionToasts';
 import { mutationRequest, showFeedback } from './actionFeedback';
 import { readApiResponse } from './apiResponse';
@@ -167,7 +168,7 @@ export default function Community() {
   const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   const group = parentView(tab);
   const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons'].includes(tab);
-  return <div className="ql-game ql-site-shell"><ActionToasts />
+  return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
     <div className="ql-site-body">
@@ -211,7 +212,7 @@ export default function Community() {
       </main>
     </div>
     <div className="ql-site-footer"><CommunityFooter /></div>
-  </div>;
+  </div></SafetyProvider>;
 }
 function Metric({ icon: Icon, label, value, note, tone = 'green' }) {
   return <section className={`ql-panel ql-metric ql-tone-${tone}`}><span className="ql-metric-icon"><Icon size={19} /></span><p>{label}</p><strong>{value}</strong><small>{note}</small></section>;

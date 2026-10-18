@@ -33,6 +33,7 @@ async function readFile(db, user, value) {
   const row = await db.collection('communityAttachments').findOne({ _id: new ObjectId(value) });
   if (!row) throw fail('Anexo indisponível.',404);
   await channelFor(db,user,row.channel);
+  await require('./safety').requireVisible(db,user,row.githubId);
   if (!row.messageId || !await db.collection('communityMessages').findOne({ _id: new ObjectId(row.messageId), deletedAt: { $exists: false }, 'attachment.id': value })) throw fail('Anexo indisponível.',404);
   return row;
 }

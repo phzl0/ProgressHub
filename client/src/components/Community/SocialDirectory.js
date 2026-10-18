@@ -4,7 +4,7 @@ import GroupRoom, { GroupCover } from './GroupRoom';
 import { Author, socialRequest, requestId } from './socialAPI';
 export default function SocialDirectory({ section = 'groups', groupId }) {
   const [data,setData]=useState({contacts:[],groups:[]});const [loaded,setLoaded]=useState(false);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [login,setLogin]=useState('');const [name,setName]=useState('');const [description,setDescription]=useState('');
-  useEffect(()=>{let alive=true;socialRequest('social').then(d=>{if(alive){setData(d);setLoaded(true);}}).catch(e=>{if(alive)setError(e.message);});return()=>{alive=false;};},[]);
+  useEffect(()=>{let alive=true;let version=0;const load=async()=>{const mine=++version;try{const d=await socialRequest('social');if(alive&&mine===version){setData(d);setLoaded(true);}}catch(e){if(alive&&mine===version)setError(e.message);}};load();const changed=e=>{if(e.detail?.path==='safety')load();};window.addEventListener('ph-data-changed',changed);return()=>{alive=false;window.removeEventListener('ph-data-changed',changed);};},[]);
   const groupAttempt=useRef(null);
   function createGroup(event){event.preventDefault();if(groupAttempt.current?.name!==name||groupAttempt.current?.description!==description)groupAttempt.current={action:'group-create',name,description,requestId:requestId()};act(groupAttempt.current);}
   async function act(body){if(busy)return;setBusy(true);setError('');try{setData(await socialRequest('social',body));setLogin('');if(body.action==='group-create'){setName('');setDescription('');groupAttempt.current=null;}window.dispatchEvent(new Event('ph-social-changed'));}catch(e){setError(e.message);}finally{setBusy(false);}}
