@@ -57,6 +57,7 @@ async function adminAction(db,user,input){
   collection=db.collection(['hide','restore'].includes(command.action)?TYPES[command.targetType]:command.action==='report-status'?'communityReports':'users');
   _id=['hide','restore'].includes(command.action)?contentKey(command.targetType,command.targetId):command.action==='report-status'?new ObjectId(command.targetId):null;
   row=await collection.findOne(_id?{_id}:{githubId:command.targetId});if(!row)throw fail('Alvo indisponível.',404);
+  if(command.targetType==='help'&&row.type!=='help')throw fail('Pedido de ajuda indisponível.',404);
   if(['warn','suspend','unsuspend'].includes(command.action)&&(row.githubId===staff.githubId||roleFor(row)))throw fail('Ações sobre contas da equipe não são permitidas neste painel.',403);
   if(['hide','restore'].includes(command.action)&&row.deletedAt)throw fail('Conteúdo excluído não pode ser restaurado.',409);
  }
