@@ -1,3 +1,5 @@
+import Mailbox from './Mailbox';
+import XPHistory from './XPHistory';
 import AdminPanel from './AdminPanel';
 import {SafetyProvider} from './SafetyContext';
 import ActionToasts from './ActionToasts';
@@ -168,7 +170,7 @@ export default function Community() {
   const activeDays = stats?.commitDays?.length || 0;
   const subtitle = tab === 'achievements' ? 'Marcos permanentes. Cada conquista tem seu valor.' : tab === 'settings' ? 'A experiência do seu jeito.' : tab === 'account' ? 'Sua identidade conectada pelo GitHub.' : tab === 'privacy' ? 'Você escolhe como participa da comunidade.' : tab === 'information' ? 'Conheça os critérios e tire suas dúvidas.' : tab === 'goals' ? 'Projetos para construir. Metas no seu ritmo.' : tab === 'missions' ? 'Objetivos simples. Bônus que aceleram sua evolução.' : tab === 'me' ? 'Seu lugar na comunidade. Sua história de evolução.' : tab === 'seasons' ? 'Novas disputas. Uma carreira que continua.' : tab === 'profile' ? 'Conheça quem está construindo junto com você.' : tab === 'ranking' ? 'Encontre seu lugar entre quem constrói.' : tab === 'progress' ? 'Entenda seu ritmo. Evolua a cada contribuição.' : 'Mais uma contribuição. Mais perto do próximo nível.';
   const group = parentView(tab);
-  const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons'].includes(tab);
+  const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons','mail'].includes(tab);
   if(tab==='admin')return <div className="ql-game ql-site-shell"><ActionToasts/><AdminPanel connected={me?.connected}/></div>;
   return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
@@ -192,10 +194,12 @@ export default function Community() {
         </>}
         {tab === 'achievements' && <Achievements connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />}
         {['settings', 'account', 'privacy', 'information'].includes(tab) && <AccountPages tab={tab} me={me} autoplay={bannerAutoplay} onAutoplayChange={changeBannerAutoplay} participate={participate} busy={busy} api={API} />}
+        {tab==='mail'&&<Mailbox connected={me?.connected}/>}
         {tab === 'progress' && <>
           <WeeklySummary connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.missionXP}`} />
           <div className="ql-metrics ql-three-metrics"><Metric icon={Zap} label="XP da temporada" value={number(xp)} note="Commits + PRs elegíveis" /><Metric tone="blue" icon={GitCommitHorizontal} label="XP em commits" value={number(stats?.breakdown?.commitXP)} note={`${activeDays} dias com contribuições`} /><Metric tone="purple" icon={GitPullRequest} label="XP em PRs" value={number(stats?.breakdown?.pullRequestXP)} note="Contribuições públicas mescladas" /></div>
           <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">CONSTÂNCIA VIRA EVOLUÇÃO</p><h2>Seu ritmo de contribuição</h2></div><span className="ql-tag"><span className="ql-live-dot" /> XP DIÁRIO DE COMMITS</span></div><ProgressChart stats={stats} /></section>
+          {me?.connected&&<XPHistory revision={`${stats?.syncedAt}:${stats?.xp}`} />}
           {me?.connected ? <ScoreDetails stats={stats} /> : <section className="ql-panel ql-empty"><Github size={30} /><h2>Seu progresso tem um ponto de partida.</h2><p>Entre com GitHub para acompanhar suas atividades e o detalhamento do XP.</p><a href={`${API}/auth`} className="ql-button">Conectar meu GitHub <ArrowUpRight size={16} /></a></section>}
         </>}
         {tab === 'ranking' && <>

@@ -53,7 +53,7 @@ test('mailbox shows unread messages and marks the checked snapshot as read',asyn
   global.fetch=jest.fn(async(_url,o)=>result(o?.method==='POST'?{...inbox,unread:0,items:inbox.items.map(n=>({...n,unread:false}))}:inbox));
   await act(async()=>render(<Inbox connected/>));
   fireEvent.click(screen.getByRole('button',{name:'Notificações: 1 não lidas'}));
-  expect(screen.getByRole('link',{name:/Convite de contato/})).toHaveAttribute('href','#community/invitations');expect(screen.queryByText('Enviar aviso à comunidade')).not.toBeInTheDocument();
+  expect(screen.getByRole('link',{name:/Convite de contato/})).toHaveAttribute('href','#mail?message=n1');expect(screen.queryByText('Enviar aviso à comunidade')).not.toBeInTheDocument();
   await act(async()=>fireEvent.click(screen.getByRole('button',{name:'Marcar todas como lidas'})));
   expect(screen.getByRole('button',{name:'Notificações'})).toBeInTheDocument();
   expect(JSON.parse(global.fetch.mock.calls.find(([,o])=>o?.method==='POST')[1].body)).toEqual({action:'read',checkedAt:inbox.checkedAt});

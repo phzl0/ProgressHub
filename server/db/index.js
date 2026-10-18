@@ -77,6 +77,13 @@ async function initializeIndexes() {
     await db.collection('missionRewards').createIndex({ githubId: 1, awardedAt: -1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, creditedPeriod: 1 });
     await db.collection('achievementRewards').createIndex({ githubId: 1, status: 1 });
+    for(const [name,field,actor] of [['communityPosts','createdAt','githubId'],['communityMessages','createdAt','githubId'],['communityComments','createdAt','githubId'],['communityHelpComments','createdAt','githubId'],['communityGroups','createdAt','owner'],['missionRewards','awardedAt','githubId'],['achievementRewards','awardedAt','githubId'],['communityPoolShares','awardedAt','githubId']])await db.collection(name).createIndex({[field]:1,[actor]:1});
+    await db.collection('communitySeasons').createIndex({period:1});
+    await db.collection('users').createIndex({createdAt:1,githubId:1});
+    await db.collection('communityGroups').createIndex({type:1,helpStatus:1,createdAt:1});
+    await db.collection('communityInboxState').createIndex({githubId:1,notificationId:1},{unique:true});
+    await db.collection('communityActivityDays').createIndex({githubId:1,day:1},{unique:true});
+    await db.collection('communityActivityDays').createIndex({lastAt:1,githubId:1});
     await db.collection('communityAdminAudit').createIndex({ sequence: -1 });
     await db.collection('communityReports').createIndex({ status: 1, _id: -1 });
     await db.collection('communityBlocks').createIndex({ githubId: 1, blockedId: 1 });

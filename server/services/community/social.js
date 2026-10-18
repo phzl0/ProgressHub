@@ -112,6 +112,7 @@ async function feedAction(db, user, input) {
     }
   } else {
     const postId = id(input.postId).toHexString();
+    if(input.action==='delete-post'&&await db.collection('communityPosts').findOne({_id:new ObjectId(postId),githubId:user.githubId,deletedAt:{$exists:true}}))return {ok:true};
     const post = await db.collection('communityPosts').findOne({ _id: new ObjectId(postId), deletedAt: { $exists: false }, moderationHidden: { $ne: true } });
     if (!post) throw fail('Publicação indisponível.', 404);
     await requireVisible(db,user,post.githubId);

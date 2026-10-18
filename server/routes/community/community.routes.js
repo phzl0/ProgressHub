@@ -65,6 +65,7 @@ for (const [path, read, write] of [['admin', require('../../services/community/a
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível salvar. Tente novamente.' }); }
   });
 }
+router.get('/xp-history',authenticateToken,githubOnly,async(req,res)=>{try{res.set('Cache-Control','no-store').json(await require('../../services/community/xp-history').readXPHistory(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar o extrato.'});}});
 router.get('/search',authenticateToken,githubOnly,async(req,res)=>{
   try{res.set('Cache-Control','no-store').json(await require('../../services/community/search').searchCommunity(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível pesquisar.'});}
 });
@@ -159,6 +160,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     const db = await connectToDatabase();
     const career = req.user.githubId ? await careerFor(db, req.user) : null;
     res.set('Cache-Control', 'no-store');
+    await require('../../services/community/admin-analytics').recordVisit(db,req.user);
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       adminRole: require('../../services/community/permissions').roleFor(req.user), suspension: require('../../services/community/permissions').suspensionFor(req.user), name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
       profile: profileSettings(req.user), appearance: appearanceFor(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });

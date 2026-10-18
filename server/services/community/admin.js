@@ -12,6 +12,9 @@ function auditView(r){return {id:r._id,action:r.command.action,actor:r.actorLogi
 function reportView(r,detail=false){return {id:r._id.toHexString(),type:r.targetType,targetId:r.targetId,authorId:r.authorId,label:r.label,reason:r.reason,status:r.status,createdAt:r.createdAt,revision:revision(r),...(detail?{note:r.note,excerpt:r.excerpt,attachment:r.attachment||null,contextId:r.contextId,resolution:r.resolution||null}:{})};}
 async function readAdmin(db,user,q={}){
  const staff=await requireStaff(db,user);const view=q.view||'reports';
+ if(view==='dashboard')return require('./admin-analytics').dashboard(db,user,q);
+ if(view==='activity')return require('./admin-analytics').userActivity(db,user,q);
+ if(view==='moderation')return require('./admin-analytics').moderationSummary(db,user,q);
  if(view==='access')return {role:staff.staffRole};
  if(view==='report'){
   if(!hex(q.id))throw fail('Denúncia indisponível.',404);const r=await db.collection('communityReports').findOne({_id:new ObjectId(q.id)});if(!r)throw fail('Denúncia indisponível.',404);

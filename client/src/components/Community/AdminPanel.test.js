@@ -9,7 +9,7 @@ test('ordinary users cannot open administrative controls',async()=>{
  socialRequest.mockRejectedValue(new Error('Acesso exclusivo à administração.'));render(<AdminPanel connected/>);await screen.findByRole('alert');expect(screen.queryByRole('button',{name:'Usuários'})).toBeNull();expect(screen.queryByText('Ocultar conteúdo')).toBeNull();
 });
 test('reports require justified confirmation and preserve failed attempts',async()=>{
- render(<AdminPanel connected/>);fireEvent.click(await screen.findByRole('button',{name:/Publicação/}));await screen.findByText('Conteúdo registrado');fireEvent.click(screen.getByText('Ocultar conteúdo'));
+ render(<AdminPanel connected/>);fireEvent.click(await screen.findByRole('button',{name:'Denúncias'}));fireEvent.click(await screen.findByRole('button',{name:/Publicação/}));await screen.findByText('Conteúdo registrado');fireEvent.click(screen.getByText('Ocultar conteúdo'));
  expect(screen.getByText('Confirmar ação').disabled).toBe(true);fireEvent.change(screen.getByLabelText('Justificativa administrativa'),{target:{value:'Publicação contém spam.'}});
  socialRequest.mockRejectedValueOnce(new Error('Falha temporária'));fireEvent.click(screen.getByText('Confirmar ação'));await screen.findByRole('alert');expect(screen.getByLabelText('Justificativa administrativa').value).toBe('Publicação contém spam.');
  fireEvent.click(screen.getByText('Confirmar ação'));await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());const writes=socialRequest.mock.calls.filter(([p])=>p==='admin');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);expect(writes[0][1]).toMatchObject({action:'hide',targetId:report.targetId,targetType:'post',expectedRevision:null,reason:'Publicação contém spam.'});
