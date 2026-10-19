@@ -38,3 +38,7 @@ Novos testes cobrem concorrência da conexão, retry e encerramento, segredo de 
 
 - Backend: auditoria final sem vulnerabilidades conhecidas após atualizações compatíveis e remoção das duas dependências antigas. Isso é resultado pontual do registro npm, não garantia de ausência de falhas.
 - Frontend: auditoria inicial apontou 111 alertas, incluindo quatro críticos. Atualizações compatíveis removeram os críticos; ainda restaram 103 alertas (3 baixos, 37 moderados, 63 altos), incluindo cadeia de build/dev server do CRA. Não aplicar a recomendação automática `react-scripts@0.0.0`: ela quebra a ferramenta de build. A migração controlada das ferramentas e a análise de quais pacotes entram no bundle são prioritárias antes de publicar. Não expor o dev server à internet.
+
+## Atualização posterior: migração para Vite
+
+A pendência de substituição do CRA foi tratada em uma etapa separada, documentada em `FRONTEND_VITE.md`. Após a migração a consulta npm apontou 27 alertas no frontend, sem críticos; os 103 alertas acima descrevem a revisão anterior. Alertas remanescentes, carga e backup/restauração continuam pendentes.
