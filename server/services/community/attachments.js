@@ -15,7 +15,7 @@ function validateFile(name, data) {
   return { name, type, size: data.length };
 }
 async function uploadFile(db, user, query, data) {
-  const channel = await channelFor(db,user,query.channel);
+  const channel = await channelFor(db,user,query.channel,{write:true});
   if (!channel.startsWith('group:')) throw fail('Anexos estão disponíveis nas conversas de grupo.');
   const file = validateFile(query.name,data);
   if (query.requestId !== undefined && (typeof query.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(query.requestId))) throw fail('Envio inválido.');

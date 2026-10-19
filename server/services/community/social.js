@@ -11,10 +11,12 @@ const text = (value,max,optional=false,lines=1) => boundedText(value,max,lines,o
 const person = user => ({ githubId: user.githubId, login: user.githubLogin, picture: user.picture || '', profileId: user.communityOptIn ? user.githubId : null, appearance: appearanceFor(user) });
 const pairKey = (a, b) => [a, b].sort().join(':');
 async function people(db, ids) { return new Map((await db.collection('users').find({ githubId: { $in: ids } }, { projection: { githubId: 1, githubLogin: 1, picture: 1, communityOptIn: 1, communityAppearance: 1 } }).toArray()).map(u => [u.githubId, person(u)])); }
-async function channelFor(db, user, value = 'general') {
+async function channelFor(db, user, value = 'general', {write=false}={}) {
   if (['general', 'help'].includes(value)) return value;
   if (typeof value !== 'string' || !value.startsWith('group:')) throw fail('Conversa indisponível.', 404);
-  if (!await db.collection('communityGroups').findOne({ _id: id(value.slice(6)), moderationHidden: {$ne:true}, members: user.githubId })) throw fail('Você não participa deste grupo.', 403);
+  const group=await db.collection('communityGroups').findOne({ _id: id(value.slice(6)), moderationHidden: {$ne:true}, members: user.githubId });
+  if(!group)throw fail('Você não participa deste grupo.',403);
+  if(write&&group.type==='help'&&group.helpStatus==='resolved')throw fail('Pedido resolvido: o histórico está disponível somente para leitura.',409);
   return value;
 }
 function channelFilter(channel) { return channel === 'general' ? { $or: [{ channel: 'general' }, { channel: { $exists: false } }] } : { channel }; }
@@ -23,8 +25,8 @@ async function readSocial(db, user) {
   const muted=(await db.collection('communityGroupMutes').find({githubId:user.githubId},{projection:{groupId:1}}).toArray()).map(r=>r.groupId);
   const contacts = await db.collection('communityContacts').find({ $or: [{ from: user.githubId }, { to: user.githubId }] }).limit(100).toArray();
   const groups = await db.collection('communityGroups').find({ moderationHidden:{$ne:true}, $or: [{ members: user.githubId }, { invited: user.githubId }] }).limit(50).toArray();
-  const authors = await people(db, [...new Set(contacts.flatMap(c => [c.from, c.to]).concat(groups.flatMap(g => [g.owner, ...g.members, ...g.invited])))]);
-  return { contacts: contacts.filter(c=>!excluded.includes(c.from===user.githubId?c.to:c.from)).map(c => ({ id: String(c._id), status: c.status, incoming: c.to === user.githubId, person: authors.get(c.from === user.githubId ? c.to : c.from) })), groups: groups.filter(g=>g.members.includes(user.githubId)||!excluded.includes(g.owner)).map(g => ({ id: g._id.toHexString(), name: g.name, description: g.description, cover: g.cover || '', muted: muted.includes(g._id.toHexString()), helpStatus: g.helpStatus || null, type: g.type || 'group', owner: g.owner === user.githubId, joined: g.members.includes(user.githubId), members: g.members.map(m => authors.get(m)).filter(Boolean) })) };
+  const authors = await people(db, [...new Set(contacts.flatMap(c => [c.from, c.to]).concat(groups.flatMap(g => [g.owner, ...g.members, ...g.invited,...(g.owner===user.githubId?g.joinRequests||[]:[])])))]);
+  return { contacts: contacts.filter(c=>!excluded.includes(c.from===user.githubId?c.to:c.from)).map(c => ({ id: String(c._id), status: c.status, incoming: c.to === user.githubId, person: authors.get(c.from === user.githubId ? c.to : c.from) })), groups: groups.filter(g=>g.members.includes(user.githubId)||!excluded.includes(g.owner)).map(g => ({ id: g._id.toHexString(), name: g.name, description: g.description, cover: g.cover || '', muted: muted.includes(g._id.toHexString()), helpStatus: g.helpStatus || null, requiresApproval:Boolean(g.requiresApproval), requests:g.owner===user.githubId?(g.joinRequests||[]).map(id=>authors.get(id)).filter(Boolean):[], type: g.type || 'group', owner: g.owner === user.githubId, joined: g.members.includes(user.githubId), members: g.members.map(m => authors.get(m)).filter(Boolean) })) };
 }
 async function socialAction(db, user, input) {
   const contacts = db.collection('communityContacts'); const groups = db.collection('communityGroups');

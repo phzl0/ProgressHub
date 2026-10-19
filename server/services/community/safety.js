@@ -49,8 +49,8 @@ async function safetyAction(db,user,input){
       if(!await db.collection('communityBlocks').findOne({_id:key})&&await db.collection('communityBlocks').countDocuments({githubId:user.githubId})>=500)throw fail('Você já tem 500 usuários bloqueados. Revise a lista nas configurações.');
       await db.collection('communityBlocks').updateOne({_id:key},{$setOnInsert:{githubId:user.githubId,blockedId:input.githubId,login:target.githubLogin,createdAt:new Date()}},{upsert:true});
       await db.collection('communityContacts').deleteMany({status:'pending',$or:[{from:user.githubId,to:input.githubId},{from:input.githubId,to:user.githubId}]});
-      await db.collection('communityGroups').updateMany({owner:user.githubId,invited:input.githubId},{$pull:{invited:input.githubId}});
-      await db.collection('communityGroups').updateMany({owner:input.githubId,invited:user.githubId},{$pull:{invited:user.githubId}});
+      await db.collection('communityGroups').updateMany({owner:user.githubId,$or:[{invited:input.githubId},{joinRequests:input.githubId}]},{$pull:{invited:input.githubId,joinRequests:input.githubId}});
+      await db.collection('communityGroups').updateMany({owner:input.githubId,$or:[{invited:user.githubId},{joinRequests:user.githubId}]},{$pull:{invited:user.githubId,joinRequests:user.githubId}});
     }else await db.collection('communityBlocks').deleteOne({_id:key});
     return {ok:true};
   }

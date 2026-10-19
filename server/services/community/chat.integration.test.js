@@ -50,7 +50,7 @@ test('HTTP: chat rejects unauthenticated access, non-GitHub sessions and cross-o
     const base=`http://127.0.0.1:${server.address().port}/community`;
     assert.equal((await fetch(`${base}/chat`,{headers:{'X-Test-Session':'none'}})).status,401);
     assert.equal((await fetch(`${base}/chat`,{headers:{'X-Test-Session':'google'}})).status,400);
-    for(const path of ['/xp-history','/admin','/safety','/feed','/help','/inbox','/chat/attachments/012345678901234567890123']) assert.equal((await fetch(`${base}${path}`,{headers:{'X-Test-Session':'none'}})).status,401);
+    for(const path of ['/group-content','/xp-history','/admin','/safety','/feed','/help','/inbox','/chat/attachments/012345678901234567890123']) assert.equal((await fetch(`${base}${path}`,{headers:{'X-Test-Session':'none'}})).status,401);
     for(const path of ['/admin','/safety','/chat','/chat/delete','/chat/attachments','/feed','/social','/help','/inbox']) {
       const response=await fetch(`${base}${path}`,{method:'POST',headers:{'Content-Type':'application/json','X-Test-Session':'github',Origin:'https://untrusted.example'},body:'{}'});
       assert.equal(response.status,403);

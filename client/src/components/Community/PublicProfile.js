@@ -11,7 +11,7 @@ import ProfileDetails from './ProfileDetails';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 export default function PublicProfile({ githubId }) {
-  const {isBlocked}=useSafety();
+  const {isBlocked}=useSafety();const [badgePage,setBadgePage]=useState(0);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function PublicProfile({ githubId }) {
     <section className="ql-panel ql-public-profile-identity-card">
     <div className={`ql-public-cover ${cover.className}`} role="img" aria-label={`Banner de ${profile.login}`} style={cover.style} />
     <div className="ql-public-hero">
-      <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><h2>@{profile.login}</h2><CosmeticTitle title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
+      <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><span className="ql-tag ph-profile-achievement-total">{new Set(career?.achievements||[]).size} conquistas</span><h2>@{profile.login}</h2><CosmeticTitle title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
       <div className="ql-public-actions"><SafetyMenu type="user" targetId={githubId} author={{githubId,login:profile.login}}/><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </div>
     <ProfileDetails profile={profile.profile} />
@@ -65,7 +65,8 @@ export default function PublicProfile({ githubId }) {
     {!stats && <p className="ql-update-banner">Aguardando a primeira sincronização deste participante na temporada atual.</p>}
 
     <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">CARREIRA PERMANENTE</p><h2>{number(career?.xp)} <span className="ql-green">XP conquistados</span></h2></div><span className="ql-tag">{number(stats?.xp)} XP NA TEMPORADA · {stats?.period || new Date().toISOString().slice(0, 7)}</span></div><div className="ql-progress-label"><span>Nível {career?.level || 1}</span><strong>{progress}%</strong><span>Nível {(career?.level || 1) + 1}</span></div><div className="ql-xp-track" role="progressbar" aria-label="Progresso público de nível" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Faltam {number((career?.nextLevelXP || 200) - (career?.experience || 0))} XP para o próximo nível.</p></section>
-    <section className="ql-panel"><div className="ql-panel-head"><h2>Conquistas permanentes</h2><span className="ql-tag ql-gold-tag"><Award size={12} />{career?.achievements?.length || 0} DESBLOQUEADAS</span></div>{career?.achievements?.length ? <div className="ql-public-badges ql-compact-badges">{career.achievements.map((badge) => <div key={badge} className="ql-public-badge"><Award size={23} /><strong>{badge}</strong><span>CONQUISTA DESBLOQUEADA</span></div>)}</div> : <p className="ql-empty">As primeiras conquistas ainda estão por vir.</p>}</section>
+    <section className="ql-panel"><div className="ql-panel-head"><h2>Conquistas permanentes</h2><span className="ql-tag ql-gold-tag"><Award size={12} />{career?.achievements?.length || 0} DESBLOQUEADAS</span></div>{career?.achievements?.length ? <div className="ql-public-badges ql-compact-badges">{career.achievements.slice(badgePage*10,badgePage*10+10).map((badge) => <div key={badge} className="ql-public-badge"><Award size={23} /><strong>{badge}</strong><span>CONQUISTA DESBLOQUEADA</span></div>)}</div> : <p className="ql-empty">As primeiras conquistas ainda estão por vir.</p>}</section>
+    {(career?.achievements?.length||0)>10&&<div className="ph-xp-pagination"><small>Conquistas · Página {badgePage+1}</small><div><button disabled={!badgePage} onClick={()=>setBadgePage(n=>n-1)}>Anterior</button><button disabled={(badgePage+1)*10>=career.achievements.length} onClick={()=>setBadgePage(n=>n+1)}>Próxima</button></div></div>}
     {!isBlocked(githubId)&&<HelpRequests profileId={githubId} />}
     <ProjectShowcase projects={profile.profile?.projects} />
     <p className="ql-caption"><ShieldCheck size={13} className="ql-inline-icon" /> Somente o resumo público de quem participa do ranking. Atualização da visualização a cada 10 minutos; atividades são sincronizadas pelo serviço automático quando disponível. {stats?.syncedAt && `GitHub sincronizado em ${new Date(stats.syncedAt).toLocaleString('pt-BR')}.`}</p>

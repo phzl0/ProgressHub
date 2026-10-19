@@ -30,7 +30,7 @@ test('help status control is only inside the owner room details',async()=>{
   global.fetch=jest.fn(async url=>result(url.includes('/chat')?{messages:[],hasOlder:false}:{requests:[{id,title:'Meu pedido',description:'Detalhes',status:'open',author:'bob',joined:true,own:true,count:1,limit:6,helpers:[]}]}));
   const view=render(<GroupRoom group={{...group,type:'help',helpStatus:'open'}} contacts={[]}/>);
   await screen.findByText('A conversa começa com um olá.');expect(screen.queryByLabelText('Estado do pedido')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'Detalhes'}));expect(screen.getByLabelText('Estado do pedido')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Opções do grupo'}));fireEvent.click(screen.getByRole('button',{name:'Dados do grupo'}));expect(screen.getByLabelText('Estado do pedido')).toBeInTheDocument();
   view.unmount();await act(async()=>render(<HelpRequests/>));expect(screen.queryByLabelText(/Estado do pedido/)).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'Salvar pedido'})).toBeInTheDocument();
 });
 test('help profile history separates created, helped and private saved collections',async()=>{

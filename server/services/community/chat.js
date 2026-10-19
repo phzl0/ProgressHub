@@ -45,10 +45,11 @@ async function readChat(db, user, query = {}) {
   const loaded = !before.length && known.length ? await messages.find({ ...scope, _id: { $in: known } }).toArray() : [];
   const rows = [...new Map([...loaded, ...history].map(row => [row._id.toHexString(), row])).values()].sort((a, b) => a._id.toHexString().localeCompare(b._id.toHexString()));
   const hiddenRows=hidden.length&&known.length?await messages.find({...channelFilter(channel),_id:{$in:known},githubId:{$in:hidden}},{projection:{_id:1}}).toArray():[];
-  return { hiddenIds:hiddenRows.map(r=>r._id.toHexString()), messages: await present(db, rows, user), hasOlder: page.length > PAGE, oldest: history.at(-1)?._id.toHexString() || null };
+  const group=channel.startsWith('group:')?await db.collection('communityGroups').findOne({_id:new ObjectId(channel.slice(6))},{projection:{type:1,helpStatus:1}}):null;
+  return {readOnly:group?.type==='help'&&group.helpStatus==='resolved',helpStatus:group?.helpStatus||null, hiddenIds:hiddenRows.map(r=>r._id.toHexString()), messages: await present(db, rows, user), hasOlder: page.length > PAGE, oldest: history.at(-1)?._id.toHexString() || null };
 }
 async function sendMessage(db, user, input, now = new Date()) {
-  const channel = await channelFor(db, user, input.channel);
+  const channel = await channelFor(db, user, input.channel,{write:true});
   if (channel === 'help') throw fail('Abra um pedido de ajuda para iniciar uma conversa.');
   const { text, requestId } = validateMessage(input);
   const messages = db.collection('communityMessages');
@@ -85,6 +86,7 @@ async function sendMessage(db, user, input, now = new Date()) {
 }
 async function deleteMessage(db, user, id, now = new Date()) {
   if (typeof id !== 'string' || !/^[a-f0-9]{24}$/.test(id)) throw fail('Mensagem indisponível.', 404);
+  const own=await db.collection('communityMessages').findOne({_id:new ObjectId(id),githubId:user.githubId});if(own)await channelFor(db,user,own.channel||'general',{write:true});
   const result = await db.collection('communityMessages').updateOne({ _id: new ObjectId(id), githubId: user.githubId }, { $set: { deletedAt: now }, $unset: { text: '', attachment: '' } });
   if (!result.matchedCount) throw fail('Mensagem indisponível.', 404);
   await db.collection('communityAttachments').deleteMany({ messageId: id, githubId: user.githubId });

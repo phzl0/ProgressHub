@@ -8,6 +8,7 @@ export function showFeedback(message,type='success',options={}){
   notices=[...notices.filter(n=>n.id!==notice.id),notice].slice(-3);listeners.forEach(fn=>fn());return notice.id;
 }
 const messages={
+ 'help:cancel-request':['Cancelando solicitação…','Solicitação cancelada.'],'help:approve-request':['Aprovando participação…','Participação aprovada.'],'help:deny-request':['Recusando solicitação…','Solicitação recusada.'],
   'inbox:set-read':['Atualizando leitura…','Estado de leitura atualizado.'], 'inbox:star':['Atualizando favorita…','Favorita atualizada.'], 'inbox:archive':['Organizando correio…','Mensagem movida.'],
   'admin:hide':['Ocultando conteúdo…','Conteúdo ocultado.'], 'admin:restore':['Restaurando conteúdo…','Conteúdo restaurado.'], 'admin:warn':['Enviando advertência…','Advertência enviada.'], 'admin:suspend':['Suspendendo participação…','Participação suspensa.'], 'admin:unsuspend':['Reativando participação…','Participação reativada.'], 'admin:report-status':['Atualizando denúncia…','Denúncia atualizada.'], 'admin:announce':['Enviando aviso…','Aviso oficial enviado.'],
   'safety:report':['Enviando denúncia…','Denúncia recebida.'], 'safety:block':['Bloqueando usuário…','Usuário bloqueado.'], 'safety:unblock':['Desbloqueando usuário…','Usuário desbloqueado.'], 'safety:mute-group':['Silenciando grupo…','Notificações do grupo silenciadas.'], 'safety:unmute-group':['Reativando notificações…','Notificações do grupo reativadas.'],

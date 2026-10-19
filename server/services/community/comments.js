@@ -10,9 +10,9 @@ function context(kind,parentId){
   if(!['post','help'].includes(kind)||typeof parentId!=='string'||!/^[a-f0-9]{24}$/.test(parentId))throw fail('Conteúdo indisponível.',404);
   return {isHelp:kind==='help',collection:kind==='help'?'communityHelpComments':'communityComments',scope:kind==='help'?{helpId:parentId}:{postId:parentId}};
 }
-async function requireParent(db,kind,parentId,user){const ctx=context(kind,parentId);const parent=await db.collection(ctx.isHelp?'communityGroups':'communityPosts').findOne({_id:new ObjectId(parentId),...(ctx.isHelp?{type:'help',moderationHidden:{$ne:true}}:{deletedAt:{$exists:false},moderationHidden:{$ne:true}})});if(!parent)throw fail('Conteúdo indisponível.',404);if(user)await requireVisible(db,user,ctx.isHelp?parent.owner:parent.githubId);return ctx;}
+async function requireParent(db,kind,parentId,user,write=false){const ctx=context(kind,parentId);const parent=await db.collection(ctx.isHelp?'communityGroups':'communityPosts').findOne({_id:new ObjectId(parentId),...(ctx.isHelp?{type:'help',moderationHidden:{$ne:true}}:{deletedAt:{$exists:false},moderationHidden:{$ne:true}})});if(!parent)throw fail('Conteúdo indisponível.',404);if(write&&ctx.isHelp&&parent.helpStatus==='resolved')throw fail('Pedido resolvido: somente leitura.',409);ctx.readOnly=ctx.isHelp&&parent.helpStatus==='resolved';if(user)await requireVisible(db,user,ctx.isHelp?parent.owner:parent.githubId);return ctx;}
 async function addComment(db,user,kind,parentId,input){
-  const ctx=await requireParent(db,kind,parentId,user);const collection=db.collection(ctx.collection);const text=boundedText(input.text,600,3);
+  const ctx=await requireParent(db,kind,parentId,user,true);const collection=db.collection(ctx.collection);const text=boundedText(input.text,600,3);
   if(typeof input.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId))throw fail('Comentário inválido.');
   const key=`${user.githubId}:${input.requestId}`;const existing=await collection.findOne({_id:key});
   if(existing){if(existing[ctx.isHelp?'helpId':'postId']!==parentId)throw fail('Esta tentativa pertence a outro conteúdo.',409);await finishReply(db,user,kind,parentId,ctx,existing);return {id:key};}
@@ -31,7 +31,7 @@ async function addComment(db,user,kind,parentId,input){
   return {id:key};
 }
 async function deleteComment(db,user,kind,parentId,commentId){
-  const ctx=await requireParent(db,kind,parentId,user);
+  const ctx=await requireParent(db,kind,parentId,user,true);
   if(typeof commentId!=='string'||commentId.length>200)throw fail('Comentário indisponível.',404);
   const result=await db.collection(ctx.collection).updateOne({_id:commentId,...ctx.scope,githubId:user.githubId},{$set:{deletedAt:new Date()},$unset:{text:''}});
   if(!result.matchedCount)throw fail('Comentário indisponível.',404);return {id:commentId};
@@ -61,6 +61,6 @@ async function readComments(db,user,query){
     const replies=await present(db,user,ctx,replyGroups.flatMap(g=>g.rows));
     for(const comment of comments){const group=replyGroups.find(g=>g._id===comment.id);comment.replies=replies.filter(r=>r.rootId===comment.id).reverse();comment.replyCount=group?.count||0;comment.replyHasMore=comment.replyCount>10;}
   }
-  return {comments,hasMore:rows.length>30};
+  return {comments,readOnly:Boolean(ctx.readOnly),hasMore:rows.length>30};
 }
 module.exports={readComments,addComment,deleteComment};

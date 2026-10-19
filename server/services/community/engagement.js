@@ -49,8 +49,8 @@ async function createGoal(db, user, input, now = new Date()) {
   await db.collection('users').updateOne({ _id: user._id, missionsStartedAt: { $exists: false } }, { $set: { missionsStartedAt: now } });
   return readGoal(db, user, now);
 }
-function summarizeWeek(records, rewards, events, now = new Date(), communityRewards = [], achievementRewards = []) {
-  const week = windowFor('weekly', now);
+function summarizeWeek(records, rewards, events, now = new Date(), communityRewards = [], achievementRewards = [], range = null) {
+  const week = range||windowFor('weekly', now);
   const inWeek = date => new Date(date) >= week.start && new Date(date) < week.end && new Date(date) <= now;
   const days = new Map(); const prs = new Map(); const reviews = new Set();
   let latest = null;
@@ -67,15 +67,23 @@ function summarizeWeek(records, rewards, events, now = new Date(), communityRewa
   const communityBonusXP = communityRewards.filter(reward => inWeek(reward.awardedAt)).reduce((sum, reward) => sum + reward.xp, 0);
   const achievementBonusXP = achievementRewards.filter(reward => inWeek(reward.awardedAt)).reduce((sum, reward) => sum + reward.xp, 0);
   const bonusXP = received.reduce((sum, r) => sum + r.xp, 0) + communityBonusXP + achievementBonusXP;
-  const requiredPeriods = new Set([week.key.slice(0, 7), now.toISOString().slice(0, 7)]);
+  const requiredPeriods = new Set([week.start.toISOString().slice(0,7), new Date(Math.min(now.getTime(),week.end.getTime()-1)).toISOString().slice(0,7)]);
   const partial = [...requiredPeriods].some(period => !records.some(r => r.period === period && r.stats?.detailsVersion >= 2));
   return { startsAt: week.start, endsAt: week.end, syncedAt: latest, partial, commitXP, prXP, bonusXP, communityBonusXP, achievementBonusXP,
     xp: commitXP + prXP + bonusXP, commits: [...days.values()].reduce((sum, d) => sum + (d.credited || 0), 0),
     mergedPRs: prs.size, activeDays: [...days.values()].filter(d => d.credited > 0).length, reviews: reviews.size, receivedMissions: received.length };
 }
-async function weeklySummary(db, user, now = new Date()) {
-  const week = windowFor('weekly', now);
-  const periods = [...new Set([week.key.slice(0, 7), now.toISOString().slice(0, 7)])];
+function summaryRange(query={},now=new Date()){
+  const mode=query.mode||'weekly';if(!['daily','weekly','monthly','date'].includes(mode))throw Object.assign(new Error('Período inválido.'),{status:400});
+  let start=new Date(now);start.setUTCHours(0,0,0,0);let end;
+  if(mode==='date'){if(typeof query.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(query.date))throw Object.assign(new Error('Escolha uma data válida.'),{status:400});start=new Date(`${query.date}T00:00:00Z`);if(!Number.isFinite(start.getTime())||start.toISOString().slice(0,10)!==query.date||start>now)throw Object.assign(new Error('Escolha uma data válida, até hoje.'),{status:400});}
+  if(mode==='weekly'){const w=windowFor('weekly',now);return {...w,mode};}
+  if(mode==='monthly'){start.setUTCDate(1);end=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,1));}else end=new Date(start.getTime()+86400000);
+  return {start,end,key:start.toISOString().slice(0,10),mode};
+}
+async function weeklySummary(db, user, now = new Date(),query={}) {
+  const week = summaryRange(query,now);
+  const periods = [...new Set([week.start.toISOString().slice(0,7), new Date(Math.min(now.getTime(),week.end.getTime()-1)).toISOString().slice(0,7)])];
   const [records, rewards, events, communityRewards, achievementRewards] = await Promise.all([
     db.collection('communitySeasons').find({ githubId: user.githubId, period: { $in: periods } }).toArray(),
     db.collection('missionRewards').find({ githubId: user.githubId, awardedAt: { $gte: week.start, $lt: week.end } }).toArray(),
@@ -83,7 +91,8 @@ async function weeklySummary(db, user, now = new Date()) {
     db.collection('communityPoolShares').find({ githubId: user.githubId, status: 'paid', awardedAt: { $gte: week.start, $lt: week.end } }).toArray(),
     db.collection('achievementRewards').find({ githubId: user.githubId, status: 'paid', awardedAt: { $gte: week.start, $lt: week.end } }).toArray()
   ]);
-  const summary = summarizeWeek(records, rewards, events, now, communityRewards, achievementRewards);
+  const summary = summarizeWeek(records, rewards, events, now, communityRewards, achievementRewards,week);
+  summary.mode=week.mode;
   summary.partial = summary.partial || Boolean(user.missionsPartial || user.missionsError);
   return summary;
 }
@@ -102,4 +111,4 @@ async function communityChallenge(db, user = null, now = new Date()) {
   return { periodKey: week.key, startsAt: week.start, endsAt: week.end, target: 100, current, participants: totals[0]?.participants || 0,
     progress: Math.min(100, current), completed: current >= 100, mine, optedIn: Boolean(user?.communityOptIn), checkedAt: now };
 }
-module.exports = { GOALS, validateGoal, goalProgress, createGoal, readGoal, summarizeWeek, weeklySummary, communityChallenge };
+module.exports = { GOALS, validateGoal, goalProgress, createGoal, readGoal, summarizeWeek, summaryRange, weeklySummary, communityChallenge };

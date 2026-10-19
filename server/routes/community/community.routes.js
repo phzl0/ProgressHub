@@ -65,6 +65,7 @@ for (const [path, read, write] of [['admin', require('../../services/community/a
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível salvar. Tente novamente.' }); }
   });
 }
+router.get('/group-content',authenticateToken,githubOnly,async(req,res)=>{try{res.set('Cache-Control','no-store').json(await require('../../services/community/group-content').readGroupContent(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar o grupo.'});}});
 router.get('/xp-history',authenticateToken,githubOnly,async(req,res)=>{try{res.set('Cache-Control','no-store').json(await require('../../services/community/xp-history').readXPHistory(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar o extrato.'});}});
 router.get('/search',authenticateToken,githubOnly,async(req,res)=>{
   try{res.set('Cache-Control','no-store').json(await require('../../services/community/search').searchCommunity(await connectToDatabase(),req.user,req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível pesquisar.'});}
@@ -241,7 +242,7 @@ router.post('/goals/update', authenticateToken, sameOrigin, async (req, res) => 
 });
 router.get('/weekly-summary', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para ver seu resumo.' });
-  try { res.set('Cache-Control', 'no-store').json(await weeklySummary(await connectToDatabase(), req.user)); }
+  try { res.set('Cache-Control', 'no-store').json(await weeklySummary(await connectToDatabase(), req.user,new Date(),req.query)); }
   catch (_) { res.status(503).json({ error: 'Não foi possível carregar o resumo semanal.' }); }
 });
 router.get('/challenge', authenticateToken, async (req, res) => {
