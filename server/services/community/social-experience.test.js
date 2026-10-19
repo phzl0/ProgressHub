@@ -66,6 +66,8 @@ test('MongoDB: reactions replace, comments paginate, invitations notify, help ca
     await sendMessage(db,alice,{channel,text:'',attachmentId:file.id,requestId:'attachment-msg-001'});assert.equal((await readFile(db,member,file.id)).messageId,message.id);
     await helpAction(db,alice,{action:'status',id:help.id,status:'resolved'});assert.ok((await readInbox(db,member)).items.some(n=>n.title==='Pedido resolvido'));
     await socialAction(db,member,{action:'group-leave',id:help.id});await assert.rejects(readFile(db,member,file.id),{status:403});
+    await assert.rejects(deleteMessage(db,alice,message.id),{status:409});
+    await helpAction(db,alice,{action:'status',id:help.id,status:'open',expectedStatus:'resolved'});
     await deleteMessage(db,alice,message.id);assert.equal(await db.collection('communityAttachments').countDocuments({}),0);
     assert.equal((await db.collection('users').findOne({_id:alice._id})).githubStats.xp,123);
     await feedAction(db,alice,{action:'delete-post',postId});await assert.rejects(readComments(db,bob,{postId}),{status:404});
