@@ -24,7 +24,7 @@ jobs:
           node-version: '22'
       - name: Install backend dependencies
         working-directory: server
-        run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test scoring, migration, concurrency and season closure
         working-directory: server
         env:
@@ -32,7 +32,7 @@ jobs:
         run: npm test
       - name: Install frontend dependencies
         working-directory: client
-        run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test community navigation and refresh
         working-directory: client
         env:

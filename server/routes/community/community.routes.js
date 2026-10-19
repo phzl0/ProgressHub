@@ -161,7 +161,9 @@ router.get('/me', authenticateToken, async (req, res) => {
     const db = await connectToDatabase();
     const career = req.user.githubId ? await careerFor(db, req.user) : null;
     res.set('Cache-Control', 'no-store');
-    await require('../../services/community/admin-analytics').recordVisit(db,req.user);
+    // Analytics must not prevent an otherwise valid profile response.
+    await require('../../services/community/admin-analytics').recordVisit(db,req.user)
+      .catch(() => console.warn('Community visit recording unavailable.'));
     res.json({ connected: Boolean(req.user.githubId), githubId: req.user.githubId, login: req.user.githubLogin,
       adminRole: require('../../services/community/permissions').roleFor(req.user), suspension: require('../../services/community/permissions').suspensionFor(req.user), name: req.user.name, picture: req.user.picture, optedIn: Boolean(req.user.communityOptIn),
       profile: profileSettings(req.user), appearance: appearanceFor(req.user), stats, position, career, backgroundSyncError: req.user.backgroundSyncError || null });
@@ -243,7 +245,7 @@ router.post('/goals/update', authenticateToken, sameOrigin, async (req, res) => 
 router.get('/weekly-summary', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para ver seu resumo.' });
   try { res.set('Cache-Control', 'no-store').json(await weeklySummary(await connectToDatabase(), req.user,new Date(),req.query)); }
-  catch (_) { res.status(503).json({ error: 'Não foi possível carregar o resumo semanal.' }); }
+  catch (error) { res.status(error.status === 400 ? 400 : 503).json({ error: error.status === 400 ? error.message : 'Não foi possível carregar o resumo.' }); }
 });
 router.get('/challenge', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar o desafio.' });

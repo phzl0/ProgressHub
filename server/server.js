@@ -5,7 +5,10 @@ const passport = require('passport');
 const MongoStore = require('connect-mongo');
 require('dotenv').config();
 
+const { sessionSecret, apiError } = require('./middleware/runtime-safety');
+const secret = sessionSecret(process.env);
 const app = express();
+app.disable('x-powered-by');
 
 app.set('trust proxy', 1);
 app.use('/api/community/profile', express.json({ limit: '450kb' }));
@@ -13,7 +16,7 @@ app.use('/api/community/feed', express.json({ limit: '450kb' }));
 app.use('/api/community/social', express.json({ limit: '450kb' }));
 app.use(express.json());
 
-const { connectToDatabase, initializeIndexes } = require('./db');
+const { connectToDatabase, initializeIndexes, closeDatabase } = require('./db');
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
@@ -24,7 +27,7 @@ if (!mongoUri) {
 // Session middleware with MongoDB store
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'fallback_secret',
+    secret,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -60,21 +63,8 @@ app.use(
 // Require passport setup
 require('./config/passport-setup');
 
-const apiRoutes = require('./routes');
-const authRoutes = require('./routes/auth/auth.routes');
-const analyticsRoutes = require('./routes/analytics/analytics.routes');
-const todoistRoutes = require('./routes/integrations/todoist/todoist.routes');
-const ticktickRoutes = require('./routes/integrations/ticktick/ticktick.routes');
-
-app.use('/api/community', require('./routes/community/community.routes'));
-
-app.use('/api/ai', require('./routes/ai/ai.routes'));
-
-app.use('/api', apiRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api', todoistRoutes);
-app.use('/api', ticktickRoutes);
+app.use('/api', require('./routes/active'));
+app.use(apiError);
 
 const PORT = process.env.PORT || 3001;
 
@@ -82,9 +72,22 @@ const startServer = async () => {
   try {
     await connectToDatabase();
     await initializeIndexes();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+    let stopping = false;
+    const stop = () => {
+      if (stopping) return;
+      stopping = true;
+      const deadline = setTimeout(() => process.exit(1), 10000);
+      deadline.unref();
+      server.close(async () => {
+        try { await closeDatabase(); clearTimeout(deadline); process.exit(0); }
+        catch (_) { process.exit(1); }
+      });
+    };
+    process.once('SIGTERM', stop);
+    process.once('SIGINT', stop);
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
