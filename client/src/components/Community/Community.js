@@ -1,3 +1,4 @@
+import {ChatDockProvider} from './ChatDock';
 import Mailbox from './Mailbox';
 import XPHistory from './XPHistory';
 import AdminPanel from './AdminPanel';
@@ -172,7 +173,7 @@ export default function Community() {
   const group = parentView(tab);
   const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons','mail'].includes(tab);
   if(tab==='admin')return <div className="ql-game ql-site-shell"><ActionToasts/><AdminPanel connected={me?.connected}/></div>;
-  return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><div className="ql-game ql-site-shell"><ActionToasts />
+  return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><ChatDockProvider key={me?.githubId||'guest'} connected={me?.connected}><div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
     <div className="ql-site-body">
@@ -219,7 +220,7 @@ export default function Community() {
       </main>
     </div>
     <div className="ql-site-footer"><CommunityFooter /></div>
-  </div></SafetyProvider>;
+  </div></ChatDockProvider></SafetyProvider>;
 }
 function Metric({ icon: Icon, label, value, note, tone = 'green' }) {
   return <section className={`ql-panel ql-metric ql-tone-${tone}`}><span className="ql-metric-icon"><Icon size={19} /></span><p>{label}</p><strong>{value}</strong><small>{note}</small></section>;

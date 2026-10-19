@@ -7,7 +7,7 @@ export default function CompactDialog({ title, onClose, children, closeLabel='Fe
   useEffect(() => {
     dialogStack.push(label);
     const previous = document.activeElement; const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
-    const background = [...document.querySelectorAll('.ql-site-shell, .ph-modal-backdrop')].filter(node=>!node.contains(panel.current)).map(node => ({ node, inert: node.getAttribute('inert'), hidden: node.getAttribute('aria-hidden') }));
+    const background = [...document.querySelectorAll('.ql-site-shell, .ph-chat-dock, .ph-chat-launcher, .ph-modal-backdrop')].filter(node=>!node.contains(panel.current)).map(node => ({ node, inert: node.getAttribute('inert'), hidden: node.getAttribute('aria-hidden') }));
     background.forEach(({node}) => { node.setAttribute('inert', ''); node.setAttribute('aria-hidden', 'true'); });
     panel.current?.querySelector('button')?.focus();
     const keydown = e => {

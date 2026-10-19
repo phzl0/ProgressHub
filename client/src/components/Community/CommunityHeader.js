@@ -14,7 +14,7 @@ function AccountDrawer({ tab, navigate, onClose, me, logout, busy }) {
     const previous = document.activeElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const background = [...document.querySelectorAll('.ql-site-header, .ql-site-body, .ql-site-footer')].map(node => ({ node, inert: node.getAttribute('inert'), hidden: node.getAttribute('aria-hidden') }));
+    const background = [...document.querySelectorAll('.ql-site-header, .ql-site-body, .ql-site-footer, .ph-chat-dock, .ph-chat-launcher')].map(node => ({ node, inert: node.getAttribute('inert'), hidden: node.getAttribute('aria-hidden') }));
     for (const { node } of background) { node.setAttribute('inert', ''); node.setAttribute('aria-hidden', 'true'); }
     panel.current?.querySelector('button')?.focus();
     const keydown = event => {
