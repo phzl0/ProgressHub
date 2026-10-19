@@ -10,7 +10,11 @@ test('Vite serves SPA routes, existing JSX components and only approved public c
   process.env.GITHUB_CLIENT_SECRET = 'private-value-must-not-appear';
   let server;
   try {
-    server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: false } });
+    // Check HTTP transforms without an unrelated background cold-cache scan.
+    server = await createServer({
+      server: { host: '127.0.0.1', port: 0, strictPort: false },
+      optimizeDeps: { noDiscovery: true, include: [] }
+    });
     await server.listen();
     const base = `http://127.0.0.1:${server.httpServer.address().port}`;
     for (const path of ['/', '/community', '/community?error=oauth']) {
