@@ -173,7 +173,7 @@ export default function Community() {
   const group = parentView(tab);
   const showIntroduction = !['dashboard', 'ranking', 'missions', 'progress', 'goals', 'profile', 'me', 'community', 'seasons','mail'].includes(tab);
   if(tab==='admin')return <div className="ql-game ql-site-shell"><ActionToasts/><AdminPanel connected={me?.connected}/></div>;
-  return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><ChatDockProvider key={me?.githubId||'guest'} connected={me?.connected}><div className="ql-game ql-site-shell"><ActionToasts />
+  return <SafetyProvider connected={me?.connected} viewerId={me?.githubId}><ChatDockProvider key={me?.githubId||'guest'} connected={me?.connected} ready={Boolean(me)}><div className="ql-game ql-site-shell"><ActionToasts />
     <a className="ql-skip-link" href="#community-main" onClick={event => { event.preventDefault(); document.getElementById('community-main')?.focus(); }}>Ir para o conteúdo</a>
     <CommunityHeader tab={tab} navigate={navigate} me={me} sync={sync} logout={logout} busy={busy} loading={loading} syncWarning={syncWarning || me?.backgroundSyncError} />
     <div className="ql-site-body">

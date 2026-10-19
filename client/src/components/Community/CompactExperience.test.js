@@ -40,3 +40,7 @@ test('new messages do not move the scroll while reading old messages',async()=>{
 test('the general-chat navigation keeps the feed visible and legacy direct links open the drawer',async()=>{
  window.location.hash='community';render(<ChatDockProvider connected><CommunitySocial me={{connected:true}}/></ChatDockProvider>);await act(async()=>fireEvent.click(screen.getByRole('link',{name:'Chat geral'})));expect(window.location.hash).toBe('#community');expect(screen.getByText('Publicações da comunidade')).toBeInTheDocument();expect(screen.getByRole('complementary')).toBeVisible();fireEvent.click(screen.getByLabelText('Fechar chat geral'));await act(async()=>{window.location.hash='community/general';window.dispatchEvent(new HashChangeEvent('hashchange'));});expect(window.location.hash).toBe('#community');expect(screen.getByRole('complementary')).toBeVisible();
 });
+
+test('a direct chat link waits for account loading before consuming the legacy route',async()=>{
+ window.location.hash='community/general';const view=render(<ChatDockProvider key="guest" ready={false} connected={false}><p>Carregando conta</p></ChatDockProvider>);expect(window.location.hash).toBe('#community/general');expect(screen.queryByRole('complementary')).toBeNull();await act(async()=>view.rerender(<ChatDockProvider key="user" ready connected><Content/></ChatDockProvider>));expect(screen.getByRole('complementary')).toBeVisible();expect(window.location.hash).toBe('#community');
+});
