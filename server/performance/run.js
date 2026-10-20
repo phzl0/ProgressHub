@@ -17,7 +17,9 @@ function options(env = process.env) {
   if (!Number.isInteger(users) || users < 100 || users > 5000) throw new Error('PERF_USERS must be 100..5000.');
   const label = env.PERF_LABEL || 'current';
   if (!/^[a-z0-9-]{1,40}$/.test(label)) throw new Error('Invalid report label.');
-  return { uri, users, label };
+  const baselineRef = env.PERF_BASELINE_REF;
+  if (baselineRef && !/^[a-f0-9]{40}$/.test(baselineRef)) throw new Error('Invalid baseline commit.');
+  return { uri, users, label, baselineRef };
 }
 
 async function seed(db, count) {
@@ -46,7 +48,7 @@ async function seed(db, count) {
   }
   // A hot page: 20 posts with 1,000 reactions each. No private data in fixtures.
   for (const post of latest) await db.collection('communityLikes').insertMany(users.slice(0, 1000).map((u, i) => ({ _id: `${post._id}:${u.githubId}`, postId: post._id.toHexString(), githubId: u.githubId, reaction: ['heart', 'like', 'laugh', 'sad'][i % 4] })));
-  const group = { _id: new ObjectId(), owner: users[0].githubId, members: users.map(u => u.githubId), invited: [], name: 'Synthetic group', type: 'group' };
+  const group = { _id: new ObjectId(), owner: users[0].githubId, members: users.slice(0, 50).map(u => u.githubId), invited: [], name: 'Synthetic group', type: 'group' };
   await db.collection('communityGroups').insertOne(group);
   await db.collection('communityMessages').insertMany(Array.from({ length: 300 }, (_, i) => ({ _id: new ObjectId(), channel: `group:${group._id}`, githubId: users[i % count].githubId, text: 'Synthetic group message', createdAt: new Date() })));
   for (const [name, keys, extra] of [
@@ -109,6 +111,22 @@ async function scenario(port, fixture, concurrency, index, mongoMetrics) {
     endpoints: Object.fromEntries(Object.entries(samples).map(([k, values]) => [k, { n: values.length, p50Ms: percentile(values, .5), p95Ms: percentile(values, .95), maxMs: percentile(values, 1) }])) };
 }
 
+function loadBaseline(ref) {
+  // Optional read-only comparison: load the historical services under comparison from git
+  // into this isolated benchmark process. Production never imports this harness.
+  const Module = require('node:module');
+  const path = require('node:path');
+  const { execFileSync } = require('node:child_process');
+  for (const name of ['services/github/league.js', 'services/community/social.js', 'services/community/career-ranking.js']) {
+    const filename = path.join(__dirname, '..', name);
+    const source = execFileSync('git', ['show', `${ref}:server/${name}`], { cwd: path.join(__dirname, '../..'), encoding: 'utf8', maxBuffer: 1024 * 1024 });
+    const legacy = new Module(filename, module);
+    legacy.filename = filename; legacy.paths = Module._nodeModulePaths(path.dirname(filename));
+    require.cache[filename] = legacy;
+    legacy._compile(source, filename); legacy.loaded = true;
+  }
+}
+
 async function main() {
   const opts = options();
   const client = new MongoClient(opts.uri, { maxPoolSize: 10, minPoolSize: 0, monitorCommands: true });
@@ -120,6 +138,7 @@ async function main() {
     // Inject the isolated DB only in this harness process, before loading actual routes.
     const dbPath = require.resolve('../db');
     require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true, exports: { connectToDatabase: async () => db } };
+    if (opts.baselineRef) loadBaseline(opts.baselineRef);
     const viewers = new Map(fixture.users.map(u => [u.githubId, u]));
     const app = express(); app.disable('x-powered-by');
     app.use((req, res, next) => { req.user = viewers.get(req.get('X-Performance-User')); req.isAuthenticated = () => Boolean(req.user); next(); });
@@ -135,7 +154,7 @@ async function main() {
     let limited = 0;
     for (let i = 0; i < 125; i++) { const r = await request(port, '/cosmetics', fixture.users[0], '127.6.0.2'); if (r.status === 429) limited++; else assert.equal(r.status, 200); }
     assert.equal(limited, 5, 'Real read limiter must remain active');
-    const report = { label: opts.label, generatedAt: new Date().toISOString(), node: process.version, mongo: (await db.admin().serverInfo()).version,
+    const report = { label: opts.label, baselineRef: opts.baselineRef || null, generatedAt: new Date().toISOString(), node: process.version, mongo: (await db.admin().serverInfo()).version,
       cpuModel: os.cpus()[0].model, logicalCPUs: os.cpus().length, totalMemoryGiB: +(os.totalmem() / 2 ** 30).toFixed(2), poolSize: 10,
       dataset: fixture.dimensions, scenarios, rateLimitCheck: { requests: 125, expected429: 5, actual429: limited },
       limitations: 'Synthetic loopback API reads; controlled viewer identity replaces OAuth/session deserialization only in this harness. Real routes, rate limits and MongoDB queries are used. No GitHub calls, browser rendering, network latency, uploads or writes are measured. Closed-loop clients have no think time. BSON reply accounting adds instrumentation overhead. Node RSS/CPU exclude MongoDB, browser and OS costs. Not a production capacity guarantee.' };

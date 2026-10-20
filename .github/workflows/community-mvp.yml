@@ -21,6 +21,8 @@ jobs:
           --health-interval 10s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -53,11 +55,18 @@ jobs:
       - name: Verify Vite routes, public configuration and generated assets
         working-directory: client
         run: npm run test:tooling
-      - name: Benchmark isolated API reads with synthetic data
+      - name: Baseline comparison on the same runner and synthetic fixture
         working-directory: server
         env:
           MONGODB_PERF_URI: mongodb://127.0.0.1:27017
           PERF_LABEL: baseline
+          PERF_BASELINE_REF: 485925cfca085b826713ceec355a101ab82cc5c8
+        run: node performance/run.js
+      - name: Benchmark isolated API reads with synthetic data
+        working-directory: server
+        env:
+          MONGODB_PERF_URI: mongodb://127.0.0.1:27017
+          PERF_LABEL: optimized
         run: node performance/run.js
       - name: Retain synthetic performance report
         if: always()

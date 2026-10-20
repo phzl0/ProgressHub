@@ -21,7 +21,12 @@ async function ensureLegacy(db, user) {
 }
 async function careerFor(db, user, migrate = true) {
   if (migrate) await ensureLegacy(db, user);
-  const records = await db.collection('communitySeasons').find({ githubId: user.githubId }).toArray();
+  // Career summaries never need PR bodies or daily evidence arrays. Keep the
+  // authoritative totals, achievements and final positions only.
+  const records = await db.collection('communitySeasons').find({ githubId: user.githubId }, { projection: {
+    period: 1, status: 1, position: 1, 'stats.xp': 1, 'stats.commits': 1,
+    'stats.mergedPRs': 1, 'stats.achievements': 1
+  } }).toArray();
   if (!records.length && user.githubStats) return summarizeCareer([{ period: user.githubStats.period, stats: user.githubStats }]);
   return summarizeCareer(records, user.career?.achievements || []);
 }

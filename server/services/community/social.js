@@ -99,9 +99,23 @@ async function readFeed(db, user, query = {}) {
   const posts = await db.collection('communityPosts').find(filter).sort({ _id: -1 }).limit(21).toArray();
   const page = posts.slice(0, 20); const ids = page.map(p => p._id.toHexString());
   const comments = await db.collection('communityComments').aggregate([{ $match: { postId: { $in: ids }, githubId: {$nin:hidden}, deletedAt: { $exists: false }, moderationHidden: { $ne: true } } }, { $group: { _id: '$postId', rows: { $topN: { sortBy: { createdAt: -1, _id: -1 }, output: '$$ROOT', n: 10 } }, count: { $sum: 1 } } }]).toArray();
-  const likes = await db.collection('communityLikes').aggregate([{ $match: { postId: { $in: ids } } }, { $group: { _id: '$postId', count: { $sum: 1 }, mine: { $max: { $cond: [{ $eq: ['$githubId', user.githubId] }, { $ifNull: ['$reaction', 'heart'] }, ''] } }, reactions: { $push: { $ifNull: ['$reaction', 'heart'] } } } }]).toArray();
+  // Return at most one bucket per post/reaction instead of transferring one
+  // array entry for every liker of a popular publication.
+  const reactionRows = await db.collection('communityLikes').aggregate([
+    { $match: { postId: { $in: ids } } },
+    { $group: { _id: { postId: '$postId', reaction: { $ifNull: ['$reaction', 'heart'] } },
+      count: { $sum: 1 }, mine: { $max: { $cond: [{ $eq: ['$githubId', user.githubId] }, 1, 0] } } } }
+  ]).toArray();
+  const likes = new Map();
+  for (const row of reactionRows) {
+    const entry = likes.get(row._id.postId) || { count: 0, mine: null, reactions: Object.create(null) };
+    entry.count += row.count;
+    entry.reactions[row._id.reaction] = row.count;
+    if (row.mine && (!entry.mine || row._id.reaction > entry.mine)) entry.mine = row._id.reaction;
+    likes.set(row._id.postId, entry);
+  }
   const authors = await people(db, [...new Set(page.map(p => p.githubId).concat(comments.flatMap(c => c.rows.map(r => r.githubId))))]);
-  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.find(l => l._id === p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, (l?.reactions || []).filter(r => r === key).length])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
+  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.get(p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, l?.reactions[key] || 0])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
 }
 async function feedAction(db, user, input) {
   if (input.action === 'publish') {
