@@ -6,6 +6,7 @@ on:
     paths:
       - 'server/**'
       - 'client/**'
+      - 'scripts/**'
       - '.github/workflows/community-mvp.yml'
 jobs:
   community:
@@ -30,6 +31,11 @@ jobs:
         env:
           MONGODB_TEST_URI: mongodb://127.0.0.1:27017
         run: npm test
+      - name: Test encrypted backups and isolated MongoDB restore
+        env:
+          BACKUP_TEST_CONTAINER: ${{ job.services.mongodb.id }}
+          BACKUP_TEST_GPG: '1'
+        run: python3 -m unittest discover -s scripts -p 'test_backup.py' -v
       - name: Install frontend dependencies
         working-directory: client
         run: npm ci --ignore-scripts --no-audit --no-fund

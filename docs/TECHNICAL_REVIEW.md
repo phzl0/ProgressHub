@@ -42,3 +42,7 @@ Novos testes cobrem concorrência da conexão, retry e encerramento, segredo de 
 ## Atualização posterior: migração para Vite
 
 A pendência de substituição do CRA foi tratada em uma etapa separada, documentada em `FRONTEND_VITE.md`. Após a migração a consulta npm apontou 27 alertas no frontend, sem críticos; os 103 alertas acima descrevem a revisão anterior. Alertas remanescentes, carga e backup/restauração continuam pendentes.
+
+## Atualização posterior: preparação de backup
+
+Adicionados scripts de cópia criptografada e ensaio isolado, documentados em `BACKUP_RESTORE.md`. O CI testa dados sintéticos em Docker; o backup real do computador, armazenamento externo e agendamento dependem de configuração/execução local e não foram realizados pelo agente. Não há restauração destrutiva sobre a instância da aplicação.

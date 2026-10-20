@@ -2,3 +2,12 @@ node_modules
 .vercel
 server/reset-db.js
 .env
+
+# Local recovery artifacts and private configuration
+.env.*
+*.tar.gpg
+*.archive.gz
+*.partial-*
+backup.key
+backups/
+__pycache__/
