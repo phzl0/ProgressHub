@@ -100,6 +100,34 @@ class BackupTests(unittest.TestCase):
                 backup.unpack(path, self.work)
         self.assertFalse((self.work.parent / 'escape').exists())
 
+    def test_restore_failure_removes_only_its_own_temporary_container(self):
+        calls = []
+        target = 'b' * 64
+        nonce = 'restore-test-nonce'
+        def fake_output(args):
+            calls.append(args)
+            if args[1:3] == ['image', 'inspect']:
+                return '[]'
+            if args[1] == 'create':
+                self.assertIn('none', args)
+                self.assertNotIn('--publish', args)
+                return target
+            if args[1] == 'inspect':
+                return json.dumps([{'Config': {'Labels': {backup.LABEL: nonce}}}])
+            raise AssertionError(args)
+        def fake_unpack(bundle, work):
+            (work / 'database.archive.gz').write_bytes(b'fixture')
+            return {'image': IMAGE, 'collections': COLLECTIONS}
+        with patch.object(backup.secrets, 'token_hex', return_value=nonce), \
+             patch.object(backup, 'gpg'), patch.object(backup, 'unpack', side_effect=fake_unpack), \
+             patch.object(backup, 'output', side_effect=fake_output), \
+             patch.object(backup, 'run', side_effect=lambda args,**kwargs: calls.append(args)), \
+             patch.object(backup, 'mongo'), patch.object(backup, 'fingerprint', return_value=[]):
+            with self.assertRaisesRegex(backup.BackupError, 'não corresponde'):
+                backup.verify(self.work / 'fixture.gpg', self.key)
+        self.assertIn(['docker', 'rm', '-f', '-v', target], calls)
+        self.assertFalse(any('--drop' in call or 'source' in call for call in calls))
+
     @unittest.skipUnless(shutil.which('gpg') and os.environ.get('BACKUP_TEST_GPG'), 'real GPG agent runs in CI')
     def test_gpg_roundtrip_and_wrong_key_before_any_docker_operation(self):
         source = self.work / 'plain'

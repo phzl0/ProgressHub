@@ -35,7 +35,9 @@ jobs:
         env:
           BACKUP_TEST_CONTAINER: ${{ job.services.mongodb.id }}
           BACKUP_TEST_GPG: '1'
-        run: python3 -m unittest discover -s scripts -p 'test_backup.py' -v
+        run: |
+          test -n "$BACKUP_TEST_CONTAINER"
+          python3 -m unittest discover -s scripts -p 'test_backup.py' -v
       - name: Install frontend dependencies
         working-directory: client
         run: npm ci --ignore-scripts --no-audit --no-fund
