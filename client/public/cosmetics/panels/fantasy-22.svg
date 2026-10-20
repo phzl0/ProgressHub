@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-24 -24 48 48" width="48" height="48" preserveAspectRatio="none"><defs><g id="Symbol_120_0_Layer0_0_FILL">
+<path fill="#FFFFFF" stroke="none" d=" M 16 -22 L 16 -24 -16 -24 -16 -22 -14 -22 -14 -20 -20 -20 -20 -14 -22 -14 -22 -16 -24 -16 -24 16 -22 16 -22 14 -20 14 -20 20 -14 20 -14 22 -16 22 -16 24 16 24 16 22 14 22 14 20 20 20 20 14 22 14 22 16 24 16 24 -16 22 -16 22 -14 20 -14 20 -20 14 -20 14 -22 16 -22 M 12 -22 L 12 -18 18 -18 18 -12 22 -12 22 12 18 12 18 18 12 18 12 22 -12 22 -12 18 -18 18 -18 12 -22 12 -22 -12 -18 -12 -18 -18 -12 -18 -12 -22 12 -22 Z" />
+</g>
+
+</defs><g id="panel_border_022">
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#Symbol_120_0_Layer0_0_FILL" />
+</g>
+</g>
+
+</svg>

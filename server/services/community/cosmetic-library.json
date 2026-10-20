@@ -1,0 +1,698 @@
+{
+  "frames": [
+    {
+      "id": "portrait-wood-a",
+      "name": "Madeira · Clássica",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-a.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-wood-b",
+      "name": "Madeira · Esculpida",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-b.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-wood-c",
+      "name": "Madeira · Dupla",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-c.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-wood-d",
+      "name": "Madeira · Facetada",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-d.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-wood-e",
+      "name": "Madeira · Entalhada",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-e.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-wood-f",
+      "name": "Madeira · Relevo",
+      "collection": "Madeira",
+      "asset": "/cosmetics/frames/portrait-wood-f.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-a",
+      "name": "Pedra · Clássica",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-a.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-b",
+      "name": "Pedra · Esculpida",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-b.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-c",
+      "name": "Pedra · Dupla",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-c.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-d",
+      "name": "Pedra · Facetada",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-d.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-e",
+      "name": "Pedra · Entalhada",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-e.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-stone-f",
+      "name": "Pedra · Relevo",
+      "collection": "Pedra",
+      "asset": "/cosmetics/frames/portrait-stone-f.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-a",
+      "name": "Mármore · Clássica",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-a.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-b",
+      "name": "Mármore · Esculpida",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-b.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-c",
+      "name": "Mármore · Dupla",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-c.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-d",
+      "name": "Mármore · Facetada",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-d.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-e",
+      "name": "Mármore · Entalhada",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-e.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-marble-f",
+      "name": "Mármore · Relevo",
+      "collection": "Mármore",
+      "asset": "/cosmetics/frames/portrait-marble-f.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-a",
+      "name": "Metal · Clássica",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-a.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-b",
+      "name": "Metal · Esculpida",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-b.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-c",
+      "name": "Metal · Dupla",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-c.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-d",
+      "name": "Metal · Facetada",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-d.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-e",
+      "name": "Metal · Entalhada",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-e.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-metal-f",
+      "name": "Metal · Relevo",
+      "collection": "Metal",
+      "asset": "/cosmetics/frames/portrait-metal-f.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-a",
+      "name": "Resina · Clássica",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-a.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-b",
+      "name": "Resina · Esculpida",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-b.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-c",
+      "name": "Resina · Dupla",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-c.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-d",
+      "name": "Resina · Facetada",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-d.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-e",
+      "name": "Resina · Entalhada",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-e.png",
+      "source": "portrait"
+    },
+    {
+      "id": "portrait-plastic-f",
+      "name": "Resina · Relevo",
+      "collection": "Resina",
+      "asset": "/cosmetics/frames/portrait-plastic-f.png",
+      "source": "portrait"
+    }
+  ],
+  "cards": [
+    {
+      "id": "fantasy-00",
+      "name": "Arcano 01",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-00.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-01",
+      "name": "Arcano 02",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-01.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-02",
+      "name": "Arcano 03",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-02.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-03",
+      "name": "Arcano 04",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-03.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-04",
+      "name": "Arcano 05",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-04.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-05",
+      "name": "Arcano 06",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-05.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-06",
+      "name": "Arcano 07",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-06.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-07",
+      "name": "Arcano 08",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-07.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-08",
+      "name": "Arcano 09",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-08.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-09",
+      "name": "Arcano 10",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-09.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-10",
+      "name": "Arcano 11",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-10.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-11",
+      "name": "Arcano 12",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-11.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-12",
+      "name": "Arcano 13",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-12.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-13",
+      "name": "Arcano 14",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-13.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-14",
+      "name": "Arcano 15",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-14.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-15",
+      "name": "Arcano 16",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-15.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-16",
+      "name": "Arcano 17",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-16.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-17",
+      "name": "Arcano 18",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-17.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-18",
+      "name": "Arcano 19",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-18.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-19",
+      "name": "Arcano 20",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-19.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "adventure-panel_border_brown",
+      "name": "Madeira robusta",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_border_brown.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_brown_detail",
+      "name": "Madeira entalhada",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_border_brown_detail.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_grey",
+      "name": "Aço polido",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_border_grey.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_grey_detail",
+      "name": "Aço gravado",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_border_grey_detail.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_arrows",
+      "name": "Guia do viajante",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_arrows.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_corners_a",
+      "name": "Cantos de carvalho",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_corners_a.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_corners_b",
+      "name": "Carvalho reforçado",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_corners_b.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_damaged",
+      "name": "Madeira antiga",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_damaged.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_grey_bolts_detail_a",
+      "name": "Oficina de aço",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_grey_bolts_detail_a.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_grey_bolts_detail_b",
+      "name": "Fortaleza",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_grey_bolts_detail_b.svg",
+      "slice": 12,
+      "source": "adventure"
+    }
+  ],
+  "chats": [
+    {
+      "id": "fantasy-20",
+      "name": "Arcano 21",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-20.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-21",
+      "name": "Arcano 22",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-21.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-22",
+      "name": "Arcano 23",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-22.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-23",
+      "name": "Arcano 24",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-23.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-24",
+      "name": "Arcano 25",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-24.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-25",
+      "name": "Arcano 26",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-25.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-26",
+      "name": "Arcano 27",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-26.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-27",
+      "name": "Arcano 28",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-27.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-28",
+      "name": "Arcano 29",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-28.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "fantasy-29",
+      "name": "Arcano 30",
+      "collection": "Fantasia",
+      "asset": "/cosmetics/panels/fantasy-29.svg",
+      "slice": 12,
+      "source": "fantasy"
+    },
+    {
+      "id": "adventure-banner_classic_curtain",
+      "name": "Estandarte clássico",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-banner_classic_curtain.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-banner_hanging",
+      "name": "Estandarte suspenso",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-banner_hanging.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-banner_modern",
+      "name": "Estandarte moderno",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-banner_modern.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_arrows_dark_detail",
+      "name": "Diário de expedição",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_arrows_dark_detail.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_grey_bolts",
+      "name": "Painel rebitado",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_grey_bolts.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_grey_bolts_dark",
+      "name": "Aço noturno",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_grey_bolts_dark.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_brown",
+      "name": "Madeira robusta",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_border_brown.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_brown_detail",
+      "name": "Madeira entalhada",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_border_brown_detail.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_grey",
+      "name": "Aço polido",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_border_grey.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_border_grey_detail",
+      "name": "Aço gravado",
+      "collection": "Industrial",
+      "asset": "/cosmetics/panels/adventure-panel_border_grey_detail.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_arrows",
+      "name": "Guia do viajante",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_arrows.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "adventure-panel_brown_corners_a",
+      "name": "Cantos de carvalho",
+      "collection": "Aventura",
+      "asset": "/cosmetics/panels/adventure-panel_brown_corners_a.svg",
+      "slice": 12,
+      "source": "adventure"
+    },
+    {
+      "id": "scifi-blade",
+      "name": "Lâmina · Liso",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_blade_rectangle.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-blade_screws",
+      "name": "Lâmina · Rebites",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_blade_rectangle_screws.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-large",
+      "name": "Comando · Liso",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_large_rectangle.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-large_screws",
+      "name": "Comando · Rebites",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_large_rectangle_screws.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-notch",
+      "name": "Encaixe · Liso",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_notch_rectangle.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-notch_screws",
+      "name": "Encaixe · Rebites",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_notch_rectangle_screws.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-small",
+      "name": "Terminal · Liso",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_small_rectangle.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    },
+    {
+      "id": "scifi-small_screws",
+      "name": "Terminal · Rebites",
+      "collection": "Tecnológica",
+      "asset": "/cosmetics/panels/scifi-button_square_header_small_rectangle_screws.svg",
+      "slice": "20 24",
+      "source": "scifi"
+    }
+  ]
+}

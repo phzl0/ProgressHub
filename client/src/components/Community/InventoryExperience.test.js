@@ -44,3 +44,18 @@ test('an already open profile, banner and chat drop expired effects without a ne
  expect(container.querySelector('.ph-skin-essential')).toBeInTheDocument();expect(container.querySelector('.ql-frame-essential')).toBeInTheDocument();expect(container.querySelector('.ph-chat-skin-standard')).toBeInTheDocument();expect(screen.queryByText('Energia em código')).not.toBeInTheDocument();
  unmount();jest.useRealTimers();
 });
+test('library categories filter by collection and selected decorations apply to profile and chat',async()=>{
+ const library=require('./cosmeticLibrary.json');
+ const catalog=Object.fromEntries(Object.entries(library).map(([key,items])=>[key,items.map(item=>({...item,owned:true,permanent:true}))]));
+ global.fetch=jest.fn(async()=>({ok:true,json:async()=>({catalog,fullCollection:true,welcomeClaimed:true})}));
+ const {container}=render(<Cosmetics me={me}/>);
+ await screen.findByText('Todos os cosméticos disponíveis na sua conta.');
+ expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(30);
+ fireEvent.change(screen.getByLabelText('Filtrar coleção'),{target:{value:'Madeira'}});
+ expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(6);
+ fireEvent.click(screen.getByRole('button',{name:library.frames[0].name}));expect(container.querySelector('.ph-avatar-art')).toHaveStyle({backgroundImage:`url("${library.frames[0].asset}")`});
+ fireEvent.click(screen.getByRole('button',{name:'Cards de perfil'}));fireEvent.click(screen.getByRole('button',{name:library.cards[0].name}));
+ expect(container.querySelector('.ph-library-card')).toHaveStyle({'--cosmetic-art':`url("${library.cards[0].asset}")`});
+ fireEvent.click(screen.getByRole('button',{name:'Chat'}));fireEvent.click(screen.getByRole('button',{name:library.chats[0].name}));
+ expect(container.querySelector('.ph-library-chat')).toBeInTheDocument();
+});

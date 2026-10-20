@@ -1,0 +1,452 @@
+[
+  {
+    "file": "frames/portrait-wood-a.png",
+    "source": "Screaming Brain Studios / Frame_A-Wood_01-256x256.png",
+    "sha256": "e82904fa24ca67008cb2cd3c143451324f7bed5d39ce0ee4d65eaac4101adf6d"
+  },
+  {
+    "file": "frames/portrait-wood-b.png",
+    "source": "Screaming Brain Studios / Frame_B-Wood_01-256x256.png",
+    "sha256": "fe4fb5268b8ba95b2e59577eaee10a80fce1dd9d94ef53a8c56d8f096a6fd0e3"
+  },
+  {
+    "file": "frames/portrait-wood-c.png",
+    "source": "Screaming Brain Studios / Frame_C-Wood_01-256x256.png",
+    "sha256": "c233e0776ba5ac60d6c4bd796a07bf1f1ee6b5080bef997d7f955903754a6bec"
+  },
+  {
+    "file": "frames/portrait-wood-d.png",
+    "source": "Screaming Brain Studios / Frame_D-Wood_01-256x256.png",
+    "sha256": "95d280c8e53f39bc0b126bcad67ecdda073fe3457fe2e36d2fa9fd8ac885c616"
+  },
+  {
+    "file": "frames/portrait-wood-e.png",
+    "source": "Screaming Brain Studios / Frame_E-Wood_01-256x256.png",
+    "sha256": "6ab24d426ed4947c5662b12f5b1375ce631a6a608d90498d22657dc1e44b2339"
+  },
+  {
+    "file": "frames/portrait-wood-f.png",
+    "source": "Screaming Brain Studios / Frame_F-Wood_01-256x256.png",
+    "sha256": "829c5c23749820f275048c81b78718cc13ffec64fc7c912174f51885c356ec60"
+  },
+  {
+    "file": "frames/portrait-stone-a.png",
+    "source": "Screaming Brain Studios / Frame_A-Stone_01-256x256.png",
+    "sha256": "86851ed3391df543998bdc2a216dacd5315b2b8a8656ba2531b3914bcd03dedd"
+  },
+  {
+    "file": "frames/portrait-stone-b.png",
+    "source": "Screaming Brain Studios / Frame_B-Stone_01-256x256.png",
+    "sha256": "ea9bfe65f9cd982b017de3a6f1f03025d091a19783c57e9c596af6bfaa4f8215"
+  },
+  {
+    "file": "frames/portrait-stone-c.png",
+    "source": "Screaming Brain Studios / Frame_C-Stone_01-256x256.png",
+    "sha256": "f0103be691a6d10d66e7e48b2b0123ace6f5a9943806ac159d8ef0b8a064cda8"
+  },
+  {
+    "file": "frames/portrait-stone-d.png",
+    "source": "Screaming Brain Studios / Frame_D-Stone_01-256x256.png",
+    "sha256": "7a92b8372a4f854a9c40692d3f0ee2af25a2d6f048499fd56b83ea68d1cc29f7"
+  },
+  {
+    "file": "frames/portrait-stone-e.png",
+    "source": "Screaming Brain Studios / Frame_E-Stone_01-256x256.png",
+    "sha256": "13db472332a2b05a9b17a45bb74dc54d7616c17d1278cf6dd671ae339738c125"
+  },
+  {
+    "file": "frames/portrait-stone-f.png",
+    "source": "Screaming Brain Studios / Frame_F-Stone_01-256x256.png",
+    "sha256": "be662c44c7b5ca5c88a08b22158e2bff2125682909841999575bba1e1bbb81a1"
+  },
+  {
+    "file": "frames/portrait-marble-a.png",
+    "source": "Screaming Brain Studios / Frame_A-Marble_01-256x256.png",
+    "sha256": "a5d67f13caac2bff9a410435c1e938402757d93e4df94d12d1baa92c5352eba6"
+  },
+  {
+    "file": "frames/portrait-marble-b.png",
+    "source": "Screaming Brain Studios / Frame_B-Marble_01-256x256.png",
+    "sha256": "bccba89f107077c37a1acf3f612ddb8c8ea72423f915141f87da041e90c7645a"
+  },
+  {
+    "file": "frames/portrait-marble-c.png",
+    "source": "Screaming Brain Studios / Frame_C-Marble_01-256x256.png",
+    "sha256": "1123cd9ca4b1967d860df38055e1ce109ff9c285be5f16bb43133d98c67ab36e"
+  },
+  {
+    "file": "frames/portrait-marble-d.png",
+    "source": "Screaming Brain Studios / Frame_D-Marble_01-256x256.png",
+    "sha256": "812054fcf9a0f36101c97758bda83f83c5e549cbffc59833de0b9a37542099d5"
+  },
+  {
+    "file": "frames/portrait-marble-e.png",
+    "source": "Screaming Brain Studios / Frame_E-Marble_01-256x256.png",
+    "sha256": "ddefd22dd3a94d90f04b168f34cb9fbad5be057a2f57f8a5061024f9fdd20fe1"
+  },
+  {
+    "file": "frames/portrait-marble-f.png",
+    "source": "Screaming Brain Studios / Frame_F-Marble_01-256x256.png",
+    "sha256": "fc97d3dbbf865e145ead13a0461f3a5958b64fc627e61e1f3a784283aae846f7"
+  },
+  {
+    "file": "frames/portrait-metal-a.png",
+    "source": "Screaming Brain Studios / Frame_A-Metal_01-256x256.png",
+    "sha256": "d0d7fdc97483e23aa2121bdf37956cf34f988df3bdfee4d6b620a70ec683709f"
+  },
+  {
+    "file": "frames/portrait-metal-b.png",
+    "source": "Screaming Brain Studios / Frame_B-Metal_01-256x256.png",
+    "sha256": "00b6c338ea8ed9bed143c3049f3b4c5c0df52237616306ccddd396e38b615bf5"
+  },
+  {
+    "file": "frames/portrait-metal-c.png",
+    "source": "Screaming Brain Studios / Frame_C-Metal_01-256x256.png",
+    "sha256": "7db8539411110c4e74f659438fb1b90c4c3edeb251c8a6cee48f29795ab7a0b1"
+  },
+  {
+    "file": "frames/portrait-metal-d.png",
+    "source": "Screaming Brain Studios / Frame_D-Metal_01-256x256.png",
+    "sha256": "2bb251fa1d78ccfb1f240a432ffcf9da8022e5c59ea796f04cfc167487ab7575"
+  },
+  {
+    "file": "frames/portrait-metal-e.png",
+    "source": "Screaming Brain Studios / Frame_E-Metal_01-256x256.png",
+    "sha256": "eba4d93189826470538d45bbb98a1d3143707c714b00317933b02629d47ccbd2"
+  },
+  {
+    "file": "frames/portrait-metal-f.png",
+    "source": "Screaming Brain Studios / Frame_F-Metal_01-256x256.png",
+    "sha256": "b15e23abf7ccddb2da05b8642f418d6c686f982ed7c2f60ee9c06ace4aaa2023"
+  },
+  {
+    "file": "frames/portrait-plastic-a.png",
+    "source": "Screaming Brain Studios / Frame_A-Plastic_01-256x256.png",
+    "sha256": "1f0b9eacd1a445a362f3df938b4f9002a9d2cd615df5b3db983b608363bbc555"
+  },
+  {
+    "file": "frames/portrait-plastic-b.png",
+    "source": "Screaming Brain Studios / Frame_B-Plastic_01-256x256.png",
+    "sha256": "75f364cb2536948f7603ff8fc3f0816213b66f133d9327f83d454ccfac45cea3"
+  },
+  {
+    "file": "frames/portrait-plastic-c.png",
+    "source": "Screaming Brain Studios / Frame_C-Plastic_01-256x256.png",
+    "sha256": "c30798ba37413cff4b23d56e38f7253852145aec232d250f0a8b0c06ce908fc3"
+  },
+  {
+    "file": "frames/portrait-plastic-d.png",
+    "source": "Screaming Brain Studios / Frame_D-Plastic_01-256x256.png",
+    "sha256": "c0f13df1761740ff6d6bcf3b8b2a0cdd6d5edeb365857fa3fe02418bc3d35d50"
+  },
+  {
+    "file": "frames/portrait-plastic-e.png",
+    "source": "Screaming Brain Studios / Frame_E-Plastic_01-256x256.png",
+    "sha256": "328c1251c5785ec95d20c2690e6b406c80ddc2143d4f4c7aa620fd378542a621"
+  },
+  {
+    "file": "frames/portrait-plastic-f.png",
+    "source": "Screaming Brain Studios / Frame_F-Plastic_01-256x256.png",
+    "sha256": "572f03a7899df50002f72d19012d07d46f9400fe0ee9cf369c581ce8c5deeec4"
+  },
+  {
+    "file": "panels/fantasy-00.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_000",
+    "sha256": "781b618ec55cb6ef966556607dc22cddeaeac9c21c9970790388d75dc710c3e6"
+  },
+  {
+    "file": "panels/fantasy-01.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_001",
+    "sha256": "73757d74d0cda63343302903602bbfc322cc32c80d331dd6fd6afbab4f830f07"
+  },
+  {
+    "file": "panels/fantasy-02.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_002",
+    "sha256": "687f964a6f2d0094b0b4f0cc692d160970f7dac39ce34f5995ca91f8f4bf4177"
+  },
+  {
+    "file": "panels/fantasy-03.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_003",
+    "sha256": "377a4982cd2931d0dba726bf8b3300708960193a60bf3cc71143b3318cd17a71"
+  },
+  {
+    "file": "panels/fantasy-04.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_004",
+    "sha256": "95b5e3f6e25a825e91369b5ff123af2aa668f93e4451247bda2fbe728ef4d9d6"
+  },
+  {
+    "file": "panels/fantasy-05.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_005",
+    "sha256": "ca7d743c9e5127f05e7aa0df26245cf8971e81c5ca4da4f58dc69d6a2a55a531"
+  },
+  {
+    "file": "panels/fantasy-06.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_006",
+    "sha256": "ec66c56f56ea30c4583fed98225efa1da63f3165ac7ceb2d0cc4859921fc40bb"
+  },
+  {
+    "file": "panels/fantasy-07.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_007",
+    "sha256": "89fadf76e3ece33f333575102e103c9b07550c11d305b8a6c31ef0e20ff7891f"
+  },
+  {
+    "file": "panels/fantasy-08.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_008",
+    "sha256": "f69a0ed37adc7d9e46a419d826c582537083e7ff61642f496d68eafd414ff52f"
+  },
+  {
+    "file": "panels/fantasy-09.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_009",
+    "sha256": "5260bb36f7c0a3e568f4a2ebf90a64e5382399c9b6e1efdf7c182835ea7909fb"
+  },
+  {
+    "file": "panels/fantasy-10.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_010",
+    "sha256": "a9c690b1217417ce58d424667acb6073425f38a08f2c995a4f3eaf063e52a371"
+  },
+  {
+    "file": "panels/fantasy-11.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_011",
+    "sha256": "09dc84dc556b16e73f6d9e30f1c6c1e323a1682b13c1f9f3eed117e1ca058094"
+  },
+  {
+    "file": "panels/fantasy-12.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_012",
+    "sha256": "4135fe7bae62fdc384800111f8d7870acabcee87934822579525aeca14b78dfc"
+  },
+  {
+    "file": "panels/fantasy-13.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_013",
+    "sha256": "c69e8d7075cadf35415b76e1fdc2df4d10251d981c8228f78109a11c91343e44"
+  },
+  {
+    "file": "panels/fantasy-14.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_014",
+    "sha256": "26736d7d54a491488d7ff8602ab61658636ad08f91034e4392f44e980f318098"
+  },
+  {
+    "file": "panels/fantasy-15.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_015",
+    "sha256": "93f5ddf1fda2753cc55847cc48702c6d52f63a114ffb14d8d03c902b48505c22"
+  },
+  {
+    "file": "panels/fantasy-16.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_016",
+    "sha256": "27642a6f8f3bde5389a2867bf0c47a885d3717a509617510e2ad6d895f83e179"
+  },
+  {
+    "file": "panels/fantasy-17.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_017",
+    "sha256": "796aa4648ffe1a94402f541ce473e387d71cc93fa613b749e20fcf23633ac7ae"
+  },
+  {
+    "file": "panels/fantasy-18.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_018",
+    "sha256": "fa65ad7762c7dae70b0981520839d43f272725b9565745a097ecc6a76ef71005"
+  },
+  {
+    "file": "panels/fantasy-19.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_019",
+    "sha256": "03b3216932b48354d4272239d57d8e564700a98e0d4f26bc046bab07c4037da2"
+  },
+  {
+    "file": "panels/fantasy-20.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_020",
+    "sha256": "f4d80e1a250c3fac877b5edd3c2a0ed141fb72751ae3d03093419c37795c9d4d"
+  },
+  {
+    "file": "panels/fantasy-21.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_021",
+    "sha256": "d2e1b2029908960176278ce7ce3325f83d54bf90c89905242895b78bcf72438a"
+  },
+  {
+    "file": "panels/fantasy-22.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_022",
+    "sha256": "8f189d240e564aec4d6076c8458915b4259e1d0a7183fde896c4d378d0f318e9"
+  },
+  {
+    "file": "panels/fantasy-23.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_023",
+    "sha256": "c15aa8af3711820a080c8b1dda7fa4233364a6c24d9149eabae09c324f1c3cb5"
+  },
+  {
+    "file": "panels/fantasy-24.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_024",
+    "sha256": "83ad84dc1983f873783bdf2b377cef9c48d49dacc14143d12eeb0a53f4774ea1"
+  },
+  {
+    "file": "panels/fantasy-25.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_025",
+    "sha256": "6e551140292ce497c6c53d69cb4968c1c9b817cae5aecbddf4c0f6d4c2a4bd55"
+  },
+  {
+    "file": "panels/fantasy-26.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_026",
+    "sha256": "6d39deaaa007a362f03bd6664f09c2fff28c5bd1d315d2f192cf6c819eeb4161"
+  },
+  {
+    "file": "panels/fantasy-27.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_027",
+    "sha256": "c5fd2fe0105c7d2b730851132d4deefa57f76c87157d28574a9b5373f7f9ce11"
+  },
+  {
+    "file": "panels/fantasy-28.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_028",
+    "sha256": "df5aefbed42b748a1f990a621cb3b46bb93a8f8da45509e3acba1600c827079d"
+  },
+  {
+    "file": "panels/fantasy-29.svg",
+    "source": "Kenney Fantasy UI Borders / panel_border_029",
+    "sha256": "c6dfc8ea2fb72227fbe967b7aab1a494da03b691862a16b3287045b0a6d98c78"
+  },
+  {
+    "file": "panels/adventure-panel_border_brown.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_brown",
+    "sha256": "57e82337b5a95c6443d558e6ecb36c6d0727d374647dbc3874cc88a23de45f82"
+  },
+  {
+    "file": "panels/adventure-panel_border_brown_detail.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_brown_detail",
+    "sha256": "b32a549063bdaea7dfb43bc5e9d5638f57a68a638d78628847728dd6037a9e9c"
+  },
+  {
+    "file": "panels/adventure-panel_border_grey.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_grey",
+    "sha256": "62fa19427793e02e0caa45064f89102462705813897dd18824f9833d9aead225"
+  },
+  {
+    "file": "panels/adventure-panel_border_grey_detail.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_grey_detail",
+    "sha256": "f1f070cec1fc1b6682eb780b35cec4ca61b3493b4f5bfcfe90b98e86ffa600d8"
+  },
+  {
+    "file": "panels/adventure-panel_brown_arrows.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_arrows",
+    "sha256": "a5527bca2bd3f889e65787b14dd7e89c7ff3e7514469f2eedad6fc26c57c86fa"
+  },
+  {
+    "file": "panels/adventure-panel_brown_corners_a.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_corners_a",
+    "sha256": "342d6a4fe1930ca085f1122ca9547f1d5599e264611324f57ce973e7af240d8d"
+  },
+  {
+    "file": "panels/adventure-panel_brown_corners_b.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_corners_b",
+    "sha256": "b8ee3a0f73126047529fd349a18ddbfe7572d2b14df888285df604c076c2db33"
+  },
+  {
+    "file": "panels/adventure-panel_brown_damaged.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_damaged",
+    "sha256": "4a1f43b50b2362bc756788ec7cd882b4cda816e8378e0df4edce235e7bc83f14"
+  },
+  {
+    "file": "panels/adventure-panel_grey_bolts_detail_a.svg",
+    "source": "Kenney UI Pack Adventure / panel_grey_bolts_detail_a",
+    "sha256": "62d1ac1017fb6169a39c6ad436b9a35c52c015dbc1b0ed854b7fd48deb266217"
+  },
+  {
+    "file": "panels/adventure-panel_grey_bolts_detail_b.svg",
+    "source": "Kenney UI Pack Adventure / panel_grey_bolts_detail_b",
+    "sha256": "57f27313d52574cd989d9338907ce8e501f21f0e99e9bc781f855b1bdd3cdf4c"
+  },
+  {
+    "file": "panels/adventure-banner_classic_curtain.svg",
+    "source": "Kenney UI Pack Adventure / banner_classic_curtain",
+    "sha256": "57c81dbe07ad05bd73a79897287387fb167a858e0a867550d7502348bd9b5bd9"
+  },
+  {
+    "file": "panels/adventure-banner_hanging.svg",
+    "source": "Kenney UI Pack Adventure / banner_hanging",
+    "sha256": "4dd8aaa7c0b4a5fca33982464c086a7d3db846b139637267783b5c195681db94"
+  },
+  {
+    "file": "panels/adventure-banner_modern.svg",
+    "source": "Kenney UI Pack Adventure / banner_modern",
+    "sha256": "fed1536006c231121fa720d5c487e42ddf2bff3f6d8b13b8e6a2fd2bab5519d5"
+  },
+  {
+    "file": "panels/adventure-panel_brown_arrows_dark_detail.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_arrows_dark_detail",
+    "sha256": "52210a289d9ff02f2b6fc76d9e0244f1050b48990bce3d3751aabad937256c26"
+  },
+  {
+    "file": "panels/adventure-panel_grey_bolts.svg",
+    "source": "Kenney UI Pack Adventure / panel_grey_bolts",
+    "sha256": "3c7261968649f9a4cbd952e6f0f93f096f6021a677375c242bb045ef17d24b54"
+  },
+  {
+    "file": "panels/adventure-panel_grey_bolts_dark.svg",
+    "source": "Kenney UI Pack Adventure / panel_grey_bolts_dark",
+    "sha256": "2607ea2e45d3a80a5a5c178eb6e62a4a4962b5fc1772041ca88497bf259d70dd"
+  },
+  {
+    "file": "panels/adventure-panel_border_brown.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_brown",
+    "sha256": "57e82337b5a95c6443d558e6ecb36c6d0727d374647dbc3874cc88a23de45f82"
+  },
+  {
+    "file": "panels/adventure-panel_border_brown_detail.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_brown_detail",
+    "sha256": "b32a549063bdaea7dfb43bc5e9d5638f57a68a638d78628847728dd6037a9e9c"
+  },
+  {
+    "file": "panels/adventure-panel_border_grey.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_grey",
+    "sha256": "62fa19427793e02e0caa45064f89102462705813897dd18824f9833d9aead225"
+  },
+  {
+    "file": "panels/adventure-panel_border_grey_detail.svg",
+    "source": "Kenney UI Pack Adventure / panel_border_grey_detail",
+    "sha256": "f1f070cec1fc1b6682eb780b35cec4ca61b3493b4f5bfcfe90b98e86ffa600d8"
+  },
+  {
+    "file": "panels/adventure-panel_brown_arrows.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_arrows",
+    "sha256": "a5527bca2bd3f889e65787b14dd7e89c7ff3e7514469f2eedad6fc26c57c86fa"
+  },
+  {
+    "file": "panels/adventure-panel_brown_corners_a.svg",
+    "source": "Kenney UI Pack Adventure / panel_brown_corners_a",
+    "sha256": "342d6a4fe1930ca085f1122ca9547f1d5599e264611324f57ce973e7af240d8d"
+  },
+  {
+    "file": "panels/scifi-button_square_header_blade_rectangle.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_blade_rectangle",
+    "sha256": "f90027b5495fd0a827f2c3e91bf2c44ebeb1bf0602cf565894ad96794c02b1d4"
+  },
+  {
+    "file": "panels/scifi-button_square_header_blade_rectangle_screws.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_blade_rectangle_screws",
+    "sha256": "a527124a7992629b70ce7795d0279b27d4ddc674485cadb82b3a1625878b8323"
+  },
+  {
+    "file": "panels/scifi-button_square_header_large_rectangle.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_large_rectangle",
+    "sha256": "dfde23afc9dd79a74883970a56396df82df6353c216271d0b4b8f14881839d1b"
+  },
+  {
+    "file": "panels/scifi-button_square_header_large_rectangle_screws.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_large_rectangle_screws",
+    "sha256": "55ceb2cfffc864150cbd2cc16fde70901568e4e500250272f6f7b610f60816e4"
+  },
+  {
+    "file": "panels/scifi-button_square_header_notch_rectangle.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_notch_rectangle",
+    "sha256": "3dbf25306aa2fdc7a86f9713d399bafcd696fd0d07e7e1ca1c4ffbd21557db84"
+  },
+  {
+    "file": "panels/scifi-button_square_header_notch_rectangle_screws.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_notch_rectangle_screws",
+    "sha256": "2fbac534ac238a3daa89811a708ed2b9885a5989e1fdf5b3c4b2138aee1554c5"
+  },
+  {
+    "file": "panels/scifi-button_square_header_small_rectangle.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_small_rectangle",
+    "sha256": "8244d1628b74f45dbb13817dce672baf551db601b274eac20749c44e66d1b482"
+  },
+  {
+    "file": "panels/scifi-button_square_header_small_rectangle_screws.svg",
+    "source": "Kenney UI Pack Sci-Fi / Grey / button_square_header_small_rectangle_screws",
+    "sha256": "b1a5f8323572560e5cc184f07f26f43b7861499acbe73004f0d45f9e6168ba27"
+  }
+]

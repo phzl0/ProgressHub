@@ -25,6 +25,19 @@ CATALOG.titles.push({id:'prestige',name:'Forjado no progresso'},{id:'ember',name
 CATALOG.avatars=[{id:'github',name:'Foto do GitHub'},{id:'bolt',name:'Pulso'},{id:'leaf',name:'Semente'},{id:'compass',name:'Explorador'}];
 CATALOG.cards=[{id:'essential',name:'Original'},{id:'prestige',name:'Prestígio'},{id:'ember',name:'Forja'},{id:'forest',name:'Santuário'},{id:'energy',name:'Núcleo elétrico',temporary:true}];
 CATALOG.chats=[{id:'standard',name:'Clássico'},{id:'prestige',name:'Assinatura dourada'},{id:'ember',name:'Assinatura de brasa'},{id:'forest',name:'Assinatura do bosque'},{id:'energy',name:'Assinatura elétrica',temporary:true}];
+const LIBRARY = require('./cosmetic-library.json');
+for (const [category, items] of Object.entries(LIBRARY)) {
+  CATALOG[category].push(...items.map(item => ({...item, collectionItem: true})));
+}
+// Account IDs are issued by GitHub, never accepted from an appearance request.
+function fullCollectionFor(user) {
+  const ids = (process.env.COMMUNITY_COSMETIC_GITHUB_IDS ?? '125362257').split(',').map(id => id.trim()).filter(Boolean);
+  return Boolean(user?.githubId && ids.includes(String(user.githubId)));
+}
+function permanentlyOwned(user, category, item) {
+  return fullCollectionFor(user) || (!item.collectionItem && !item.temporary) ||
+    (Array.isArray(user?.communityCosmetics?.unlockedItems) && user.communityCosmetics.unlockedItems.includes(`${category}:${item.id}`));
+}
 const FIELDS={frames:'frame',covers:'cover',titles:'title',avatars:'avatar',cards:'card',chats:'chat'};
 const DEFAULTS={frame:'essential',cover:'custom',title:'none',avatar:'github',card:'essential',chat:'standard'};
 const DEFAULT_APPEARANCE={frame:'essential',cover:'custom',title:'none'};
@@ -46,32 +59,36 @@ function welcomeExpiry(user){
 }
 function inventoryFor(user,now=new Date()){
   const expiry=welcomeExpiry(user);
-  const catalog=Object.fromEntries(Object.entries(CATALOG).map(([category,items])=>[category,items.map(item=>({...item,owned:!item.temporary||expiry>now.getTime(),permanent:!item.temporary,expiresAt:item.temporary&&expiry?new Date(expiry).toISOString():null}))]));
-  return {catalog,appearance:appearanceFor(user,now),welcomeClaimed:Boolean(user?.communityCosmetics?.welcomeClaimedAt),serverTime:now.toISOString()};
+  const catalog=Object.fromEntries(Object.entries(CATALOG).map(([category,items])=>[category,items.map(item=>({...item,owned:Boolean(permanentlyOwned(user,category,item)||(item.temporary&&expiry>now.getTime())),permanent:permanentlyOwned(user,category,item)||!item.temporary,expiresAt:item.temporary&&!permanentlyOwned(user,category,item)&&expiry?new Date(expiry).toISOString():null}))]));
+  return {catalog,appearance:appearanceFor(user,now),fullCollection:fullCollectionFor(user),welcomeClaimed:fullCollectionFor(user)||Boolean(user?.communityCosmetics?.welcomeClaimedAt),serverTime:now.toISOString()};
 }
 async function claimWelcome(db,user,now=new Date()){
   await db.collection('users').updateOne({_id:user._id,'communityCosmetics.welcomeClaimedAt':{$exists:false}},{$set:{communityCosmetics:{welcomeClaimedAt:now,welcomeExpiresAt:new Date(now.getTime()+7*86400000)}}});
   return inventoryFor(await db.collection('users').findOne({_id:user._id}),now);
 }
 function validateOwnedAppearance(input,user,now=new Date()){
-  const result=validateAppearance(input);const expiresAt={};
+  const result=validateAppearance(input);const expiresAt={};const permanentEffects=[];
   for(const [category,field] of Object.entries(FIELDS)){
     const item=CATALOG[category].find(i=>i.id===(result[field]||DEFAULTS[field]));
-    if(item.temporary){const expiry=welcomeExpiry(user);if(expiry<=now.getTime())throw fail('Este item não está disponível ou já expirou. Abra o Meu baú.',403);expiresAt[field]=new Date(expiry).toISOString();}
+    const permanent=permanentlyOwned(user,category,item);
+    if(item.collectionItem&&!permanent)throw fail('Este cosmético ainda não está desbloqueado na sua conta.',403);
+    if(item.temporary&&permanent)permanentEffects.push(field);
+    if(item.temporary&&!permanent){const expiry=welcomeExpiry(user);if(expiry<=now.getTime())throw fail('Este item não está disponível ou já expirou. Abra o Meu baú.',403);expiresAt[field]=new Date(expiry).toISOString();}
   }
-  return {...result,...(Object.keys(expiresAt).length?{expiresAt}:{})};
+  return {...result,...(permanentEffects.length?{permanentEffects}:{}),...(Object.keys(expiresAt).length?{expiresAt}:{})};
 }
 function appearanceFor(user,now=new Date()){
   const source=user?.communityAppearance||DEFAULT_APPEARANCE;
   let result;try{result=validateAppearance(source);}catch(_){return {...DEFAULT_APPEARANCE};}
-  const expiresAt={};
+  const expiresAt={};const permanentEffects=[];
   for(const [category,field] of Object.entries(FIELDS)){
     const item=CATALOG[category].find(i=>i.id===(result[field]||DEFAULTS[field]));
+    if(item.temporary&&Array.isArray(source.permanentEffects)&&source.permanentEffects.includes(field)){permanentEffects.push(field);continue;}
     if(item.temporary){const end=new Date(source.expiresAt?.[field]||0).getTime();
       if(!Number.isFinite(end)||end<=now.getTime()){if(['frame','cover','title'].includes(field))result[field]=DEFAULTS[field];else delete result[field];}
       else expiresAt[field]=new Date(end).toISOString();
     }
   }
-  return {...result,...(Object.keys(expiresAt).length?{expiresAt}:{})};
+  return {...result,...(permanentEffects.length?{permanentEffects}:{}),...(Object.keys(expiresAt).length?{expiresAt}:{})};
 }
-module.exports={CATALOG,DEFAULT_APPEARANCE,FIELDS,validateAppearance,validateOwnedAppearance,appearanceFor,inventoryFor,claimWelcome};
+module.exports={CATALOG,LIBRARY,fullCollectionFor,DEFAULT_APPEARANCE,FIELDS,validateAppearance,validateOwnedAppearance,appearanceFor,inventoryFor,claimWelcome};
