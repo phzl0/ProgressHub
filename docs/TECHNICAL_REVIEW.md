@@ -46,3 +46,7 @@ A pendência de substituição do CRA foi tratada em uma etapa separada, documen
 ## Atualização posterior: preparação de backup
 
 Adicionados scripts de cópia criptografada e ensaio isolado, documentados em `BACKUP_RESTORE.md`. O CI testa dados sintéticos em Docker; o backup real do computador, armazenamento externo e agendamento dependem de configuração/execução local e não foram realizados pelo agente. Não há restauração destrutiva sobre a instância da aplicação.
+
+## Atualização posterior: ensaio de desempenho
+
+Adicionados testes de carga sintéticos e relatório em `PERFORMANCE.md`, com medições antes/depois no mesmo runner. Reduzidas consultas repetidas do ranking de carreira, transferência de detalhes históricos em resumos e transferência de listas de curtidas no feed. Testes preservam somas de XP, fallback legado, perfis privados e reações. No cenário registrado de 25 clientes o p95 do ranking caiu de 1.789,60 ms para 276,09 ms. Não equivale a teste de capacidade de produção; carga sustentada, escritas, sessões reais e worker simultâneo permanecem pendentes.
