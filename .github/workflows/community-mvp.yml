@@ -29,7 +29,7 @@ jobs:
       - name: Install backend dependencies
         working-directory: server
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Test scoring, migration, concurrency and season closure
+      - name: Test scoring, concurrent writes, retry recovery and season closure
         working-directory: server
         env:
           MONGODB_TEST_URI: mongodb://127.0.0.1:27017
