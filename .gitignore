@@ -11,3 +11,5 @@ server/reset-db.js
 backup.key
 backups/
 __pycache__/
+
+performance-*.json
