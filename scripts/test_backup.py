@@ -171,7 +171,7 @@ class RestoreIntegration(unittest.TestCase):
                     manifest = backup.verify(archive, key)
                 self.assertEqual(len(manifest['collections']), 3)
                 self.assertEqual(backup.fingerprint(source), before)
-                self.assertEqual(next(c for c in manifest['collections'] if c['name']=='users')['count'], 1)
+                self.assertEqual(next(c for c in manifest['collections'] if c['name']=='users')['count'], {'$numberInt': '1'})
                 with tempfile.TemporaryDirectory() as unpacked:
                     work = Path(unpacked)
                     backup.gpg(key, '--output', str(work / 'bundle.tar'), '--decrypt', str(archive))
