@@ -11,7 +11,7 @@ const { careerFor, syncSeason, seasonHistory } = require('../../services/github/
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
 const { weeklySummary } = require('../../services/community/engagement');
 const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
-const { CATALOG, validateAppearance, appearanceFor } = require('../../services/community/cosmetics');
+const { appearanceFor, inventoryFor, claimWelcome, validateOwnedAppearance } = require('../../services/community/cosmetics');
 const { poolView, setParticipation, ensurePool } = require('../../services/community/pool');
 const { careerRanking } = require('../../services/community/career-ranking');
 const router = express.Router();
@@ -178,16 +178,21 @@ router.get('/achievements', authenticateToken, async (req, res) => {
 });
 router.get('/cosmetics', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
-  res.set('Cache-Control', 'no-store').json({ catalog: CATALOG, appearance: appearanceFor(req.user) });
+  res.set('Cache-Control', 'no-store').json(inventoryFor(req.user));
+});
+router.post('/cosmetics/welcome',authenticateToken,githubOnly,sameOrigin,async(req,res)=>{
+  try{res.set('Cache-Control','no-store').json(await claimWelcome(await connectToDatabase(),req.user));}
+  catch(_){res.status(503).json({error:'Não foi possível receber a coleção. Tente novamente.'});}
 });
 router.post('/cosmetics', authenticateToken, sameOrigin, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
   try {
-    const appearance = validateAppearance(req.body);
     const db = await connectToDatabase();
+    const fresh = await db.collection('users').findOne({_id:req.user._id});
+    const appearance = validateOwnedAppearance(req.body,fresh);
     await db.collection('users').updateOne({ _id: req.user._id }, { $set: { communityAppearance: appearance } });
     res.set('Cache-Control', 'no-store').json({ appearance });
-  } catch (error) { res.status(error.status === 400 ? 400 : 503).json({ error: error.status === 400 ? error.message : 'Não foi possível salvar sua aparência.' }); }
+  } catch (error) { res.status([400,403].includes(error.status) ? error.status : 503).json({ error: error.status ? error.message : 'Não foi possível salvar sua aparência.' }); }
 });
 router.get('/community-ranking', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para acompanhar sua contribuição.' });

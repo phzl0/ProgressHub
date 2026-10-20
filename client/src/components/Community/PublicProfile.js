@@ -4,7 +4,7 @@ import { readApiResponse } from './apiResponse';
 import React, { useEffect, useState } from 'react';
 import { Github, ArrowUpRight, ArrowLeft, Trophy, Award, ShieldCheck, Zap, Target } from 'lucide-react';
 
-import { CosmeticAvatar, CosmeticTitle, coverProps } from './Appearance';
+import { CosmeticAvatar, CosmeticTitle, CosmeticCover, ProfileCard } from './Appearance';
 import HelpRequests from './HelpRequests';
 import ProjectShowcase from './ProjectShowcase';
 import ProfileDetails from './ProfileDetails';
@@ -39,7 +39,6 @@ export default function PublicProfile({ githubId }) {
     document.addEventListener('visibilitychange', resume);
     return () => { mounted = false; controller.abort(); window.clearInterval(timer); document.removeEventListener('visibilitychange', resume); };
   }, [githubId]);
-  const cover = coverProps(profile?.appearance, profile?.profile?.banner);
   const stats = profile?.stats;
   const career = profile?.career || stats;
   const progress = Math.min(100, Math.round((career?.experience || 0) / (career?.nextLevelXP || 200) * 100));
@@ -52,15 +51,15 @@ export default function PublicProfile({ githubId }) {
   if (!profile) return <section className="ql-panel ql-empty"><ShieldCheck size={30} /><h2>Perfil indisponível</h2><p>{error || 'Este perfil não foi encontrado ou não participa do ranking público.'}</p><a href="#ranking" className="ql-button ql-button-secondary"><ArrowLeft size={16} /> Voltar ao ranking</a></section>;
   return <div className="ql-public-profile">
     <a href="#ranking" className="ql-back-link"><ArrowLeft size={15} /> Voltar ao ranking</a>
-    <section className="ql-panel ql-public-profile-identity-card">
-    <div className={`ql-public-cover ${cover.className}`} role="img" aria-label={`Banner de ${profile.login}`} style={cover.style} />
+    <ProfileCard appearance={profile.appearance} rank={profile.position} className="ql-panel ql-public-profile-identity-card">
+    <CosmeticCover className="ql-public-cover" appearance={profile.appearance} banner={profile.profile?.banner} role="img" aria-label={`Banner de ${profile.login}`} />
     <div className="ql-public-hero">
-      <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><span className="ql-tag ph-profile-achievement-total">{new Set(career?.achievements||[]).size} conquistas</span><h2>@{profile.login}</h2><CosmeticTitle title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
+      <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} appearance={profile.appearance} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><span className="ql-tag ph-profile-achievement-total">{new Set(career?.achievements||[]).size} conquistas</span><h2>@{profile.login}</h2><CosmeticTitle appearance={profile.appearance} title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
       <div className="ql-public-actions"><SafetyMenu type="user" targetId={githubId} author={{githubId,login:profile.login}}/><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </div>
     <ProfileDetails profile={profile.profile} />
     <div className="ql-profile-inline-stats"><PublicMetric icon={Zap} label="XP de carreira" value={number(career?.xp)} tone="green" /><PublicMetric icon={Trophy} label="Posição atual" value={profile.position ? `#${profile.position}` : '—'} tone="gold" /><PublicMetric icon={Award} label="Melhor posição final" value={career?.bestPosition ? `#${career.bestPosition}` : '—'} tone="purple" /><PublicMetric icon={Target} label="XP desta temporada" value={number(stats?.xp)} tone="blue" /></div>
-    </section>
+    </ProfileCard>
     {error && <p className="ql-caption" role="status">{error}</p>}
     {!stats && <p className="ql-update-banner">Aguardando a primeira sincronização deste participante na temporada atual.</p>}
 

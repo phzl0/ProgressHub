@@ -5,7 +5,7 @@ import { COMMUNITY_API } from './useCommunityData';
 import { readApiResponse } from './apiResponse';
 export const socialRequest = async (path, body, options={}) => body!==undefined ? mutationRequest(`${COMMUNITY_API}/${path}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},{path,...options}) : readApiResponse(await fetch(`${COMMUNITY_API}/${path}`,{credentials:'include'}));
 export const requestId = () => window.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
-export function Author({ author }) { return <div className="ph-social-author"><CosmeticAvatar src={author?.picture} frame={author?.appearance?.frame} size={32} />{author?.profileId ? <a href={`#profile/${author.profileId}`}>@{author.login}</a> : <strong>@{author?.login || 'Participante'}</strong>}</div>; }
+export function Author({ author }) { return <div className="ph-social-author"><CosmeticAvatar src={author?.picture} appearance={author?.appearance} frame={author?.appearance?.frame} size={32} />{author?.profileId ? <a href={`#profile/${author.profileId}`}>@{author.login}</a> : <strong>@{author?.login || 'Participante'}</strong>}</div>; }
 export async function preparePhoto(file) {
   if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Escolha uma foto JPG, PNG ou WebP de até 10 MB.');
   const bitmap = await createImageBitmap(file);
