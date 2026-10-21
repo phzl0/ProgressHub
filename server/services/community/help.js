@@ -1,6 +1,8 @@
 const { ObjectId } = require('mongodb');
 const { boundedText } = require('./text-limits');
 const {blockedIds,requireVisible,requireUnblockedPair}=require('./safety');
+const {tags,search}=require('./expansion-utils');
+const CATEGORIES=['general','javascript','typescript','python','java','frontend','backend','database','devops','testing'];
 const { notify } = require('./notifications');
 const helpersFor = r => [...new Set([...(r.helpers||[]),...r.members.filter(m=>m!==r.owner)])];
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
@@ -11,7 +13,8 @@ function validateHelp(input) {
   if (!title || title.length > 80 || !description || description.length > 2000 || !Number.isInteger(limit) || limit < 2 || limit > 20) throw fail('Informe título (80 caracteres), descrição (2.000) e limite de 2 a 20 participantes.');
   if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Pedido inválido.');
   if(input.requiresApproval!==undefined&&typeof input.requiresApproval!=='boolean')throw fail('Aprovação inválida.');
-  return { title, description, limit, requiresApproval:Boolean(input.requiresApproval), requestId: input.requestId };
+  if(input.category!==undefined&&!CATEGORIES.includes(input.category))throw fail('Categoria inválida.');
+  return { title, description, limit, requiresApproval:Boolean(input.requiresApproval), requestId: input.requestId,...(input.category!==undefined?{category:input.category}:{}),...(input.tags!==undefined?{tags:tags(input.tags)}:{}) };
 }
 async function readHelp(db, user, query = {}) {
   const hidden=await blockedIds(db,user);
@@ -24,6 +27,9 @@ async function readHelp(db, user, query = {}) {
   else if(query.tab==='helped'){filter.owner={$ne:viewer};filter.$or=[{helpers:viewer},{members:viewer}];}
   else if(query.tab==='saved'){const saved=await db.collection('communityHelpSaves').find({githubId:viewer},{projection:{helpId:1}}).limit(500).toArray();filter._id={$in:saved.map(s=>new ObjectId(s.helpId))};}
   else if(query.tab&&query.tab!=='all')throw fail('Coleção inválida.');
+  if(query.category){if(!CATEGORIES.includes(query.category))throw fail('Categoria inválida.');if(query.category==='general')filter.$and.push({$or:[{helpCategory:'general'},{helpCategory:{$exists:false}}]});else filter.helpCategory=query.category;}
+  if(query.status){if(!['open','paused','resolved'].includes(query.status))throw fail('Estado inválido.');filter.helpStatus=query.status;}
+  const term=search(query.q);if(term)filter.$and.push({$or:[{name:{$regex:term,$options:'i'}},{description:{$regex:term,$options:'i'}},{helpTags:{$regex:term,$options:'i'}}]});
   if(query.id&&query.before)throw fail('Página inválida.');
   if(query.before){if(typeof query.before!=='string'||!/^[a-f0-9]{24}$/.test(query.before))throw fail('Página inválida.');filter._id={...(filter._id||{}),$lt:new ObjectId(query.before)};}
   const rows=await db.collection('communityGroups').find(filter).sort({_id:-1}).limit(21).toArray();
@@ -31,7 +37,8 @@ async function readHelp(db, user, query = {}) {
   const ids=rows.map(r=>r._id.toHexString());
   const saved=viewer?await db.collection('communityHelpSaves').find({githubId:viewer,helpId:{$in:ids}}).toArray():[];
   const counts=await db.collection('communityHelpComments').aggregate([{$match:{helpId:{$in:ids},githubId:{$nin:hidden},deletedAt:{$exists:false},moderationHidden:{$ne:true}}},{$group:{_id:'$helpId',count:{$sum:1}}}]).toArray();
-  return {requests:rows.slice(0,20).map(r=>({id:r._id.toHexString(),title:r.name,description:r.description,status:r.helpStatus,limit:r.helpLimit,count:r.members.length,joined:r.members.includes(viewer),requiresApproval:Boolean(r.requiresApproval),pending:Boolean(viewer&&(r.joinRequests||[]).includes(viewer)),own:r.owner===viewer,authorId:r.owner,author:users.find(u=>u.githubId===r.owner)?.githubLogin||'Participante',createdAt:r.createdAt,saved:saved.some(s=>s.helpId===r._id.toHexString()),commentCount:counts.find(c=>c._id===r._id.toHexString())?.count||0,helpers:helpersFor(r).map(m=>{const u=users.find(u=>u.githubId===m);return {login:u?.communityOptIn||r.owner===viewer||m===viewer?u?.githubLogin||'Participante':'Participante',profileId:u?.communityOptIn?m:null};})})),hasMore:rows.length>20};
+  const solutions=await db.collection('communityHelpComments').find({_id:{$in:rows.map(r=>r.solutionCommentId).filter(Boolean)},deletedAt:{$exists:false},moderationHidden:{$ne:true},githubId:{$nin:hidden}}).toArray();
+  return {categories:CATEGORIES,requests:rows.slice(0,20).map(r=>({id:r._id.toHexString(),title:r.name,description:r.description,category:r.helpCategory||'general',tags:r.helpTags||[],solution:solutions.find(c=>String(c._id)===r.solutionCommentId)?{id:r.solutionCommentId,text:solutions.find(c=>String(c._id)===r.solutionCommentId).text}:null,status:r.helpStatus,limit:r.helpLimit,count:r.members.length,joined:r.members.includes(viewer),requiresApproval:Boolean(r.requiresApproval),pending:Boolean(viewer&&(r.joinRequests||[]).includes(viewer)),own:r.owner===viewer,authorId:r.owner,author:users.find(u=>u.githubId===r.owner)?.githubLogin||'Participante',createdAt:r.createdAt,saved:saved.some(s=>s.helpId===r._id.toHexString()),commentCount:counts.find(c=>c._id===r._id.toHexString())?.count||0,helpers:helpersFor(r).map(m=>{const u=users.find(u=>u.githubId===m);return {login:u?.communityOptIn||r.owner===viewer||m===viewer?u?.githubLogin||'Participante':'Participante',profileId:u?.communityOptIn?m:null};})})),hasMore:rows.length>20};
 }
 async function helpAction(db, user, input) {
   const groups = db.collection('communityGroups');
@@ -39,7 +46,7 @@ async function helpAction(db, user, input) {
     const value = validateHelp(input); const requestKey = `help:${user.githubId}:${value.requestId}`;
     const existing = await groups.findOne({ requestKey }); if (existing) return { id: existing._id.toHexString() };
     if (await groups.countDocuments({ owner: user.githubId, type: 'help', helpStatus: { $ne: 'resolved' } }) >= 5) throw fail('Encerre um dos seus cinco pedidos antes de abrir outro.');
-    const result = await groups.updateOne({ requestKey }, { $setOnInsert: { type: 'help', name: value.title, description: value.description, helpLimit: value.limit, helpStatus: 'open', requiresApproval:value.requiresApproval,joinRequests:[], owner: user.githubId, members: [user.githubId], helpers: [], invited: [], createdAt: new Date() } }, { upsert: true });
+    const result = await groups.updateOne({ requestKey }, { $setOnInsert: { type: 'help', helpCategory:value.category||'general',helpTags:value.tags||[],name: value.title, description: value.description, helpLimit: value.limit, helpStatus: 'open', requiresApproval:value.requiresApproval,joinRequests:[], owner: user.githubId, members: [user.githubId], helpers: [], invited: [], createdAt: new Date() } }, { upsert: true });
     const row = result.upsertedId ? { _id: result.upsertedId } : await groups.findOne({ requestKey }); return { id: row._id.toHexString() };
   }
   if (typeof input.id !== 'string' || !/^[a-f0-9]{24}$/.test(input.id)) throw fail('Pedido indisponível.',404);
@@ -84,11 +91,19 @@ async function helpAction(db, user, input) {
     await require('./comments').addComment(db,user,'help',input.id,input);
   } else if(input.action==='delete-comment') {
     await require('./comments').deleteComment(db,user,'help',input.id,input.commentId);
+  } else if(input.action==='solution'){
+    if(group.owner!==user.githubId)throw fail('Apenas o autor pode escolher a solução.',403);
+    if(typeof input.commentId!=='string'||input.commentId.length>200)throw fail('Comentário inválido.');
+    const comment=await db.collection('communityHelpComments').findOne({_id:input.commentId,helpId:input.id,deletedAt:{$exists:false},moderationHidden:{$ne:true}});
+    if(!comment)throw fail('Comentário indisponível.',404);await requireVisible(db,user,comment.githubId);
+    const result=await groups.updateOne({_id,owner:user.githubId,solutionCommentId:group.solutionCommentId||null},{$set:{solutionCommentId:input.commentId,helpStatus:'resolved',joinRequests:[],resolvedAt:new Date()},...(comment.githubId!==user.githubId?{$addToSet:{helpers:comment.githubId}}:{})});
+    if(!result.matchedCount)throw fail('A solução mudou. Atualize o pedido.',409);
+    if(comment.githubId!==user.githubId)await notify(db,comment.githubId,`help-solution:${input.id}:${input.commentId}`,'Sua sugestão resolveu um pedido',`Sua resposta foi marcada como solução em “${group.name}”.`,`#community/help/${input.id}`,{actorId:user.githubId});
   } else if (input.action === 'status') {
     if (group.owner !== user.githubId) throw fail('Apenas o autor pode encerrar o pedido.',403);
     if (!['open','paused','resolved'].includes(input.status)) throw fail('Estado inválido.');
     if(input.expectedStatus!==undefined&&input.expectedStatus!==group.helpStatus)throw fail('O estado mudou. Atualize o grupo.',409);
-    const result=await groups.updateOne({_id,owner:user.githubId,helpStatus:group.helpStatus},{$set:{helpStatus:input.status,...(input.status==='resolved'?{joinRequests:[],resolvedAt:new Date()}:{})}});
+    const result=await groups.updateOne({_id,owner:user.githubId,helpStatus:group.helpStatus},{$set:{helpStatus:input.status,...(input.status==='resolved'?{joinRequests:[],resolvedAt:new Date()}:{solutionCommentId:null})}});
     if(!result.matchedCount)throw fail('O estado mudou. Atualize o grupo.',409);
     if (input.status === 'resolved') await Promise.all(group.members.filter(m => m !== user.githubId).map(m => notify(db,m,`help-resolved:${input.id}`,'Pedido resolvido',`“${group.name}” foi marcado como resolvido.`,`#community/groups/${input.id}`,{actorId:user.githubId,groupId:input.id})));
   } else throw fail('Ação inválida.');

@@ -4,7 +4,7 @@ import CompactDialog from './CompactDialog';
 import {useSafety} from './SafetyContext';
 import {socialRequest,requestId} from './socialAPI';
 export const REPORT_REASONS=[['spam','Spam'],['harassment','Assédio ou ofensas'],['inappropriate','Conteúdo inadequado'],['manipulation','Suspeita de manipulação'],['other','Outro motivo']];
-const labels={user:'usuário',post:'publicação',comment:'comentário','help-comment':'comentário',message:'mensagem',help:'pedido de ajuda'};
+const labels={project:'projeto',user:'usuário',post:'publicação',comment:'comentário','help-comment':'comentário',message:'mensagem',help:'pedido de ajuda'};
 export function ReportDialog({type,targetId,onClose}){
   const [reason,setReason]=useState('');const [note,setNote]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const pending=useRef(null);const lock=useRef(false);
   async function send(e){e.preventDefault();if(lock.current||!reason)return;lock.current=true;setBusy(true);setError('');if(pending.current?.reason!==reason||pending.current?.note!==note)pending.current={action:'report',targetType:type,targetId,reason,note,requestId:requestId()};try{await socialRequest('safety',pending.current);onClose();}catch(e){setError(e.message);}finally{lock.current=false;setBusy(false);}}

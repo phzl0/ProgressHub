@@ -4,9 +4,9 @@ const {requireStaff,roleFor,suspensionFor}=require('./permissions');
 const {boundedText}=require('./text-limits');
 const {notify}=require('./notifications');
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
-const TYPES={post:'communityPosts',comment:'communityComments','help-comment':'communityHelpComments',message:'communityMessages',help:'communityGroups'};
+const TYPES={project:'communityProjects',post:'communityPosts',comment:'communityComments','help-comment':'communityHelpComments',message:'communityMessages',help:'communityGroups'};
 const hex=v=>typeof v==='string'&&/^[a-f0-9]{24}$/.test(v);
-function contentKey(type,value){if(!TYPES[type]||typeof value!=='string'||value.length>200)throw fail('Conteúdo inválido.');if(['post','message','help'].includes(type)){if(!hex(value))throw fail('Conteúdo inválido.');return new ObjectId(value);}return value;}
+function contentKey(type,value){if(!TYPES[type]||typeof value!=='string'||value.length>200)throw fail('Conteúdo inválido.');if(['post','message','help','project'].includes(type)){if(!hex(value))throw fail('Conteúdo inválido.');return new ObjectId(value);}return value;}
 const revision=row=>row?.moderationRevision||null;
 function auditView(r){return {id:r._id,action:r.command.action,actor:r.actorLogin,role:r.actorRole,targetId:r.command.targetId||null,targetType:r.command.targetType||null,reason:r.command.reason,status:r.status,createdAt:r.createdAt,before:r.before,after:r.after};}
 function reportView(r,detail=false){return {id:r._id.toHexString(),type:r.targetType,targetId:r.targetId,authorId:r.authorId,label:r.label,reason:r.reason,status:r.status,createdAt:r.createdAt,revision:revision(r),...(detail?{note:r.note,excerpt:r.excerpt,attachment:r.attachment||null,contextId:r.contextId,resolution:r.resolution||null}:{})};}
@@ -80,6 +80,7 @@ async function adminAction(db,user,input){
  if(command.action==='warn')await notify(db,command.targetId,`admin:${key}`,'Advertência da moderação',command.reason,'#settings');
  if(['suspend','unsuspend'].includes(command.action))await notify(db,command.targetId,`admin:${key}`,command.action==='suspend'?'Participação suspensa':'Participação reativada',command.reason,'#settings');
  if(command.action==='announce')await notify(db,'*',`admin:${key}`,command.title,command.message,'#community');
+ if(command.targetType==='project'&&['hide','restore'].includes(command.action))await db.collection('communityPosts').updateMany({projectId:command.targetId},{$set:{projectModerationHidden:command.action==='hide'}});
  await audits.updateOne({_id:key,status:'pending'},{$set:{status:'completed',after,completedAt:new Date()}});return {ok:true,id:key};
 }
 module.exports={readAdmin,adminAction,commandFor};

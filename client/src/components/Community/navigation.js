@@ -11,7 +11,7 @@ export const PAGE_LABELS = { mail: 'Correio', admin: 'Administração', dashboar
 export function viewFromHash(hash = window.location.hash) {
   const path = hash.replace(/^#/, '').split('?')[0];
   if (/^profile\/\d{1,20}$/.test(path)) return 'profile';
-  if (/^community\/(general|help|groups|contacts|invitations)$/.test(path) || /^community\/(groups|help)\/[a-f0-9]{24}$/.test(path) || /^community\/post\/[a-f0-9]{24}$/.test(path)) return 'community';
+  if (/^community\/(general|help|groups|contacts|invitations|projects|events|interests)$/.test(path) || /^community\/(groups|help|projects|events)\/[a-f0-9]{24}$/.test(path) || /^community\/post\/[a-f0-9]{24}$/.test(path)) return 'community';
   if (path === 'ranking/community') return 'ranking';
   if (path === 'ranking/seasons') return 'seasons';
   if (path === 'progress/achievements') return 'achievements';

@@ -10,7 +10,7 @@ function context(kind,parentId){
   if(!['post','help'].includes(kind)||typeof parentId!=='string'||!/^[a-f0-9]{24}$/.test(parentId))throw fail('Conteúdo indisponível.',404);
   return {isHelp:kind==='help',collection:kind==='help'?'communityHelpComments':'communityComments',scope:kind==='help'?{helpId:parentId}:{postId:parentId}};
 }
-async function requireParent(db,kind,parentId,user,write=false){const ctx=context(kind,parentId);const parent=await db.collection(ctx.isHelp?'communityGroups':'communityPosts').findOne({_id:new ObjectId(parentId),...(ctx.isHelp?{type:'help',moderationHidden:{$ne:true}}:{deletedAt:{$exists:false},moderationHidden:{$ne:true}})});if(!parent)throw fail('Conteúdo indisponível.',404);if(write&&ctx.isHelp&&parent.helpStatus==='resolved')throw fail('Pedido resolvido: somente leitura.',409);ctx.readOnly=ctx.isHelp&&parent.helpStatus==='resolved';if(user)await requireVisible(db,user,ctx.isHelp?parent.owner:parent.githubId);return ctx;}
+async function requireParent(db,kind,parentId,user,write=false){const ctx=context(kind,parentId);const parent=await db.collection(ctx.isHelp?'communityGroups':'communityPosts').findOne({_id:new ObjectId(parentId),...(ctx.isHelp?{type:'help',moderationHidden:{$ne:true}}:{deletedAt:{$exists:false},moderationHidden:{$ne:true},projectModerationHidden:{$ne:true}})});if(!parent)throw fail('Conteúdo indisponível.',404);if(write&&ctx.isHelp&&parent.helpStatus==='resolved')throw fail('Pedido resolvido: somente leitura.',409);ctx.readOnly=ctx.isHelp&&parent.helpStatus==='resolved';if(user)await requireVisible(db,user,ctx.isHelp?parent.owner:parent.githubId);return ctx;}
 async function addComment(db,user,kind,parentId,input){
   const ctx=await requireParent(db,kind,parentId,user,true);const collection=db.collection(ctx.collection);const text=boundedText(input.text,600,3);
   if(typeof input.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId))throw fail('Comentário inválido.');
@@ -48,7 +48,7 @@ async function readComments(db,user,query){
   if(query.threadId!==undefined){
     if(typeof query.threadId!=='string'||query.threadId.length>200)throw fail('Conversa inválida.');
     const root=await collection.findOne({_id:query.threadId,...ctx.scope});if(root)await requireVisible(db,user,root.githubId);if(!root||root.rootId||root.moderationHidden)throw fail('Conversa indisponível.',404);filter.rootId=query.threadId;
-  }else filter.$and=[{$or:[{rootId:{$exists:false}},{rootId:null}]},{$or:[{deletedAt:{$exists:false},moderationHidden:{$ne:true}},{hasReplies:true}]}];
+  }else filter.$and=[{$or:[{rootId:{$exists:false}},{rootId:null}]},{$or:[{deletedAt:{$exists:false},moderationHidden:{$ne:true},projectModerationHidden:{$ne:true}},{hasReplies:true}]}];
   if(query.commentId!==undefined){if(typeof query.commentId!=='string'||query.commentId.length>200||query.threadId||query.before)throw fail('Comentário inválido.');filter._id=query.commentId;}
   if(query.before){
     if(typeof query.before!=='string'||query.before.length>200)throw fail('Página inválida.');

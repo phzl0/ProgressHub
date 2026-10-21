@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongodb');
 const {blockedIds,requireVisible,requireUnblockedPair}=require('./safety');
 const { notify } = require('./notifications');
+const {tags,search}=require('./expansion-utils');
 const { boundedText } = require('./text-limits');
 const CATEGORIES = ['feed','project','learning','help','achievement','discussion'];
 const REACTIONS = ['heart', 'like', 'laugh', 'sad'];
@@ -88,15 +89,25 @@ function validatePost(input) {
   if (typeof image !== 'string' || (image && (!/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(image) || image.length > 400000))) throw fail('Envie uma imagem WebP de até 300 KB.');
   if (!body && !image) throw fail('Escreva algo ou escolha uma foto.');
   if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(input.requestId)) throw fail('Publicação inválida.');
-  return { text: body, image, kind: CATEGORIES.includes(input.kind) ? input.kind : 'feed', requestId: input.requestId };
+  return { text: body, image, kind: CATEGORIES.includes(input.kind) ? input.kind : 'feed', requestId: input.requestId,...(input.tags!==undefined?{tags:tags(input.tags)}:{}) };
 }
 async function readFeed(db, user, query = {}) {
   const hidden=await blockedIds(db,user);
-  const filter = { deletedAt: { $exists: false }, moderationHidden: { $ne: true }, githubId: {$nin:hidden} };
+  const filter = { deletedAt: { $exists: false }, moderationHidden: { $ne: true }, projectModerationHidden:{$ne:true},projectOwner:{$nin:hidden},githubId: {$nin:hidden} };
   if(query.kind && query.kind!=='all') {if(!CATEGORIES.includes(query.kind))throw fail('Categoria inválida.');filter.kind=query.kind==='project'?{$in:['project','progress']}:query.kind;}
+  if(query.scope&&!['all','following','saved','interests'].includes(query.scope))throw fail('Filtro inválido.');
+  if(query.scope==='following'){
+    const [people,projects]=await Promise.all([db.collection('communityUserFollows').find({githubId:user.githubId}).limit(500).toArray(),db.collection('communityProjectFollows').find({githubId:user.githubId}).limit(500).toArray()]);
+    filter.$or=[{githubId:{$in:people.map(p=>p.targetId)}},{projectId:{$in:projects.map(p=>p.projectId)}}];
+  }
+  if(query.scope==='saved'){const saved=await db.collection('communityPostSaves').find({githubId:user.githubId}).limit(500).toArray();filter.$and=[{_id:{$in:saved.map(s=>id(s.postId))}}];}
+  if(query.scope==='interests'){const fresh=await db.collection('users').findOne({_id:user._id},{projection:{communityInterests:1}});(filter.$and||=[]).push({tags:{$in:fresh?.communityInterests||[]}});}
+  if(query.tag)filter.tags=tags([query.tag])[0];
+  const term=search(query.q);if(term)(filter.$and||=[]).push({text:{$regex:term,$options:'i'}});
   if (query.before) filter._id = { $lt: id(query.before) };
   if (query.post) filter._id = id(query.post);
   const posts = await db.collection('communityPosts').find(filter).sort({ _id: -1 }).limit(21).toArray();
+  const saves=await db.collection('communityPostSaves').find({githubId:user.githubId,postId:{$in:posts.map(p=>String(p._id))}}).toArray();
   const page = posts.slice(0, 20); const ids = page.map(p => p._id.toHexString());
   const comments = await db.collection('communityComments').aggregate([{ $match: { postId: { $in: ids }, githubId: {$nin:hidden}, deletedAt: { $exists: false }, moderationHidden: { $ne: true } } }, { $group: { _id: '$postId', rows: { $topN: { sortBy: { createdAt: -1, _id: -1 }, output: '$$ROOT', n: 10 } }, count: { $sum: 1 } } }]).toArray();
   // Return at most one bucket per post/reaction instead of transferring one
@@ -115,7 +126,7 @@ async function readFeed(db, user, query = {}) {
     likes.set(row._id.postId, entry);
   }
   const authors = await people(db, [...new Set(page.map(p => p.githubId).concat(comments.flatMap(c => c.rows.map(r => r.githubId))))]);
-  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.get(p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image, kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, l?.reactions[key] || 0])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
+  return { posts: page.map(p => { const c = comments.find(c => c._id === p._id.toHexString()); const l = likes.get(p._id.toHexString()); return { id: p._id.toHexString(), text: p.text, image: p.image,tags:p.tags||[],projectId:p.projectId||null,saved:saves.some(s=>s.postId===String(p._id)),kind: p.kind==='progress'?'project':p.kind||'feed', createdAt: p.createdAt, author: authors.get(p.githubId), own: p.githubId === user.githubId, likes: l?.count || 0, liked: Boolean(l?.mine), reaction: l?.mine || null, reactions: Object.fromEntries(REACTIONS.map(key => [key, l?.reactions[key] || 0])), commentCount: c?.count || 0, comments: (c?.rows || []).reverse().map(r => ({ id: String(r._id), text: r.text, author: authors.get(r.githubId), own: r.githubId === user.githubId })) }; }), hasMore: posts.length > 20 };
 }
 async function feedAction(db, user, input) {
   if (input.action === 'publish') {
@@ -129,10 +140,14 @@ async function feedAction(db, user, input) {
   } else {
     const postId = id(input.postId).toHexString();
     if(input.action==='delete-post'&&await db.collection('communityPosts').findOne({_id:new ObjectId(postId),githubId:user.githubId,deletedAt:{$exists:true}}))return {ok:true};
-    const post = await db.collection('communityPosts').findOne({ _id: new ObjectId(postId), deletedAt: { $exists: false }, moderationHidden: { $ne: true } });
+    const post = await db.collection('communityPosts').findOne({ _id: new ObjectId(postId), deletedAt: { $exists: false }, moderationHidden: { $ne: true },projectModerationHidden:{$ne:true} });
     if (!post) throw fail('Publicação indisponível.', 404);
     await requireVisible(db,user,post.githubId);
-    if (input.action === 'like') {
+    if(input.action==='save'){
+      if(typeof input.saved!=='boolean')throw fail('Marcação inválida.');const key=`${postId}:${user.githubId}`;
+      if(input.saved){if(await db.collection('communityPostSaves').countDocuments({githubId:user.githubId})>=500&&!await db.collection('communityPostSaves').findOne({_id:key}))throw fail('Limite de 500 publicações salvas.');await db.collection('communityPostSaves').updateOne({_id:key},{$setOnInsert:{postId,githubId:user.githubId,createdAt:new Date()}},{upsert:true});}
+      else await db.collection('communityPostSaves').deleteOne({_id:key});
+    }else if (input.action === 'like') {
       if (typeof input.liked !== 'boolean' || (input.reaction !== undefined && input.reaction !== null && !REACTIONS.includes(input.reaction))) throw fail('Reação inválida.');
       const key = `${postId}:${user.githubId}`;
       if (input.liked) await db.collection('communityLikes').updateOne({ _id: key }, { $set: { reaction: input.reaction || 'heart' }, $setOnInsert: { postId, githubId: user.githubId } }, { upsert: true });

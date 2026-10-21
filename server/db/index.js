@@ -24,6 +24,17 @@ async function initializeIndexes() {
       { githubId: 1 }, { unique: true, partialFilterExpression: { githubId: { $type: 'string' } } }
     );
     await usersCollection.createIndex({ 'githubStats.period': 1, 'githubStats.xp': -1, githubId: 1 });
+    for (const name of ['communityProjects','communityEvents','communityAnnouncements']) await db.collection(name).createIndex({requestKey:1},{unique:true});
+    await db.collection('communityProjects').createIndex({owner:1,_id:-1});
+    await db.collection('communityProjects').createIndex({status:1,tags:1,_id:-1});
+    await db.collection('communityProjectApplications').createIndex({projectId:1,status:1});
+    await db.collection('communityProjectUpdates').createIndex({projectId:1,createdAt:-1});
+    await db.collection('communityProjectFollows').createIndex({githubId:1,projectId:1});
+    await db.collection('communityUserFollows').createIndex({githubId:1,targetId:1});
+    await db.collection('communityPostSaves').createIndex({githubId:1,postId:1});
+    await db.collection('communityEvents').createIndex({status:1,endsAt:1});
+    await db.collection('communityEventEntries').createIndex({eventId:1,status:1});
+    await db.collection('communityAnnouncements').createIndex({status:1,dueAt:1});
     await db.collection('communitySeasons').createIndex({ githubId: 1, period: 1 }, { unique: true });
     await db.collection('communitySeasons').createIndex({ period: 1, status: 1, 'stats.xp': -1, githubId: 1 });
     await db.collection('missionEvents').createIndex({ githubId: 1, at: 1 });

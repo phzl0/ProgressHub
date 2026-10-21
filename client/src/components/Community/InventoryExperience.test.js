@@ -36,7 +36,7 @@ test('expiry removes every temporary effect and rank decoration cannot be select
  expect(screen.getByRole('img',{name:'Avatar'})).toHaveAttribute('src','github.png');
 });
 test('an already open profile, banner and chat drop expired effects without a new response',()=>{
- jest.useFakeTimers();jest.setSystemTime(new Date('2026-10-20T12:00:00Z'));
+ const initialTime=Date.now()+60000;jest.useFakeTimers();jest.setSystemTime(initialTime);
  const expiresAt=new Date(Date.now()+1000).toISOString();const appearance={frame:'energy',title:'energy',card:'energy',chat:'energy',expiresAt:{frame:expiresAt,title:expiresAt,card:expiresAt,chat:expiresAt}};
  const {container,unmount}=render(<ProfileCard appearance={appearance}><CosmeticAvatar appearance={appearance}/><CosmeticTitle appearance={appearance}/><CosmeticChatFrame as="div" appearance={appearance}>Mensagem</CosmeticChatFrame></ProfileCard>);
  expect(container.querySelector('.ph-skin-energy')).toBeInTheDocument();

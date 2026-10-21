@@ -31,6 +31,7 @@ async function runCycle() {
         if (!result.matchedCount) ownsLease = false;
       } catch (_) { ownsLease = false; }
     }, 30000);
+    await require('./services/community/community-growth').dispatchAnnouncements(db);
     await ensurePool(db);
     let synced = 0;
     let failures = 0;
@@ -88,7 +89,9 @@ async function start() {
     console.log('Community background sync enabled: every ten minutes.');
     runCycle();
     const timer = setInterval(runCycle, INTERVAL);
-    process.on('SIGTERM', () => { stopping = true; clearInterval(timer); process.exit(0); });
+    let dispatching=false;
+    const announcementTimer=setInterval(async()=>{if(dispatching||stopping)return;dispatching=true;try{await require('./services/community/community-growth').dispatchAnnouncements(await connectToDatabase());}catch(_){console.error('Scheduled announcements will retry.');}finally{dispatching=false;}},60000);
+    process.on('SIGTERM', () => { stopping = true; clearInterval(timer); clearInterval(announcementTimer); process.exit(0); });
   } catch (_) {
     console.error('Community worker could not initialize; process will restart.');
     process.exit(1);

@@ -1,6 +1,7 @@
 import SafetyMenu from './SafetyControls';
 import {useSafety} from './SafetyContext';
 import { readApiResponse } from './apiResponse';
+import {FollowUser} from './CommunityDiscovery';
 import React, { useEffect, useState } from 'react';
 import { Github, ArrowUpRight, ArrowLeft, Trophy, Award, ShieldCheck, Zap, Target } from 'lucide-react';
 
@@ -10,7 +11,7 @@ import ProjectShowcase from './ProjectShowcase';
 import ProfileDetails from './ProfileDetails';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
-export default function PublicProfile({ githubId }) {
+export default function PublicProfile({ githubId, connected }) {
   const {isBlocked}=useSafety();const [badgePage,setBadgePage]=useState(0);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
@@ -55,7 +56,7 @@ export default function PublicProfile({ githubId }) {
     <CosmeticCover className="ql-public-cover" appearance={profile.appearance} banner={profile.profile?.banner} role="img" aria-label={`Banner de ${profile.login}`} />
     <div className="ql-public-hero">
       <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} appearance={profile.appearance} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><span className="ql-tag ph-profile-achievement-total">{new Set(career?.achievements||[]).size} conquistas</span><h2>@{profile.login}</h2><CosmeticTitle appearance={profile.appearance} title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
-      <div className="ql-public-actions"><SafetyMenu type="user" targetId={githubId} author={{githubId,login:profile.login}}/><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
+      <div className="ql-public-actions"><FollowUser githubId={githubId} connected={connected}/><SafetyMenu type="user" targetId={githubId} author={{githubId,login:profile.login}}/><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </div>
     <ProfileDetails profile={profile.profile} />
     <div className="ql-profile-inline-stats"><PublicMetric icon={Zap} label="XP de carreira" value={number(career?.xp)} tone="green" /><PublicMetric icon={Trophy} label="Posição atual" value={profile.position ? `#${profile.position}` : '—'} tone="gold" /><PublicMetric icon={Award} label="Melhor posição final" value={career?.bestPosition ? `#${career.bestPosition}` : '—'} tone="purple" /><PublicMetric icon={Target} label="XP desta temporada" value={number(stats?.xp)} tone="blue" /></div>
@@ -67,7 +68,7 @@ export default function PublicProfile({ githubId }) {
     <section className="ql-panel"><div className="ql-panel-head"><h2>Conquistas permanentes</h2><span className="ql-tag ql-gold-tag"><Award size={12} />{career?.achievements?.length || 0} DESBLOQUEADAS</span></div>{career?.achievements?.length ? <div className="ql-public-badges ql-compact-badges">{career.achievements.slice(badgePage*10,badgePage*10+10).map((badge) => <div key={badge} className="ql-public-badge"><Award size={23} /><strong>{badge}</strong><span>CONQUISTA DESBLOQUEADA</span></div>)}</div> : <p className="ql-empty">As primeiras conquistas ainda estão por vir.</p>}</section>
     {(career?.achievements?.length||0)>10&&<div className="ph-xp-pagination"><small>Conquistas · Página {badgePage+1}</small><div><button disabled={!badgePage} onClick={()=>setBadgePage(n=>n-1)}>Anterior</button><button disabled={(badgePage+1)*10>=career.achievements.length} onClick={()=>setBadgePage(n=>n+1)}>Próxima</button></div></div>}
     {!isBlocked(githubId)&&<HelpRequests profileId={githubId} />}
-    <ProjectShowcase projects={profile.profile?.projects} />
+    <a className="ql-text-link" href={`#community/projects?owner=${githubId}`}>Ver projetos acompanháveis deste desenvolvedor →</a><ProjectShowcase projects={profile.profile?.projects} />
     <p className="ql-caption"><ShieldCheck size={13} className="ql-inline-icon" /> Somente o resumo público de quem participa do ranking. Atualização da visualização a cada 10 minutos; atividades são sincronizadas pelo serviço automático quando disponível. {stats?.syncedAt && `GitHub sincronizado em ${new Date(stats.syncedAt).toLocaleString('pt-BR')}.`}</p>
   </div>;
 }

@@ -2,7 +2,7 @@ const {ObjectId}=require('mongodb');
 const {boundedText}=require('./text-limits');
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 const REASONS=['spam','harassment','inappropriate','manipulation','other'];
-const TYPES=['user','post','comment','help-comment','message','help'];
+const TYPES=['project','user','post','comment','help-comment','message','help'];
 const hex=value=>typeof value==='string'&&/^[a-f0-9]{24}$/.test(value);
 const account=value=>typeof value==='string'&&/^\d{1,20}$/.test(value);
 async function blockedIds(db,user){if(!user?.githubId)return [];return (await db.collection('communityBlocks').find({githubId:user.githubId},{projection:{blockedId:1}}).toArray()).map(r=>r.blockedId);}
@@ -16,16 +16,16 @@ async function resolveReport(db,user,type,targetId){
     return {authorId:person.githubId,label:`Usuário @${person.githubLogin}`,excerpt:'',contextId:null};
   }
   let row,parentId=null;
-  if(type==='post'||type==='help'||type==='message'){
+  if(type==='project'||type==='post'||type==='help'||type==='message'){
     if(!hex(targetId))throw fail('Conteúdo indisponível.',404);
-    row=await db.collection(type==='post'?'communityPosts':type==='help'?'communityGroups':'communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false},moderationHidden:{$ne:true},...(type==='help'?{type:'help'}:{})});
+    row=await db.collection(type==='project'?'communityProjects':type==='post'?'communityPosts':type==='help'?'communityGroups':'communityMessages').findOne({_id:new ObjectId(targetId),deletedAt:{$exists:false},moderationHidden:{$ne:true},...(type==='help'?{type:'help'}:{})});
   }else{
     row=await db.collection(type==='comment'?'communityComments':'communityHelpComments').findOne({_id:targetId,deletedAt:{$exists:false},moderationHidden:{$ne:true}});
     if(row){parentId=type==='comment'?row.postId:row.helpId;const parent=hex(parentId)?await db.collection(type==='comment'?'communityPosts':'communityGroups').findOne({_id:new ObjectId(parentId),deletedAt:{$exists:false},moderationHidden:{$ne:true},...(type==='help-comment'?{type:'help'}:{})}):null;if(!parent)row=null;}
   }
   if(!row)throw fail('Conteúdo indisponível.',404);
   if(type==='message'){await require('./social').channelFor(db,user,row.channel||'general');parentId=row.channel?.startsWith('group:')?row.channel.slice(6):'general';}
-  return {authorId:type==='help'?row.owner:row.githubId,label:({post:'Publicação',help:'Pedido de ajuda',message:'Mensagem',comment:'Comentário','help-comment':'Comentário em pedido de ajuda'})[type],excerpt:String(row.text||row.description||'').slice(0,600),contextId:parentId,attachment:row.attachment?{name:row.attachment.name,type:row.attachment.type}:null};
+  return {authorId:['help','project'].includes(type)?row.owner:row.githubId,label:({project:'Projeto',post:'Publicação',help:'Pedido de ajuda',message:'Mensagem',comment:'Comentário','help-comment':'Comentário em pedido de ajuda'})[type],excerpt:String(row.text||row.description||'').slice(0,600),contextId:parentId,attachment:row.attachment?{name:row.attachment.name,type:row.attachment.type}:null};
 }
 async function readSafety(db,user,query={}){
   const reportsFilter={reporterId:user.githubId};if(query.before){if(!hex(query.before))throw fail('Página inválida.');reportsFilter._id={$lt:new ObjectId(query.before)};}

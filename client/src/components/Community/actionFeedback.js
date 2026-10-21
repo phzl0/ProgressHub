@@ -21,6 +21,7 @@ const messages={
 };
 export function domainsFor(path){
   const base=path.replace(/^\//,'').split('?')[0];
+  if(['projects','events','discovery','community-tools'].includes(base))return [base,'feed','discovery','community-tools'];
   if(['profile','cosmetics','participation','sync','missions/claim'].includes(base))return base==='missions/claim'||base==='sync'?['me','leaderboard','missions','achievements','xp-history']:['me','leaderboard'];
   if(base==='admin')return ['admin','safety','feed','help','chat','social','inbox'];
   if(base==='safety')return ['safety','feed','help','chat','social','inbox'];
