@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 const dialogStack=[];
-export default function CompactDialog({ title, onClose, children, closeLabel='Fechar comentários', size }) {
+export default function CompactDialog({ title, onClose, children, closeLabel='Fechar comentários', size, scrollLabel='Conteúdo do baú' }) {
   const panel = useRef(null); const close = useRef(onClose); close.current = onClose; const label = useId();
   useEffect(() => {
     dialogStack.push(label);
@@ -22,5 +22,5 @@ export default function CompactDialog({ title, onClose, children, closeLabel='Fe
     document.addEventListener('keydown', keydown);
     return () => { const index=dialogStack.indexOf(label);if(index>=0)dialogStack.splice(index,1); document.body.style.overflow = overflow; background.forEach(({node,inert,hidden}) => { if (inert === null) node.removeAttribute('inert'); else node.setAttribute('inert',inert); if (hidden === null) node.removeAttribute('aria-hidden'); else node.setAttribute('aria-hidden',hidden); }); document.removeEventListener('keydown',keydown); previous?.focus(); };
   }, [label]);
-  return createPortal(<div className="ph-modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}><section className={`ph-compact-dialog${size === 'large' ? ' ph-inventory-dialog' : ''}`} role="dialog" aria-modal="true" aria-labelledby={label} ref={panel}><header><h2 id={label}>{title}</h2><button aria-label={closeLabel} onClick={onClose}><X size={18} /></button></header>{size === 'large' ? <div className="ph-inventory-scroll" tabIndex={0} aria-label="Conteúdo do baú">{children}</div> : children}</section></div>,document.body);
+  return createPortal(<div className="ph-modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}><section className={`ph-compact-dialog${size === 'large' ? ' ph-inventory-dialog' : ''}`} role="dialog" aria-modal="true" aria-labelledby={label} ref={panel}><header><h2 id={label}>{title}</h2><button aria-label={closeLabel} onClick={onClose}><X size={18} /></button></header>{size === 'large' ? <div className="ph-inventory-scroll" tabIndex={0} aria-label={scrollLabel}>{children}</div> : children}</section></div>,document.body);
 }

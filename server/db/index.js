@@ -24,6 +24,10 @@ async function initializeIndexes() {
       { githubId: 1 }, { unique: true, partialFilterExpression: { githubId: { $type: 'string' } } }
     );
     await usersCollection.createIndex({ 'githubStats.period': 1, 'githubStats.xp': -1, githubId: 1 });
+    await db.collection('communityPosts').createIndex({githubId:1,_id:-1});
+    await db.collection('communityProjectFollows').createIndex({projectId:1,githubId:1});
+    await db.collection('communityNotificationJobs').createIndex({status:1,createdAt:1});
+    await db.collection('communityUserFollows').createIndex({targetId:1,githubId:1});
     await db.collection('communityProjectReactions').createIndex({projectId:1,githubId:1});
     for (const name of ['communityProjects','communityEvents','communityAnnouncements']) await db.collection(name).createIndex({requestKey:1},{unique:true});
     await db.collection('communityProjects').createIndex({owner:1,_id:-1});

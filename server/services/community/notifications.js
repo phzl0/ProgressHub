@@ -2,6 +2,8 @@ const fail = (message, status = 400) => Object.assign(new Error(message), { stat
 const canAnnounce = user => Boolean(require('./permissions').roleFor(user));
 async function notify(db, recipient, key, title, message, path, metadata={}) {
   const actorId=typeof metadata.actorId==='string'?metadata.actorId:null;const groupId=typeof metadata.groupId==='string'&&/^[a-f0-9]{24}$/.test(metadata.groupId)?metadata.groupId:null;
+  const category=metadata.category||(key.startsWith('reply:')?'replies':key.startsWith('comment:')?'comments':key.startsWith('project-apply:')||key.startsWith('project-decision:')?'collaboration':key.startsWith('event-review:')?'events':null);
+  if(recipient!=='*'&&category){const person=await db.collection('users').findOne({githubId:recipient},{projection:{communityNotificationPreferences:1}});if(person?.communityNotificationPreferences?.[category]===false)return;}
   if(recipient!=='*'){if(actorId&&await db.collection('communityBlocks').findOne({githubId:recipient,blockedId:actorId}))return;if(groupId&&await db.collection('communityGroupMutes').findOne({_id:`${recipient}:${groupId}`}))return;}
   await db.collection('communityNotifications').updateOne({ _id: key }, { $setOnInsert: { recipient, title, message, path,...(actorId?{actorId}:{}),...(groupId?{groupId}:{}), createdAt: new Date() } }, { upsert: true });
 }

@@ -1,3 +1,4 @@
+import HomePosts from './HomePosts';
 import {ChatDockProvider} from './ChatDock';
 import Mailbox from './Mailbox';
 import XPHistory from './XPHistory';
@@ -197,7 +198,7 @@ export default function Community() {
           </div>
           <div className="ql-metrics"><Metric tone="blue" icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="10 XP por commit elegível" /><Metric tone="purple" icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="50 XP por PR + bônus de colaboração" /><Metric icon={Zap} label="Dias com commits" value={number(activeDays)} note="Atividade reconhecida neste mês" /><Metric tone="gold" icon={Trophy} label="Sua posição global" value={position ? `#${position}` : '—'} note={me?.optedIn ? 'Ranking da temporada atual' : 'Participe na aba Ranking'} /></div>
           <CareerTop revision={`${stats?.syncedAt}:${stats?.xp}:${me?.optedIn}:${me?.appearance?.frame}`} login={me?.login} />
-          <PopularProjects connected={Boolean(me?.connected)}/>
+          <PopularProjects connected={Boolean(me?.connected)}/><HomePosts/>
         </>}
         {tab === 'achievements' && <Achievements connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />}
         {['settings', 'account', 'privacy', 'information'].includes(tab) && <AccountPages tab={tab} me={me} autoplay={bannerAutoplay} onAutoplayChange={changeBannerAutoplay} participate={participate} busy={busy} api={API} />}

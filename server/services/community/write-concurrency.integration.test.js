@@ -51,7 +51,8 @@ test('MongoDB write burst: 40 publishers, duplicate retries, 120 replies and 800
     assert.equal(new Set(replies.map(c => c.id)).size, 120);
     assert.equal(await db.collection('communityComments').countDocuments({ rootId: root }), 120);
     assert.equal((await db.collection('communityComments').findOne({ _id: root })).hasReplies, true);
-    assert.equal(await db.collection('communityNotifications').countDocuments({}), 117); // owner does not notify themself
+    assert.equal(await db.collection('communityNotifications').countDocuments({_id:/^reply:/}),117);
+    assert.equal(await db.collection('communityNotifications').countDocuments({_id:/^comment:/}),117); // each action notifies once; owners do not notify themselves
     const writes = await Promise.allSettled(users.flatMap(user => Array.from({ length: 10 }, () => feedAction(db, user, { action: 'like', postId, liked: true, reaction: 'heart' }))).concat(users.flatMap(user => Array.from({ length: 10 }, () => react(db, user, { kind: 'comment', targetId: root, reaction: 'laugh' })))));
     assert.equal(statuses(writes), 800);
     assert.equal(await db.collection('communityLikes').countDocuments({ postId }), 40);

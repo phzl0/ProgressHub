@@ -94,6 +94,7 @@ function validatePost(input) {
 async function readFeed(db, user, query = {}) {
   const hidden=await blockedIds(db,user);
   const filter = { deletedAt: { $exists: false }, moderationHidden: { $ne: true }, projectModerationHidden:{$ne:true},projectOwner:{$nin:hidden},githubId: {$nin:hidden} };
+  if(query.manualOnly===true)filter.requestKey={$not:/^project-update:/};
   if(query.kind && query.kind!=='all') {if(!CATEGORIES.includes(query.kind))throw fail('Categoria inválida.');filter.kind=query.kind==='project'?{$in:['project','progress']}:query.kind;}
   if(query.scope&&!['all','following','saved','interests'].includes(query.scope))throw fail('Filtro inválido.');
   if(query.scope==='following'){

@@ -21,11 +21,11 @@ const messages={
 };
 export function domainsFor(path){
   const base=path.replace(/^\//,'').split('?')[0];
-  if(['projects','events','discovery','community-tools'].includes(base))return [base,'feed','discovery','community-tools'];
+  if(['projects','events','discovery','community-tools'].includes(base))return [base,'feed','discovery','community-tools','profile-social','home-posts'];
   if(['profile','cosmetics','participation','sync','missions/claim'].includes(base))return base==='missions/claim'||base==='sync'?['me','leaderboard','missions','achievements','xp-history']:['me','leaderboard'];
   if(base==='admin')return ['admin','safety','feed','help','chat','social','inbox'];
   if(base==='safety')return ['safety','feed','help','chat','social','inbox'];
-  if(base==='social')return ['social','inbox'];if(base==='help')return ['help','social','inbox'];if(base==='feed')return ['feed'];if(base.startsWith('goals'))return ['goals'];if(base==='inbox')return ['inbox'];return [];
+  if(base==='social')return ['social','inbox'];if(base==='help')return ['help','social','inbox'];if(base==='feed')return ['feed','profile-social','home-posts','inbox'];if(base.startsWith('goals'))return ['goals'];if(base==='inbox')return ['inbox'];return [];
 }
 // A single explicit mutation path: no fetch interception and no automatic replay of writes.
 export function mutationRequest(url,options={},metadata={}){

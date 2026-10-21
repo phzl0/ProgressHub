@@ -1,3 +1,5 @@
+import useCommunityData from './useCommunityData';
+import ProfilePosts from './ProfilePosts';
 import SafetyMenu from './SafetyControls';
 import {useSafety} from './SafetyContext';
 import { readApiResponse } from './apiResponse';
@@ -12,6 +14,7 @@ import ProfileDetails from './ProfileDetails';
 
 const API = `${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/community`;
 export default function PublicProfile({ githubId, connected }) {
+  const social=useCommunityData(`/profile-social?githubId=${githubId}`,Boolean(githubId));
   const {isBlocked}=useSafety();const [badgePage,setBadgePage]=useState(0);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
@@ -58,7 +61,7 @@ export default function PublicProfile({ githubId, connected }) {
       <div className="ql-public-identity"><CosmeticAvatar src={profile.picture} alt={`Avatar de ${profile.login}`} appearance={profile.appearance} frame={profile.appearance?.frame} size={72} /><div><span className="ql-tag ql-purple-tag"><Award size={12} />{career?.title || 'Explorador'}</span><span className="ql-tag ph-profile-achievement-total">{new Set(career?.achievements||[]).size} conquistas</span><h2>@{profile.login}</h2><CosmeticTitle appearance={profile.appearance} title={profile.appearance?.title} /><p className="ql-muted">Desenvolvedor da comunidade · perfil público</p></div></div>
       <div className="ql-public-actions"><FollowUser githubId={githubId} connected={connected}/><SafetyMenu type="user" targetId={githubId} author={{githubId,login:profile.login}}/><a className="ql-button" href={`https://github.com/${profile.login}`} target="_blank" rel="noreferrer"><Github size={16} /> Ver no GitHub <ArrowUpRight size={15} /></a><button className="ql-button ql-button-secondary" onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link do perfil'}</button></div>
     </div>
-    <ProfileDetails profile={profile.profile} />
+    <ProfileDetails profile={profile.profile} /><div className="ph-follower-counts"><strong>{social.data?.followers||0} seguidores</strong><span>{social.data?.following||0} seguindo</span></div>
     <div className="ql-profile-inline-stats"><PublicMetric icon={Zap} label="XP de carreira" value={number(career?.xp)} tone="green" /><PublicMetric icon={Trophy} label="Posição atual" value={profile.position ? `#${profile.position}` : '—'} tone="gold" /><PublicMetric icon={Award} label="Melhor posição final" value={career?.bestPosition ? `#${career.bestPosition}` : '—'} tone="purple" /><PublicMetric icon={Target} label="XP desta temporada" value={number(stats?.xp)} tone="blue" /></div>
     </ProfileCard>
     {error && <p className="ql-caption" role="status">{error}</p>}
@@ -69,6 +72,7 @@ export default function PublicProfile({ githubId, connected }) {
     {(career?.achievements?.length||0)>10&&<div className="ph-xp-pagination"><small>Conquistas · Página {badgePage+1}</small><div><button disabled={!badgePage} onClick={()=>setBadgePage(n=>n-1)}>Anterior</button><button disabled={(badgePage+1)*10>=career.achievements.length} onClick={()=>setBadgePage(n=>n+1)}>Próxima</button></div></div>}
     <a className="ql-text-link" href={`#community/projects?owner=${githubId}`}>Ver projetos acompanháveis deste desenvolvedor →</a><ProjectShowcase projects={profile.profile?.projects} />
     <p className="ql-caption"><ShieldCheck size={13} className="ql-inline-icon" /> Somente o resumo público de quem participa do ranking. Atualização da visualização a cada 10 minutos; atividades são sincronizadas pelo serviço automático quando disponível. {stats?.syncedAt && `GitHub sincronizado em ${new Date(stats.syncedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}.`}</p>
+    {!isBlocked(githubId)&&<ProfilePosts githubId={githubId} data={social.data} error={social.error}/>}
     {!isBlocked(githubId)&&<HelpRequests profileId={githubId} />}
   </div>;
 }

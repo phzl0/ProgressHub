@@ -95,6 +95,7 @@ async function toolsAction(db,user,input,now=new Date()){
  }else throw fail('Ação inválida.');await finishAudit(db,auditId);return {ok:true};
 }
 async function dispatchAnnouncements(db,now=new Date()){
+ await require('./project-notification-jobs').dispatchProjectNotifications(db,now);
  for(let i=0;i<25;i++){
   const claim=await db.collection('communityAnnouncements').findOneAndUpdate({dueAt:{$lte:now},$or:[{status:'scheduled'},{status:'processing',leaseUntil:{$lte:now}}]},{$set:{status:'processing',leaseUntil:new Date(+now+60000)}},{sort:{dueAt:1},returnDocument:'after'});const row=claim.value;if(!row)return;
   await notify(db,'*',`scheduled:${row._id}`,row.title,row.message,'#community');

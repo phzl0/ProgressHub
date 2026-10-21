@@ -1,0 +1,11 @@
+import React,{useState} from 'react';
+import CompactDialog from './CompactDialog';
+import useCommunityData from './useCommunityData';
+import {socialRequest} from './socialAPI';
+export function PostPreview({post,author}){return <article className="ph-profile-post"><a href={`#community/post/${post.id}`}>{post.image&&<img src={post.image} alt="Foto da publicação" loading="lazy"/>}{author&&<span className="ph-preview-author">{author.picture&&<img src={author.picture} alt=""/>}@{author.login}</span>}<p>{post.text||'Publicação com imagem'}</p><time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}</time><span>Ver no feed →</span></a></article>;}
+function AllPosts({githubId,onClose}){
+ const {data,error}=useCommunityData(`/profile-social?githubId=${githubId}&limit=20`,true);const [extra,setExtra]=useState([]),[more,setMore]=useState(null),[busy,setBusy]=useState(false),[failure,setFailure]=useState('');const rows=[...(data?.posts||[]),...extra];
+ async function older(){if(busy)return;setBusy(true);setFailure('');try{const next=await socialRequest(`profile-social?githubId=${githubId}&limit=20&before=${rows.at(-1).id}`);setExtra(old=>[...old,...next.posts]);setMore(next.hasMore);}catch(e){setFailure(e.message);}finally{setBusy(false)}}
+ return <CompactDialog title="Publicações do perfil" closeLabel="Fechar publicações" size="large" scrollLabel="Publicações do perfil" onClose={onClose}>{(error||failure)&&<p role="alert">{failure||error}</p>}<div className="ph-profile-post-grid">{rows.map(p=><PostPreview key={p.id} post={p}/>)}</div>{(more??data?.hasMore)&&<button className="ql-button" disabled={busy} onClick={older}>Carregar mais publicações</button>}</CompactDialog>;
+}
+export default function ProfilePosts({githubId,data,error}){const [open,setOpen]=useState(false);return <section className="ph-profile-posts"><header role="group"><h2>Publicações no feed</h2>{data?.hasMore&&<button onClick={()=>setOpen(true)}>Ver mais publicações</button>}</header>{error&&<p role="alert">{error}</p>}<div className="ph-profile-post-grid">{data?.posts?.map(p=><PostPreview key={p.id} post={p}/>)}</div>{data&&!data.posts?.length&&<p className="ql-caption">Nenhuma publicação no feed por enquanto.</p>}{open&&<AllPosts githubId={githubId} onClose={()=>setOpen(false)}/>}</section>;}

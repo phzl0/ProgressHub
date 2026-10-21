@@ -1,0 +1,5 @@
+const {fail}=require('./expansion-utils');
+const DEFAULTS={replies:true,comments:true,projects:true,collaboration:true,events:true};
+async function readPreferences(db,user){const row=await db.collection('users').findOne({_id:user._id},{projection:{communityNotificationPreferences:1}});return {...DEFAULTS,...row?.communityNotificationPreferences};}
+async function savePreferences(db,user,input){if(!input||typeof input!=='object'||Array.isArray(input))throw fail('Preferências inválidas.');const {requestId,...values}=input;if(requestId!==undefined&&(typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{16,80}$/.test(requestId)))throw fail('Tentativa inválida.');if(Object.keys(values).some(k=>!Object.hasOwn(DEFAULTS,k)||typeof input[k]!=='boolean'))throw fail('Preferências inválidas.');const changes=Object.fromEntries(Object.entries(values).map(([k,v])=>[`communityNotificationPreferences.${k}`,v]));if(Object.keys(changes).length)await db.collection('users').updateOne({_id:user._id},{$set:changes});return readPreferences(db,user);}
+module.exports={DEFAULTS,readPreferences,savePreferences};
