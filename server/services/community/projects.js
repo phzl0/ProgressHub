@@ -10,7 +10,7 @@ function projectData(input){
  const steps=input.steps;
  if(!Array.isArray(steps)||steps.length<1||steps.length>12)throw fail('Informe de uma a 12 etapas.');
  const roles=input.roles||[];if(!Array.isArray(roles)||roles.length>6||roles.some(role=>!ROLES.includes(role)))throw fail('Função de colaboração inválida.');
- return {title:boundedText(input.title,80,1),description:boundedText(input.description,1000,6),repository:repositoryURL(input.repository),tags:tags(input.tags),roles:[...new Set(roles)],steps:steps.map((label,i)=>({id:String(i+1),label:boundedText(label,120,1),done:false}))};
+ return {language:boundedText(input.language||'Não informada',32,1),title:boundedText(input.title,80,1),description:boundedText(input.description,1000,6),repository:repositoryURL(input.repository),tags:tags(input.tags),roles:[...new Set(roles)],steps:steps.map((label,i)=>({id:String(i+1),label:boundedText(label,120,1),done:false}))};
 }
 async function readProjects(db,user,q={}){
  const hidden=await blockedIds(db,user);const filter={moderationHidden:{$ne:true},owner:{$nin:hidden}};
@@ -40,7 +40,7 @@ async function readProjects(db,user,q={}){
   const mine=applications.find(a=>a.projectId===String(p._id)&&a.githubId===user.githubId);
   const updates=allUpdates.filter(a=>a.projectId===String(p._id));
   const person=githubId=>{const a=people.find(a=>a.githubId===githubId);return {login:a?.githubLogin||'Participante',profileId:a?.communityOptIn?githubId:null};};
-  items.push({id:String(p._id),title:p.title,description:p.description,repository:p.repository,tags:p.tags,roles:p.roles,steps:p.steps,status:p.status,version:p.version,createdAt:p.createdAt,own,authorId:p.owner,following:follows.some(f=>f.projectId===String(p._id)),author:person(p.owner),members:p.members.filter(id=>!hidden.includes(id)).map(person),application:mine?{role:mine.role,status:mine.status}:null,requests:requests.filter(r=>!hidden.includes(r.githubId)).map(r=>({id:r.githubId,login:r.login,role:r.role,message:r.message})),updates:updates.filter(r=>!hidden.includes(r.githubId)).map(r=>({id:String(r._id),text:r.text,createdAt:r.createdAt,author:r.login}))});
+  items.push({id:String(p._id),title:p.title,language:p.language||'Não informada',description:p.description,repository:p.repository,tags:p.tags,roles:p.roles,steps:p.steps,status:p.status,version:p.version,createdAt:p.createdAt,own,authorId:p.owner,following:follows.some(f=>f.projectId===String(p._id)),author:person(p.owner),members:p.members.filter(id=>!hidden.includes(id)).map(person),application:mine?{role:mine.role,status:mine.status}:null,requests:requests.filter(r=>!hidden.includes(r.githubId)).map(r=>({id:r.githubId,login:r.login,role:r.role,message:r.message})),updates:updates.filter(r=>!hidden.includes(r.githubId)).map(r=>({id:String(r._id),text:r.text,createdAt:r.createdAt,author:r.login}))});
  }
  return {items,hasMore:rows.length>20,roles:ROLES};
 }

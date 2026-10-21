@@ -11,7 +11,7 @@ const { careerFor, syncSeason, seasonHistory } = require('../../services/github/
 const { validateProfile, profileSettings } = require('../../services/github/profile-settings');
 const { weeklySummary } = require('../../services/community/engagement');
 const { readProjectGoal, createProjectGoal, updateProjectGoal } = require('../../services/community/project-goals');
-const { appearanceFor, inventoryFor, claimWelcome, validateOwnedAppearance } = require('../../services/community/cosmetics');
+const { basicInventoryFor, appearanceFor, inventoryFor, claimWelcome, validateOwnedAppearance } = require('../../services/community/cosmetics');
 const { poolView, setParticipation, ensurePool } = require('../../services/community/pool');
 const { careerRanking } = require('../../services/community/career-ranking');
 const router = express.Router();
@@ -55,7 +55,9 @@ router.post('/chat/delete', authenticateToken, githubOnly, sameOrigin, async (re
   catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível apagar a mensagem.' }); }
 });
 const social = require('../../services/community/social');
-for (const [path, read, write] of [['projects', require('../../services/community/projects').readProjects, require('../../services/community/projects').projectAction], ['events', require('../../services/community/community-growth').readEvents, require('../../services/community/community-growth').eventAction], ['discovery', require('../../services/community/community-growth').readDiscovery, require('../../services/community/community-growth').discoveryAction], ['community-tools', require('../../services/community/community-growth').readCommunityTools, require('../../services/community/community-growth').toolsAction], ['admin', require('../../services/community/admin').readAdmin, require('../../services/community/admin').adminAction], ['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction], ['safety', require('../../services/community/safety').readSafety, require('../../services/community/safety').safetyAction]]) {
+router.get('/project-gallery',async(req,res)=>{try{res.set('Cache-Control','no-store').json(await require('../../services/community/project-gallery').readGallery(await connectToDatabase(),req.user||{},req.query));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar os projetos.'});}});
+
+for (const [path, read, write] of [['project-reactions', require('../../services/community/project-gallery').readGallery, require('../../services/community/project-gallery').reactToProject], ['projects', require('../../services/community/projects').readProjects, require('../../services/community/projects').projectAction], ['events', require('../../services/community/community-growth').readEvents, require('../../services/community/community-growth').eventAction], ['discovery', require('../../services/community/community-growth').readDiscovery, require('../../services/community/community-growth').discoveryAction], ['community-tools', require('../../services/community/community-growth').readCommunityTools, require('../../services/community/community-growth').toolsAction], ['admin', require('../../services/community/admin').readAdmin, require('../../services/community/admin').adminAction], ['social', social.readSocial, social.socialAction], ['feed', social.readFeed, social.feedAction], ['inbox', require('../../services/community/notifications').readInbox, require('../../services/community/notifications').inboxAction], ['help', require('../../services/community/help').readHelp, require('../../services/community/help').helpAction], ['safety', require('../../services/community/safety').readSafety, require('../../services/community/safety').safetyAction]]) {
   router.get(`/${path}`, authenticateToken, githubOnly, async (req, res) => {
     try { res.set('Cache-Control', 'no-store').json(await read(await connectToDatabase(), req.user, req.query)); }
     catch (error) { res.status(error.status || 503).json({ error: error.status ? error.message : 'Não foi possível carregar. Tente novamente.' }); }
@@ -178,10 +180,10 @@ router.get('/achievements', authenticateToken, async (req, res) => {
 });
 router.get('/cosmetics', authenticateToken, async (req, res) => {
   if (!req.user.githubId) return res.status(400).json({ error: 'Entre com GitHub para personalizar sua aparência.' });
-  res.set('Cache-Control', 'no-store').json(inventoryFor(req.user));
+  res.set('Cache-Control', 'no-store').json(basicInventoryFor(req.user));
 });
 router.post('/cosmetics/welcome',authenticateToken,githubOnly,sameOrigin,async(req,res)=>{
-  try{res.set('Cache-Control','no-store').json(await claimWelcome(await connectToDatabase(),req.user));}
+  try{res.set('Cache-Control','no-store').json(basicInventoryFor(req.user));}
   catch(_){res.status(503).json({error:'Não foi possível receber a coleção. Tente novamente.'});}
 });
 router.post('/cosmetics', authenticateToken, sameOrigin, async (req, res) => {

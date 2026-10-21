@@ -9,7 +9,7 @@ import CompactDialog from './CompactDialog';
 import BrandMark from './BrandMark';
 const STATUS={received:'Recebida',reviewing:'Em análise',resolved:'Resolvida',dismissed:'Descartada'};
 const ACTION={hide:'Ocultar conteúdo',restore:'Restaurar conteúdo',warn:'Enviar advertência',suspend:'Suspender participação',unsuspend:'Reativar participação','report-status':'Atualizar denúncia',announce:'Enviar aviso oficial'};
-const date=v=>v?new Date(v).toLocaleString('pt-BR'):'—';
+const date=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
 function ConfirmAction({command,onClose,onSaved}){
  const [reason,setReason]=useState('');const [days,setDays]=useState(1);const [status,setStatus]=useState('reviewing');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const pending=useRef(null);const lock=useRef(false);
  async function submit(e){e.preventDefault();if(lock.current)return;const data={...command,reason,...(command.action==='suspend'?{days}:{}),...(command.action==='report-status'?{status}:{})};const signature=JSON.stringify(data);if(pending.current?.signature!==signature)pending.current={signature,body:{...data,requestId:requestId()}};lock.current=true;setBusy(true);setError('');try{await socialRequest('admin',pending.current.body);onSaved();onClose();}catch(e){setError(e.message);}finally{lock.current=false;setBusy(false);}}

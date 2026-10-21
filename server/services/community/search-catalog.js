@@ -1,7 +1,6 @@
 const PAGES=[
  ['community/projects','Projetos da comunidade','Projetos, etapas e colaboração.','projeto projetos repositorio colaborar equipe'],
  ['community/events','Eventos da comunidade','Desafios, prazos e entregas.','evento eventos desafio desafios'],
- ['community/interests','Interesses e seguindo','Tecnologias e pessoas que você acompanha.','interesses seguindo tecnologias'],
  ['home','Tela inicial','Resumo da sua jornada e destaques.','inicio dashboard painel resumo principal'],
  ['ranking','Ranking','Classificação da comunidade.','classificacao posicao colocado colocacao competicao arena lideres top global'],
  ['ranking/seasons','Temporadas','Resultados e histórico de temporadas.','temporada meses historico classificacoes anteriores'],

@@ -21,10 +21,10 @@ export default function MyProfile({ me, onSaved, onAppearanceSaved }) {
     {saved && <p className="ql-profile-saved" role="status">Perfil atualizado. Sua identidade está pronta para a comunidade.</p>}
 
     <section className="ql-panel"><div className="ql-panel-head"><div><p className="ql-eyebrow">SEU PRÓXIMO MARCO</p><h2>Nível {career.level || 1} <span className="ql-muted">→</span> Nível {(career.level || 1) + 1}</h2></div><a className="ql-text-link" href="#missions">Ganhar bônus nas missões <ArrowUpRight size={16} /></a></div><div className="ql-xp-track" role="progressbar" aria-label="Evolução do meu perfil" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Você já percorreu {progress}% deste nível. Faltam {number((career.nextLevelXP || 200) - (career.experience || 0))} XP para avançar. Continue construindo!</p></section>
-    <HelpRequests history />
     <a className="ql-text-link" href="#community/projects?tab=mine">Gerenciar meus projetos e colaborações →</a>
     <ProjectShowcase own projects={me.profile?.projects} onEdit={() => { setEditing(true); setSaved(false); }} />
-    <p className="ql-caption">Seu nome e sua foto original vêm do GitHub; você pode escolher um avatar no baú. A versão pública mostra seu banner, descrição, links e resumo de carreira e temporada, nunca e-mail, tokens ou histórico privado.</p>
+    <p className="ql-caption">Seu nome e sua foto vêm do GitHub. A versão pública mostra seu banner, descrição, links e resumo de carreira e temporada, nunca e-mail, tokens ou histórico privado.</p>
+    <HelpRequests history />
   </div>;
 }
 function ProfileMetric({ icon: Icon, label, value, tone }) { return <section className={`ql-profile-stat ql-tone-${tone}`}><span className="ql-metric-icon"><Icon size={19} /></span><p>{label}</p><strong>{value}</strong></section>; }

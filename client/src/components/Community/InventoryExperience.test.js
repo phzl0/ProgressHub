@@ -17,45 +17,15 @@ test('profile menu opens only by click, stays open on mouse leave and opens the 
  expect(screen.getByRole('dialog',{name:'Meu baú'})).toHaveClass('ph-inventory-dialog');
  fireEvent.keyDown(document,{key:'Escape'});expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
-test('locked temporary item can be inspected but must be received before equip',async()=>{
- const expiresAt=new Date(Date.now()+7*86400000).toISOString();
- const catalog={frames:[{id:'essential',name:'Essencial',owned:true},{id:'energy',name:'Energia',temporary:true,owned:false}]};
- global.fetch=jest.fn(async(url,options)=>({ok:true,json:async()=>url.endsWith('/welcome')?{catalog:{frames:[catalog.frames[0],{...catalog.frames[1],owned:true,expiresAt}]},welcomeClaimed:true}:options?.method==='POST'?{appearance:JSON.parse(options.body)}:{catalog,welcomeClaimed:false}}));
- const onEquipped=jest.fn();render(<Cosmetics me={me} onEquipped={onEquipped}/>);
- fireEvent.click(await screen.findByRole('button',{name:'Energia'}));expect(screen.getByRole('button',{name:'Item indisponível'})).toBeDisabled();
- fireEvent.click(screen.getByRole('button',{name:'Receber coleção'}));await screen.findByText(/Coleção Energia recebida/);
- fireEvent.click(screen.getByRole('button',{name:'Energia'}));fireEvent.click(screen.getByRole('button',{name:'Equipar aparência'}));
- await waitFor(()=>expect(onEquipped).toHaveBeenCalledWith(expect.objectContaining({frame:'energy'})));
- expect(global.fetch.mock.calls.filter(([url])=>url.endsWith('/welcome'))).toHaveLength(1);
+test('inventory shows one basic option per category while stored collections remain untouched',async()=>{
+ const library=require('./cosmeticLibrary.json');const catalog={frames:[{id:'essential',name:'Essencial',owned:true},...library.frames],cards:[{id:'essential',name:'Original',owned:true},...library.cards],chats:[{id:'standard',name:'Clássico',owned:true},...library.chats]};
+ global.fetch=jest.fn(async()=>({ok:true,json:async()=>({catalog,welcomeClaimed:true})}));
+ const {container}=render(<Cosmetics me={me}/>);await screen.findByRole('button',{name:'Essencial'});expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(1);
+ fireEvent.click(screen.getByRole('button',{name:'Cards de perfil'}));expect(screen.getByRole('button',{name:'Original'})).toBeInTheDocument();expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(1);
+ fireEvent.click(screen.getByRole('button',{name:'Chat'}));expect(screen.getByRole('button',{name:'Clássico'})).toBeInTheDocument();
 });
-test('expiry removes every temporary effect and rank decoration cannot be selected through appearance',()=>{
- const expired={frame:'energy',title:'energy',card:'energy',chat:'energy',rank:1,expiresAt:{frame:'2000-01-01',title:'2000-01-01',card:'2000-01-01',chat:'2000-01-01'}};
- expect(activeAppearance(expired).frame).toBe('essential');
- const {container}=render(<ProfileCard appearance={expired}><CosmeticAvatar appearance={expired} src="github.png" alt="Avatar"/><CosmeticTitle appearance={expired}/><CosmeticChatFrame as="div" appearance={expired}>Mensagem</CosmeticChatFrame></ProfileCard>);
- expect(container.querySelector('.ph-skin-essential')).toBeInTheDocument();expect(container.querySelector('.ph-chat-skin-standard')).toBeInTheDocument();expect(screen.queryByText('Energia em código')).not.toBeInTheDocument();expect(screen.queryByLabelText(/Top 1/)).not.toBeInTheDocument();
- expect(screen.getByRole('img',{name:'Avatar'})).toHaveAttribute('src','github.png');
-});
-test('an already open profile, banner and chat drop expired effects without a new response',()=>{
- const initialTime=Date.now()+60000;jest.useFakeTimers();jest.setSystemTime(initialTime);
- const expiresAt=new Date(Date.now()+1000).toISOString();const appearance={frame:'energy',title:'energy',card:'energy',chat:'energy',expiresAt:{frame:expiresAt,title:expiresAt,card:expiresAt,chat:expiresAt}};
- const {container,unmount}=render(<ProfileCard appearance={appearance}><CosmeticAvatar appearance={appearance}/><CosmeticTitle appearance={appearance}/><CosmeticChatFrame as="div" appearance={appearance}>Mensagem</CosmeticChatFrame></ProfileCard>);
- expect(container.querySelector('.ph-skin-energy')).toBeInTheDocument();
- act(()=>jest.advanceTimersByTime(30000));
- expect(container.querySelector('.ph-skin-essential')).toBeInTheDocument();expect(container.querySelector('.ql-frame-essential')).toBeInTheDocument();expect(container.querySelector('.ph-chat-skin-standard')).toBeInTheDocument();expect(screen.queryByText('Energia em código')).not.toBeInTheDocument();
- unmount();jest.useRealTimers();
-});
-test('library categories filter by collection and selected decorations apply to profile and chat',async()=>{
- const library=require('./cosmeticLibrary.json');
- const catalog=Object.fromEntries(Object.entries(library).map(([key,items])=>[key,items.map(item=>({...item,owned:true,permanent:true}))]));
- global.fetch=jest.fn(async()=>({ok:true,json:async()=>({catalog,fullCollection:true,welcomeClaimed:true})}));
- const {container}=render(<Cosmetics me={me}/>);
- await screen.findByText('Todos os cosméticos disponíveis na sua conta.');
- expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(30);
- fireEvent.change(screen.getByLabelText('Filtrar coleção'),{target:{value:'Madeira'}});
- expect(container.querySelectorAll('.ql-cosmetic-item')).toHaveLength(6);
- fireEvent.click(screen.getByRole('button',{name:library.frames[0].name}));expect(container.querySelector('.ph-avatar-art')).toHaveStyle({backgroundImage:`url("${library.frames[0].asset}")`});
- fireEvent.click(screen.getByRole('button',{name:'Cards de perfil'}));fireEvent.click(screen.getByRole('button',{name:library.cards[0].name}));
- expect(container.querySelector('.ph-library-card')).toHaveStyle({'--cosmetic-art':`url("${library.cards[0].asset}")`});
- fireEvent.click(screen.getByRole('button',{name:'Chat'}));fireEvent.click(screen.getByRole('button',{name:library.chats[0].name}));
- expect(container.querySelector('.ph-library-chat')).toBeInTheDocument();
+test('paused cosmetics render the basic profile and chat while the expiry engine remains safe',()=>{
+ const stored={frame:'energy',title:'energy',card:'energy',chat:'energy',expiresAt:{frame:'2000-01-01',title:'2000-01-01',card:'2000-01-01',chat:'2000-01-01'}};
+ expect(activeAppearance(stored).frame).toBe('essential');const {container}=render(<ProfileCard appearance={stored}><CosmeticAvatar src="github.png" alt="Avatar" appearance={stored}/><CosmeticTitle appearance={stored}/><CosmeticChatFrame as="div" appearance={stored}>Mensagem</CosmeticChatFrame></ProfileCard>);
+ expect(container.querySelector('.ph-skin-essential')).toBeInTheDocument();expect(container.querySelector('.ph-chat-skin-standard')).toBeInTheDocument();expect(screen.getByRole('img',{name:'Avatar'})).toHaveAttribute('src','github.png');expect(screen.queryByText('Energia em código')).not.toBeInTheDocument();expect(stored.frame).toBe('energy');
 });

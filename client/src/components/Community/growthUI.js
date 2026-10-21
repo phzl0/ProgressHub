@@ -2,7 +2,7 @@ import {useRef,useState} from 'react';
 import {socialRequest,requestId} from './socialAPI';
 export const roleLabels={frontend:'Frontend',backend:'Backend',design:'Design',documentation:'Documentação',testing:'Testes',fullstack:'Full stack'};
 export const stateLabels={active:'Em desenvolvimento',paused:'Pausado',completed:'Concluído',archived:'Arquivado',draft:'Rascunho',upcoming:'Em breve',open:'Aberto',ended:'Encerrado',cancelled:'Cancelado',accepting:'Confirmando participação',pending:'Aguardando avaliação',accepted:'Aceita',declined:'Recusada','changes-requested':'Ajustes solicitados',scheduled:'Agendado',processing:'Enviando',sent:'Enviado'};
-export const date=value=>value?new Date(value).toLocaleString('pt-BR'):'—';
+export const date=value=>value?new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
 export const splitTags=value=>value.split(',').map(s=>s.trim()).filter(Boolean);
 export function useGrowthAction(path,onSaved){
  const [busy,setBusy]=useState(false),[error,setError]=useState('');const lock=useRef(false),pending=useRef(null);

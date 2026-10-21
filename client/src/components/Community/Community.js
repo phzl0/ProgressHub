@@ -23,7 +23,8 @@ import PersonalGoals from './PersonalGoals';
 import WeeklySummary from './WeeklySummary';
 import CareerTop from './CareerTop';
 import Achievements from './Achievements';
-import {FirstSteps} from './CommunityDiscovery';
+import BrasiliaClock from './BrasiliaClock';
+import PopularProjects from './PopularProjects';
 import './community-growth.css';
 import CommunityHeader from './CommunityHeader';
 import HomeBanners from './HomeBanners';
@@ -185,17 +186,18 @@ export default function Community() {
         {group === 'ranking' && <nav className="ql-section-navigation" aria-label="Navegação do ranking"><a href="#ranking" aria-current={tab === 'ranking' ? 'page' : undefined} onClick={event => navigate('ranking', event)}>Classificação</a><a href="#ranking/seasons" aria-current={tab === 'seasons' ? 'page' : undefined} onClick={event => navigate('ranking/seasons', event)}>Temporadas</a></nav>}
         {group === 'progress' && <nav className="ql-section-navigation" aria-label="Navegação do progresso"><a href="#progress" aria-current={tab === 'progress' ? 'page' : undefined} onClick={event => navigate('progress', event)}>Visão geral</a><a href="#progress/achievements" aria-current={tab === 'achievements' ? 'page' : undefined} onClick={event => navigate('progress/achievements', event)}>Conquistas</a></nav>}
 
-        {me?.suspension&&<p role="status" className="ph-admin-warning">Sua participação está suspensa até {new Date(me.suspension.until).toLocaleString('pt-BR')}. {me.suspension.reason} Você pode consultar o site e usar a Central de segurança.</p>}
+        {me?.suspension&&<p role="status" className="ph-admin-warning">Sua participação está suspensa até {new Date(me.suspension.until).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}. {me.suspension.reason} Você pode consultar o site e usar a Central de segurança.</p>}
         {error && <p role="alert" className="ql-error">{error}</p>}
         {loading && <p role="status" className="ql-muted">Carregando sua jornada e contribuições…</p>}
         {tab === 'dashboard' && <>
-          <FirstSteps key={me?.githubId||'guest'} connected={Boolean(me?.connected)}/>
+          <BrasiliaClock/>
           <div className="ql-dashboard-top">
             <HomeBanners navigate={navigate} autoplay={bannerAutoplay} />
             <section className="ql-panel ql-profile-card"><div className="ql-profile-heading">{me?.picture ? <CosmeticAvatar src={me.picture} appearance={me.appearance} frame={me.appearance?.frame} size={44} /> : <span className="ql-avatar-placeholder"><Github size={24} /></span>}<div><strong>{me?.login ? `@${me.login}` : 'Seu perfil começa aqui'}</strong><span>{career?.title || 'Explorador'} · Nível {level}</span></div><ShieldCheck className="ql-green" size={20} /></div><div className="ql-xp-total">{number(career?.xp)} <span>XP</span><small>CARREIRA PERMANENTE</small></div><div className="ql-progress-label"><span>Nível {level}</span><strong>{progress}%</strong><span>Nível {level + 1}</span></div><div className="ql-xp-track" role="progressbar" aria-label={`Progresso para o nível ${level + 1}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><p className="ql-caption">Faltam {number((career?.nextLevelXP || 200) - (career?.experience || 0))} XP para seu próximo nível.</p>{me?.optedIn && me?.githubId && <a className="ql-own-profile" href={`#profile/${me.githubId}`}>Ver meu perfil público <ArrowUpRight size={13} /></a>}</section>
           </div>
           <div className="ql-metrics"><Metric tone="blue" icon={GitCommitHorizontal} label="Commits pontuados" value={number(stats?.commits)} note="10 XP por commit elegível" /><Metric tone="purple" icon={GitPullRequest} label="PRs mesclados pontuados" value={number(stats?.mergedPRs)} note="50 XP por PR + bônus de colaboração" /><Metric icon={Zap} label="Dias com commits" value={number(activeDays)} note="Atividade reconhecida neste mês" /><Metric tone="gold" icon={Trophy} label="Sua posição global" value={position ? `#${position}` : '—'} note={me?.optedIn ? 'Ranking da temporada atual' : 'Participe na aba Ranking'} /></div>
           <CareerTop revision={`${stats?.syncedAt}:${stats?.xp}:${me?.optedIn}:${me?.appearance?.frame}`} login={me?.login} />
+          <PopularProjects connected={Boolean(me?.connected)}/>
         </>}
         {tab === 'achievements' && <Achievements connected={me?.connected} revision={`${stats?.syncedAt}:${stats?.xp}`} fallbackNames={career?.achievements} />}
         {['settings', 'account', 'privacy', 'information'].includes(tab) && <AccountPages tab={tab} me={me} autoplay={bannerAutoplay} onAutoplayChange={changeBannerAutoplay} participate={participate} busy={busy} api={API} />}

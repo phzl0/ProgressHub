@@ -91,4 +91,5 @@ function appearanceFor(user,now=new Date()){
   }
   return {...result,...(permanentEffects.length?{permanentEffects}:{}),...(Object.keys(expiresAt).length?{expiresAt}:{})};
 }
-module.exports={CATALOG,LIBRARY,fullCollectionFor,DEFAULT_APPEARANCE,FIELDS,validateAppearance,validateOwnedAppearance,appearanceFor,inventoryFor,claimWelcome};
+function basicInventoryFor(user){return {catalog:Object.fromEntries(Object.keys(FIELDS).map(category=>[category,[{...CATALOG[category][0],owned:true,permanent:true}]])),appearance:{...DEFAULT_APPEARANCE,avatar:'github',card:'essential',chat:'standard'},welcomeClaimed:true,fullCollection:false};}
+module.exports={basicInventoryFor,CATALOG,LIBRARY,fullCollectionFor,DEFAULT_APPEARANCE,FIELDS,validateAppearance,validateOwnedAppearance,appearanceFor,inventoryFor,claimWelcome};
