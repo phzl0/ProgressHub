@@ -83,25 +83,35 @@ async function runCycle() {
     running = false;
   }
 }
-async function start() {
-  try {
+let workerPromise;
+function startWorker({ initialize = true } = {}) {
+  if (workerPromise) return workerPromise;
+  workerPromise = (async () => {
     if (process.env.NODE_ENV === 'production') require('./config/production').validateWorker();
-    await initializeIndexes();
-    console.log('Community background sync enabled: every ten minutes.');
-    runCycle();
-    const timer = setInterval(runCycle, INTERVAL);
-    let dispatching=false;
-    const announcementTimer=setInterval(async()=>{if(dispatching||stopping)return;dispatching=true;try{await require('./services/community/community-growth').dispatchAnnouncements(await connectToDatabase());}catch(_){console.error('Scheduled announcements will retry.');}finally{dispatching=false;}},60000);
-    const stop = () => {
-      if (stopping) return;
-      stopping = true; clearInterval(timer); clearInterval(announcementTimer);
+    if (initialize) await initializeIndexes();
+    const { createWorkerScheduler } = require('./services/community/worker-scheduler');
+    const scheduler = createWorkerScheduler({
+      sync: runCycle,
+      dispatch: async () => {
+        if (!stopping) await require('./services/community/community-growth').dispatchAnnouncements(await connectToDatabase());
+      },
+      onError: () => console.error('Community background task failed; next cycle will retry.')
+    });
+    console.log('Community background sync enabled while this process is active.');
+    return { async stop() { stopping = true; await scheduler.stop(); } };
+  })().catch(error => { workerPromise = undefined; throw error; });
+  return workerPromise;
+}
+async function main() {
+  try {
+    const worker = await startWorker();
+    let closing = false;
+    const stop = async () => {
+      if (closing) return;
+      closing = true;
       const deadline = setTimeout(() => process.exit(1), 10000); deadline.unref();
-      const wait = setInterval(async () => {
-        if (running || dispatching) return;
-        clearInterval(wait);
-        await require('./db').closeDatabase().catch(() => {});
-        clearTimeout(deadline); process.exit(0);
-      }, 100);
+      try { await worker.stop(); await require('./db').closeDatabase(); clearTimeout(deadline); process.exit(0); }
+      catch (_) { process.exit(1); }
     };
     process.once('SIGTERM', stop); process.once('SIGINT', stop);
   } catch (_) {
@@ -109,4 +119,5 @@ async function start() {
     process.exit(1);
   }
 }
-start();
+if (require.main === module) main();
+module.exports = { startWorker };

@@ -1,0 +1,38 @@
+# Preparation only: importing this Blueprint and confirming creation starts a deployment.
+# Do that only after approval and after setting the real frontend URL/secrets.
+services:
+  - type: web
+    name: progress-hub-api
+    runtime: docker
+    repo: https://github.com/phzl0/QuestLog
+    branch: feat/github-community-mvp
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free
+    autoDeployTrigger: 'off'
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COMMUNITY_WORKER_MODE
+        value: embedded
+      - key: MONGODB_DB
+        value: usersDB
+      - key: CLIENT
+        sync: false
+      - key: GITHUB_CALLBACK_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: GITHUB_TOKEN_KEY
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: COMMUNITY_ADMIN_GITHUB_IDS
+        sync: false
+      - key: TRUST_PROXY
+        sync: false

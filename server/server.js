@@ -78,6 +78,8 @@ const startServer = async () => {
   try {
     await connectToDatabase();
     await initializeIndexes();
+    const worker = settings.workerMode === 'embedded'
+      ? await require('./community-worker').startWorker({ initialize: false }) : null;
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -87,10 +89,11 @@ const startServer = async () => {
       stopping = true;
       const deadline = setTimeout(() => process.exit(1), 10000);
       deadline.unref();
-      server.close(async () => {
-        try { await closeDatabase(); clearTimeout(deadline); process.exit(0); }
-        catch (_) { process.exit(1); }
-      });
+      // Stop accepting requests and finish background writes before closing MongoDB.
+      const requestsClosed = new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      Promise.all([requestsClosed, worker?.stop()]).then(async () => {
+        await closeDatabase(); clearTimeout(deadline); process.exit(0);
+      }).catch(() => process.exit(1));
     };
     process.once('SIGTERM', stop);
     process.once('SIGINT', stop);

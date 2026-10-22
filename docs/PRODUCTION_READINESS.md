@@ -1,6 +1,10 @@
 # Preparação de produção — Progress Hub
 
-## Arquitetura proposta
+## Alternativa escolhida para custo zero
+
+Para a validação gratuita aprovada: Vercel + um Web Service Render Free com worker embutido + Atlas Free. Ver `docs/RENDER_FREE.md` e `render.yaml`. O serviço pausa sem acessos; não promete ciclos contínuos com navegador fechado. A arquitetura contínua abaixo continua como alternativa futura, não como requisito de contratação nesta etapa.
+
+## Arquitetura contínua proposta
 
 - Vercel: frontend estático React/Vite, pasta raiz `client`, saída `build`, Node 22.
 - API: imagem `server/Dockerfile`, processo Node contínuo atrás de HTTPS.
