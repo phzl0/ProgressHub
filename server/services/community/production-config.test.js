@@ -1,0 +1,7 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {serverSettings,databaseName,validateWorker,communityRateKey}=require('../../config/production');
+const env={NODE_ENV:'production',CLIENT:'https://hub.example.com',SESSION_SECRET:'x'.repeat(48),MONGODB_URI:'mongodb://localhost:27017',GITHUB_TOKEN_KEY:'a'.repeat(64),GITHUB_CLIENT_ID:'real-client',GITHUB_CLIENT_SECRET:'real-secret',COMMUNITY_ADMIN_GITHUB_IDS:'123',TRUST_PROXY:'1'};
+test('production uses secure same-origin cookies and explicit database/proxy',()=>{const s=serverSettings({...env,MONGODB_DB:'productionDB'});assert.equal(s.cookie.sameSite,'lax');assert.equal(s.cookie.secure,true);assert.equal(s.dbName,'productionDB');assert.equal(s.trustProxy,1);assert.equal(databaseName({}),'usersDB');});
+test('production refuses unsafe or incomplete configuration',()=>{for(const change of [{CLIENT:'http://hub.example.com'},{CLIENT:'https://hub.example.com/path'},{TRUST_PROXY:''},{TRUST_PROXY:'true'},{GITHUB_TOKEN_KEY:''},{GITHUB_CALLBACK_URL:'https://other.example.com/callback'},{COMMUNITY_ADMIN_GITHUB_IDS:''},{SESSION_SECRET:'short'},{MONGODB_DB:'bad/name'}])assert.throws(()=>serverSettings({...env,...change}));assert.throws(()=>validateWorker({...env,GITHUB_TOKEN_KEY:'wrong'}));});
+test('authenticated limits isolate verified accounts behind the proxy',()=>{assert.equal(communityRateKey({user:{githubId:'123'},ip:'proxy'}),'github:123');assert.equal(communityRateKey({ip:'address'}),'address');});

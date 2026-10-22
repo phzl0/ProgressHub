@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
+const { communityRateKey } = require('../../config/production');
 const { connectToDatabase } = require('../../db');
 const { authenticateToken } = require('../../middleware/auth');
 const { periodFor } = require('../../services/github/scoring');
@@ -16,13 +17,13 @@ const { poolView, setParticipation, ensurePool } = require('../../services/commu
 const { careerRanking } = require('../../services/community/career-ranking');
 const router = express.Router();
 const clientURL = () => process.env.CLIENT || 'http://localhost:3000';
-const callbackURL = () => process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/community/auth/callback';
+const callbackURL = () => process.env.GITHUB_CALLBACK_URL || (process.env.NODE_ENV === 'production' ? `${clientURL()}/api/community/auth/callback` : 'http://localhost:3001/api/community/auth/callback');
 const saveSession = (req) => new Promise((resolve, reject) => req.session.save((err) => err ? reject(err) : resolve()));
 const limitOptions = { windowMs: 60000, standardHeaders: 'draft-7', legacyHeaders: false,
   message: { error: 'Muitas consultas em pouco tempo. Aguarde um minuto e tente novamente.' } };
-const writeLimiter = rateLimit({ ...limitOptions, limit: 30 });
+const writeLimiter = rateLimit({ ...limitOptions, keyGenerator: communityRateKey, limit: 30 });
 const authLimiter = rateLimit({ ...limitOptions, limit: 10 });
-const readLimiter = rateLimit({ ...limitOptions, limit: 120 });
+const readLimiter = rateLimit({ ...limitOptions, keyGenerator: communityRateKey, limit: 120 });
 router.use('/profiles', require('./profiles.routes'));
 router.use((req, res, next) => req.path.startsWith('/auth') ? authLimiter(req, res, next)
   : req.method === 'GET' ? readLimiter(req, res, next) : writeLimiter(req, res, next));

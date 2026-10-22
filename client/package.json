@@ -24,7 +24,6 @@
     "react-router-dom": "^7.0.2",
     "react-transition-group": "^4.4.5",
     "remark-gfm": "^4.0.1",
-    "tailwind-scrollbar": "^3.1.0",
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.1",
     "web-vitals": "^2.1.4"
@@ -61,7 +60,6 @@
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
     "vite": "^7.0.0"
   },
   "engines": {

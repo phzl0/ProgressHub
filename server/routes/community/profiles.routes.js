@@ -1,11 +1,12 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { communityRateKey } = require('../../config/production');
 const { connectToDatabase } = require('../../db');
 const { periodFor } = require('../../services/github/scoring');
 const { careerFor } = require('../../services/github/league');
 const { publicProfile } = require('../../services/github/public-profile');
 const router = express.Router();
-router.use(rateLimit({ windowMs: 60000, limit: 60, message: { error: 'Muitas consultas de perfis. Aguarde um minuto e tente novamente.' }, standardHeaders: 'draft-7', legacyHeaders: false }));
+router.use(rateLimit({ windowMs: 60000, keyGenerator: communityRateKey, limit: 60, message: { error: 'Muitas consultas de perfis. Aguarde um minuto e tente novamente.' }, standardHeaders: 'draft-7', legacyHeaders: false }));
 router.get('/:githubId/help',async(req,res)=>{
   try{res.set('Cache-Control','no-store').json(await require('../../services/community/help').readHelp(await connectToDatabase(),req.user?.githubId?req.user:{}, {profileId:req.params.githubId,tab:'mine',before:req.query.before,status:req.query.status,q:req.query.q}));}catch(e){res.status(e.status||503).json({error:e.status?e.message:'Não foi possível carregar os pedidos.'});}
 });

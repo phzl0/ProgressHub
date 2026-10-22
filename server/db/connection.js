@@ -1,12 +1,12 @@
 // Share one pool and one in-flight connection attempt per process. The MongoDB
 // driver handles transient disconnections; a ping on every request adds latency.
-function createConnectionManager(open) {
+function createConnectionManager(open, dbName = 'usersDB') {
   let client;
   let pending;
   let closing = false;
   async function connect(uri) {
     if (closing) throw new Error('Database connection is closing');
-    if (client) return client.db('usersDB');
+    if (client) return client.db(dbName);
     if (!pending) {
       pending = (async () => {
         try {
@@ -16,7 +16,7 @@ function createConnectionManager(open) {
             retryWrites: true, retryReads: true
           });
           client = opened;
-          return opened.db('usersDB');
+          return opened.db(dbName);
         } finally { pending = null; }
       })();
     }

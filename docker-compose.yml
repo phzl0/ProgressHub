@@ -31,6 +31,7 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     environment:
+      - NODE_ENV=development
       - MONGODB_URI=${MONGODB_URI}
       - CLIENT=${CLIENT}
       - EMAIL_USER=${EMAIL_USER}
@@ -62,6 +63,7 @@ services:
     command: ["node", "community-worker.js"]
     restart: unless-stopped
     environment:
+      - NODE_ENV=development
       - MONGODB_URI=${MONGODB_URI}
       - GITHUB_TOKEN_KEY=${GITHUB_TOKEN_KEY}
     depends_on:

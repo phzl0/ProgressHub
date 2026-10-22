@@ -85,13 +85,25 @@ async function runCycle() {
 }
 async function start() {
   try {
+    if (process.env.NODE_ENV === 'production') require('./config/production').validateWorker();
     await initializeIndexes();
     console.log('Community background sync enabled: every ten minutes.');
     runCycle();
     const timer = setInterval(runCycle, INTERVAL);
     let dispatching=false;
     const announcementTimer=setInterval(async()=>{if(dispatching||stopping)return;dispatching=true;try{await require('./services/community/community-growth').dispatchAnnouncements(await connectToDatabase());}catch(_){console.error('Scheduled announcements will retry.');}finally{dispatching=false;}},60000);
-    process.on('SIGTERM', () => { stopping = true; clearInterval(timer); clearInterval(announcementTimer); process.exit(0); });
+    const stop = () => {
+      if (stopping) return;
+      stopping = true; clearInterval(timer); clearInterval(announcementTimer);
+      const deadline = setTimeout(() => process.exit(1), 10000); deadline.unref();
+      const wait = setInterval(async () => {
+        if (running || dispatching) return;
+        clearInterval(wait);
+        await require('./db').closeDatabase().catch(() => {});
+        clearTimeout(deadline); process.exit(0);
+      }, 100);
+    };
+    process.once('SIGTERM', stop); process.once('SIGINT', stop);
   } catch (_) {
     console.error('Community worker could not initialize; process will restart.');
     process.exit(1);

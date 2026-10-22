@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 const { createConnectionManager } = require('./connection');
-const connection = createConnectionManager((uri, options) => MongoClient.connect(uri, options));
+const connection = createConnectionManager((uri, options) => MongoClient.connect(uri, options),require('../config/production').databaseName());
 const connectToDatabase = () => connection.connect(process.env.MONGODB_URI);
 
 async function initializeIndexes() {

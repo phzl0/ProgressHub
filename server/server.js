@@ -5,12 +5,18 @@ const passport = require('passport');
 const MongoStore = require('connect-mongo');
 require('dotenv').config();
 
-const { sessionSecret, apiError } = require('./middleware/runtime-safety');
-const secret = sessionSecret(process.env);
+const { apiError } = require('./middleware/runtime-safety');
+const settings = require('./config/production').serverSettings();
+const secret = settings.secret;
 const app = express();
 app.disable('x-powered-by');
 
-app.set('trust proxy', 1);
+app.set('trust proxy', settings.trustProxy);
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'private, no-store');
+  res.set('X-Content-Type-Options', 'nosniff');
+  next();
+});
 app.use('/api/community/profile', express.json({ limit: '450kb' }));
 app.use('/api/community/feed', express.json({ limit: '450kb' }));
 app.use('/api/community/social', express.json({ limit: '450kb' }));
@@ -33,15 +39,11 @@ app.use(
     store: MongoStore.create({
       mongoUrl: mongoUri,
       collectionName: 'sessions',
+      dbName: settings.dbName,
       autoRemove: 'native',
       touchAfter: 24 * 3600
     }),
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    }
+    cookie: settings.cookie
   })
 );
 
@@ -52,7 +54,7 @@ app.use(passport.session());
 // Update CORS configuration
 app.use(
   cors({
-    origin: process.env.CLIENT || 'http://localhost:3000',
+    origin: settings.client,
     credentials: true, // Allow credentials
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
@@ -63,6 +65,10 @@ app.use(
 // Require passport setup
 require('./config/passport-setup');
 
+app.get('/api/health', async (req, res) => {
+  try { await (await connectToDatabase()).command({ ping: 1 }); res.json({ status: 'ok' }); }
+  catch (_) { res.status(503).json({ status: 'unavailable' }); }
+});
 app.use('/api', require('./routes/active'));
 app.use(apiError);
 
@@ -89,9 +95,10 @@ const startServer = async () => {
     process.once('SIGTERM', stop);
     process.once('SIGINT', stop);
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Failed to start server; check production configuration and database connectivity.');
     process.exit(1);
   }
 };
 
-startServer();
+if (require.main === module) startServer();
+module.exports = { app, startServer };

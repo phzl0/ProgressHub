@@ -1,0 +1,17 @@
+services:
+  api:
+    build: ../server
+    restart: unless-stopped
+    env_file: .env.production
+    ports:
+      - "127.0.0.1:3001:3001"
+    init: true
+    stop_grace_period: 15s
+  worker:
+    build: ../server
+    command: ["node", "community-worker.js"]
+    restart: unless-stopped
+    env_file: .env.production
+    init: true
+    stop_grace_period: 15s
+# A API precisa de proxy HTTPS na frente. MongoDB externo; nenhuma porta Mongo exposta.

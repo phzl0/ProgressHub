@@ -6,7 +6,7 @@ const sourceRoot = fileURLToPath(new URL('./src/', import.meta.url));
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'REACT_APP_');
   const publicSettings = {
-    'process.env.REACT_APP_PROD': JSON.stringify(env.REACT_APP_PROD || ''),
+    'process.env.REACT_APP_PROD': JSON.stringify(env.REACT_APP_PROD || (mode === 'production' ? '/api' : '')),
     'process.env.REACT_APP_GOOGLE_CLIENT_ID': JSON.stringify(env.REACT_APP_GOOGLE_CLIENT_ID || '')
   };
   return {

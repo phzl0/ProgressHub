@@ -160,7 +160,7 @@ export default function Community() {
     showFeedback('Encerrando sessão…','pending',{id:'logout'});
     setBusy(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/auth/logout`, { credentials: 'include' });
+      const response = await fetch(`${process.env.REACT_APP_PROD || 'http://localhost:3001/api'}/auth/logout`, { method: 'POST', credentials: 'include' });
       if (!response.ok) throw new Error('Não foi possível sair.');
       showFeedback('Sessão encerrada.','success',{id:'logout'});
       window.location.assign('/community');
