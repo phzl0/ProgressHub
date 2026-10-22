@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://configure-progress-hub-api.invalid/api/:path*"
+      "destination": "https://progress-hub-api-q9hc.onrender.com/api/:path*"
     },
     {
       "source": "/((?!api(?:/|$)).*)",
