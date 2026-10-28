@@ -1,203 +1,213 @@
-# QuestLog
+# Progress Hub — Beta
 
-![Current Authorized Users](https://img.shields.io/badge/Current%20Authorized%20Users-719-blue?logo=mongodb&logoColor=white) ![Total User XP](https://img.shields.io/badge/Total%20User%20XP-783,378-red?logo=zap&logoColor=white) ![Vercel Deploy](https://deploy-badge.vercel.app/vercel/smart-listapp)
-<!-- These values update automatically every 1st and 15th of the month -->
+> **Projeto em fase beta.** Interface, regras de pontuação e integrações estão em evolução. O produto se chama **Progress Hub**; o repositório ainda se chama `QuestLog`.
 
-QuestLog is an AI-powered productivity platform that turns task/project management into a rewarding progression system. Through XP points, achievement tracking, and smart insights, it creates an engaging framework that helps users maximize their daily productivity while making personal growth measurable and motivating!
+## Comece aqui: usar ou executar
 
-## ✨ Key Features
+| O que você quer fazer | Caminho |
+| --- | --- |
+| Participar da comunidade já hospedada | Acesse o endereço da interface fornecido pelo responsável; veja abaixo. |
+| Rodar uma cópia no Linux ou Windows | Use o passo a passo Docker deste README. |
+| Conectar/publicar sua própria cópia no servidor | Configure Vercel + Render + MongoDB Atlas na seção de servidor. |
 
-#### 🤖 AI-Powered Productivity
-- Personalized task insights and recommendations
-- Analyzes task completion patterns, task completion rates, recent accomplishments, XP progression, and performance trends
+**Branch da comunidade: [`feat/github-community-mvp`](https://github.com/phzl0/QuestLog/tree/feat/github-community-mvp).** A `main` ainda contém a base antiga. Os comandos abaixo selecionam a versão do Progress Hub; clonar apenas a `main` não entrega a mesma aplicação.
 
-#### 👥 Collaborative Projects
-- Real-time project sharing and collaboration
-- Invite system via shareable codes
-- Synchronized progress across team members
-- Team activity tracking
-- Project-specific collaboration settings
+### Acessar a comunidade pelo servidor — Linux e Windows
 
-#### 📈 Progress System
-- Experience points (XP) and leveling
-- Achievement badges 
-- Streak system
-- Control tasks/projects via different XP settings
+1. Obtenha com o responsável a **URL HTTPS da interface na Vercel**. O acesso é pelo navegador, igual nos dois sistemas; não precisa instalar Docker, acessar SSH ou conhecer senhas do banco.
+2. Abra essa URL e use o botão de acesso pelo **GitHub**. Confira a autorização solicitada e conclua o retorno para a aplicação.
+3. Após entrar, confira seu perfil e a sincronização. Escolha na interface se deseja participar da classificação pública.
+4. Se o servidor estiver indisponível, o responsável precisa conferir a configuração e o deploy descritos abaixo. Recarregar a página não corrige credenciais OAuth ou banco ausentes.
 
-#### 📊 Productivity Analytics
-- Analytics dashboard
-- Performance metrics and trends
-- XP growth tracking
-- Custom date range insights 
+**Situação de referência:** o repositório configura a API em `https://progress-hub-api-q9hc.onrender.com`, mas isso é o backend, não a página de entrada. Na conferência de 28/10/2026, `/api/health` respondeu HTTP 503. A URL definitiva da interface não está confirmada neste README; não trate o ambiente como pronto até validar saúde, proxy e login reais. Consulte o [registro da publicação](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/PUBLISH_STATUS.md).
 
-#### 📝 Task/Project Management
-- Cloud synchronization
-- Project or Task creation
-- List/Calendar views
-- Label organization
+### Rodar no Linux
 
-#### 🏆 Social Features
-- Public leaderboard
+**1. Instale Git e Docker Engine com o plugin Compose.** Use o [guia da sua distribuição](https://docs.docker.com/engine/install/). Node.js e MongoDB são executados dentro dos containers.
 
-## ⚙️ Integrations
+**2. Baixe a branch correta e copie a configuração de exemplo:**
 
-_Tasks will be imported with default XP settings_
+```bash
+git clone --branch feat/github-community-mvp https://github.com/phzl0/QuestLog.git
+cd QuestLog
+cp example.env .env.test
+```
 
-- Todoist 
-- TickTick  
+Faça a cópia apenas na primeira instalação. Se `.env.test` já existir, preserve seu conteúdo. Se o repositório for privado, sua conta GitHub precisa ter acesso; quem já usa SSH pode trocar somente a URL do clone por `git@github.com:phzl0/QuestLog.git`.
 
-## 🔒 Security
-- **Authentication**: 
-  - Secure sign-in via Google OAuth 2.0
-  - Session-based authentication with Passport.js
-  - Secure cookie management with express-session
+**3. Configure sua conta GitHub e os segredos** conforme a seção **Configuração local obrigatória** abaixo. Edite `.env.test` no editor de sua preferência.
 
-- **Data Protection**:
-  - MongoDB session store
-  - Resource ownership verification
-  - Password-less authentication flow
+**4. Inicie e confira os serviços:**
 
-- **Network Security**:
-  - Express.js security middleware
-  - Production-grade CORS policy
-  - Rate limiting protection
+```bash
+sudo docker compose --env-file .env.test up --build -d
+sudo docker compose --env-file .env.test ps
+sudo docker compose --env-file .env.test logs -f server community-worker
+```
 
-## 🛠️ Technical Overview
-Built with:
-- [React](https://reactjs.org/) - Frontend framework
-- [Express.js](https://expressjs.com/) - Backend framework
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Vercel](https://vercel.com/) - Hosting platform
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Google OAuth 2.0](https://developers.google.com/identity/protocols/oauth2) - Authentication
-- [Passport.js](https://www.passportjs.org/concepts/authentication/middleware/) - Auth Middleware
-- [Docker](https://www.docker.com/) - Container Orchestration
+Aguarde o servidor conectar ao MongoDB. `Ctrl+C` sai dos logs sem parar os serviços. Se seu usuário já tem acesso ao Docker, pode omitir `sudo`.
 
-## 🏗️ Architecture
+**5. Abra [http://localhost:3000/community](http://localhost:3000/community)** e entre pelo GitHub. Saúde da API: [http://localhost:3001/api/health](http://localhost:3001/api/health).
 
-```mermaid
-graph TB
-    %% External Services Layer
-    subgraph External["External Services"]
-        OAuth[OAuth Providers]
-        AppIntegrations[App Integrations]
-    end
+### Rodar no Windows — PowerShell
 
-    %% Frontend Layer
-    subgraph Frontend["Frontend (React)"]
-        direction TB
-        App[App.js]
-        Auth[Authentication]
-        ModalManager[Task/Project Management]
-        GameSystem[Game Systems]
-    end
+**1. Instale [Git](https://git-scm.com/downloads) e [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/).** Use o backend WSL 2 com containers Linux e siga os requisitos do instalador. Abra o Docker Desktop e aguarde o mecanismo iniciar.
 
-    %% Backend Layer
-    subgraph Backend["Backend (Express.js)"]
-        direction TB
-        Server[Server.js]
-        AuthService[Auth Service]
-        ItemService[Task/Project Service]
-        GameService[Game Service]
-        IntegrationService[Integration Service]
-        Passport[Passport.js]
-        Session[Session Management]
-    end
+**2. No PowerShell, baixe a branch e copie o exemplo:**
 
-    %% Database Layer
-    subgraph Database["Database Layer"]
-        direction TB
-        MongoDB[(MongoDB)]
-        SessionStore[(Session Store)]
-    end
+```powershell
+git clone --branch feat/github-community-mvp https://github.com/phzl0/QuestLog.git
+cd QuestLog
+Copy-Item example.env .env.test
+notepad .env.test
+```
 
-    %% Core Connections
-    Frontend --> Backend
-    Backend --> External
-    Backend --> Database
+Copie o arquivo somente na primeira instalação; não sobrescreva uma configuração existente. Node.js e MongoDB rodam nos containers.
 
-    %% Detailed Connections
-    Auth --> AuthService
-    ModalManager --> ItemService
-    ModalManager --> IntegrationService
-    GameSystem --> GameService
-    AuthService --> OAuth
-    IntegrationService --> AppIntegrations
-    Session --> SessionStore
-    
-    %% Frontend Flow
-    App --> Auth & ModalManager & GameSystem
-    
-    %% Backend Flow
-    Server --> AuthService & ItemService & GameService & IntegrationService & Session
-    AuthService --> Passport
+**3. Preencha a configuração obrigatória** da próxima seção, salve e feche o editor.
 
-classDef frontend fill:#42b883,stroke:#333,stroke-width:2px
-classDef backend fill:#68a063,stroke:#333,stroke-width:2px
-classDef external fill:#f5a623,stroke:#333,stroke-width:2px
-classDef database fill:#4479a1,stroke:#333,stroke-width:2px
-  ```
+**4. Construa e inicie:**
 
-## 🚀 Quick Start
-### Prerequisites
-- Node.js (v14.0.0 or later)
-- Docker and Docker Compose
-- Google OAuth credentials from Google Cloud Console
+```powershell
+docker compose --env-file .env.test up --build -d
+docker compose --env-file .env.test ps
+docker compose --env-file .env.test logs -f server community-worker
+```
 
-### Installation
+Use `Ctrl+C` para sair dos logs. Não use `sudo` no PowerShell.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/hussaino03/QuestLog.git
-   cd QuestLog
-   ```
+**5. Abra [http://localhost:3000/community](http://localhost:3000/community)** e entre pelo GitHub. O Docker Desktop precisa permanecer em execução.
 
-2. Set up environment:
-   ```bash
-   # Copy the example environment file
-   cp example.env .env.test
+### Configuração local obrigatória — ambos os sistemas
 
-   # Only required changes:
-   # - GOOGLE_CLIENT_ID=your_client_id_from_google_cloud_console
-   # - GOOGLE_CLIENT_SECRET=your_client_secret_from_google_cloud_console
-   # - REACT_APP_GOOGLE_CLIENT_ID=same_as_GOOGLE_CLIENT_ID
-   ```
+1. No GitHub, abra **Settings → Developer settings → OAuth Apps → New OAuth App** ([atalho](https://github.com/settings/developers)). Crie uma aplicação exclusiva para esta cópia local.
+2. Defina **Homepage URL** como `http://localhost:3000` e **Authorization callback URL** exatamente como `http://localhost:3001/api/community/auth/callback`.
+3. Copie o Client ID e o Client Secret para `.env.test`. Gere dois segredos diferentes para sessão e criptografia. O comando abaixo usa Node dentro de um container temporário e funciona no terminal Linux e no PowerShell; no Linux, acrescente `sudo` se necessário:
 
-3. Start with Docker:
-   ```bash
-   docker-compose --env-file .env.test up --build
-   ```
+```bash
+docker run --rm node:22-alpine node -e "const c=require('node:crypto'); console.log('SESSION_SECRET='+c.randomBytes(32).toString('hex')); console.log('GITHUB_TOKEN_KEY='+c.randomBytes(32).toString('hex'))"
+```
 
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:3001
+4. Em `.env.test`, ajuste estas linhas com **seus próprios valores**:
 
-The example.env includes working test values for all other configurations. You only need to provide Google OAuth credentials to get started.
+```dotenv
+MONGODB_URI=mongodb://mongodb:27017/usersDB
+CLIENT=http://localhost:3000
+REACT_APP_PROD=http://localhost:3001/api
+GITHUB_CLIENT_ID=SEU_CLIENT_ID
+GITHUB_CLIENT_SECRET=SEU_CLIENT_SECRET
+GITHUB_CALLBACK_URL=http://localhost:3001/api/community/auth/callback
+SESSION_SECRET=COLE_O_PRIMEIRO_SEGREDO_GERADO
+GITHUB_TOKEN_KEY=COLE_O_SEGUNDO_SEGREDO_GERADO
+```
 
-## 🔧 API Endpoints
-- `POST /api/users`: Create or retrieve a user
-- `GET /api/users/:id`: Get user data
-- `PUT /api/users/:id`: Update user data (XP, level, tasks/projects completed)
-- `GET /api/leaderboard`: Retrieve leaderboard data
-- `POST /api/auth/google`: Handle Google OAuth authentication
-- `GET /api/auth/<integrations>` : integrations OAuth import
-- `POST /api/projects/:id/share`: Generate project share code
-- `POST /api/projects/:id/join`: Join project via share code
-- `GET /api/projects/:id/collaborators`: Get project collaborators
-- `DELETE /api/projects/:id/collaborators/:userId`: Remove collaborator
+Os textos `SEU_...` e `COLE_...` são instruções, não valores prontos. `GITHUB_TOKEN_KEY` precisa ter 64 caracteres hexadecimais. As credenciais ilustrativas do exemplo não autenticam contas reais. Google, Todoist, TickTick e IA não são necessários para usar a comunidade GitHub.
 
-## 💾 Data Persistence
-- All data synced with MongoDB
-- Available across devices
-- Progress tracked on the leaderboard
+Não publique `.env.test` ou segredos. Preserve a chave de tokens junto do backup: trocá-la impede ler tokens já salvos e exige reconectar contas. Para outras opções, veja o [guia da comunidade](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/GITHUB_COMMUNITY.md).
 
-## 💳 Support
-If you find QuestLog helpful and would like to support its development:
+### Atualizar, parar e conferir
 
-[![PayPal](https://img.shields.io/badge/PayPal-Support%20Development-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/hussaino03)
+Na pasta `QuestLog`, já na branch da comunidade:
 
-## 🤝 Contributing
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+```bash
+git pull --ff-only
+docker compose --env-file .env.test up --build -d
+```
 
-## 📝 License
-This project is open source and available under the [MIT License](LICENSE).
+No Linux, use `sudo` nos comandos Docker se necessário. `git pull` atualiza os arquivos; o Compose reconstrói e executa a nova versão.
+
+Para parar sem remover o banco:
+
+```bash
+docker compose --env-file .env.test down
+```
+
+Não acrescente `-v`, pois remove o volume do MongoDB. O worker local só sincroniza enquanto Docker e computador estiverem ligados. Falhas de OAuth pedem conferir a URL de retorno; falhas de dados pedem conferir os logs de `server` e `community-worker`.
+
+## Conectar sua própria cópia ao servidor — responsável técnico
+
+A arquitetura preparada usa **Vercel para a interface**, **Render para API e sincronização** e **MongoDB Atlas para persistência**. O navegador usa a origem da interface; o caminho `/api` é encaminhado até o Render. Não coloque a URI do Atlas ou o Client Secret no frontend.
+
+### 1. Banco e GitHub OAuth
+
+- Prepare seu banco Atlas com usuário restrito à aplicação e acesso de rede compatível com os endereços de saída do Render. O banco usado pela aplicação é `usersDB`.
+- Crie uma OAuth App para o ambiente hospedado, separada da local. A homepage é a URL HTTPS da interface; o callback é essa mesma origem seguida de `/api/community/auth/callback`.
+- Para migrar uma instalação existente, preserve `GITHUB_TOKEN_KEY` e siga [backup e restauração](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/BACKUP_RESTORE.md). Clonar o repositório não transfere usuários, histórico ou demos.
+
+### 2. API no Render
+
+Para uma instalação nova, use o [`render.yaml`](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/render.yaml) da branch da comunidade, ou configure um Web Service Docker com Dockerfile `server/Dockerfile` e contexto `server`. Se o serviço já existir, atualize sua configuração em vez de criar outro. Confirmar a criação de um Blueprint inicia a primeira publicação.
+
+No ambiente do serviço, configure:
+
+| Variável | Valor / finalidade |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `COMMUNITY_WORKER_MODE` | `embedded`, para API e sincronização no mesmo serviço |
+| `MONGODB_URI` | Sua conexão privada Atlas |
+| `MONGODB_DB` | `usersDB` |
+| `CLIENT` | Origem HTTPS exata da sua interface, sem caminho ou barra final |
+| `GITHUB_CALLBACK_URL` | `CLIENT` seguido de `/api/community/auth/callback` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | OAuth App desse ambiente |
+| `SESSION_SECRET`, `GITHUB_TOKEN_KEY` | Segredos privados; preserve os existentes numa migração |
+| `COMMUNITY_ADMIN_GITHUB_IDS` | IDs numéricos GitHub dos administradores, separados por vírgula |
+| `TRUST_PROXY` | Quantidade validada de proxies no caminho real; não copie um número sem verificar |
+
+O Render fornece `PORT`. O health check é `/api/health`: deve retornar HTTP 200 com `{"status":"ok"}` antes de testar o login. Um serviço criado ou uma URL existente não comprova que o backend esteja funcionando.
+
+### 3. Interface na Vercel e conexão com a API
+
+Com **Node.js 22.12 ou superior** instalado, execute na raiz da sua cópia, substituindo o exemplo pela origem HTTPS real da sua API Render, sem `/api`:
+
+```bash
+node scripts/prepare-vercel.mjs https://SUA-API.onrender.com
+```
+
+Esse comando gera `client/vercel.json` com o encaminhamento de `/api`; não executa deploy. Em uma cópia própria, confira a origem gerada antes de publicá-la. O arquivo atual do projeto aponta para a API de referência citada acima; substitua-a se estiver criando outro servidor.
+
+Na Vercel, use a branch `feat/github-community-mvp`, pasta raiz `client`, instalação `npm ci`, build `npm run build` e saída `build`. Deixe `REACT_APP_PROD` sem configuração para o build usar `/api`. Depois de confirmar a URL pública, atualize `CLIENT`, o callback no Render e o callback da OAuth App com essa mesma origem.
+
+**Não basta mudar `.env.test` para apontar um frontend local à API hospedada:** a origem permitida, cookies e o callback também precisam combinar. Para participar do servidor existente, use a interface oficial; para desenvolver isoladamente, use a instalação Docker local.
+
+### 4. Validar o ambiente
+
+Confira API saudável, login/logout reais pelo domínio público, persistência no Atlas, sincronização e acesso com duas contas. O Blueprint e a configuração Vercel mantêm deploy automático desligado; commits não são uma confirmação de publicação. Esta documentação não executa deploy nem altera serviços.
+
+No [Render Free](https://render.com/docs/free), o serviço pode pausar após 15 minutos sem tráfego. Enquanto pausado, o worker embutido não sincroniza; no próximo acesso pode haver espera de inicialização. Veja [Render e suas limitações](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/RENDER_FREE.md) e [preparação de produção](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/PRODUCTION_READINESS.md).
+
+## Sobre o projeto
+
+O **Progress Hub é uma comunidade competitiva de desenvolvedores conectada ao GitHub**. A proposta é transformar contribuições de desenvolvimento em progresso visível: carreira, temporadas, classificações, missões e conquistas, junto de espaços para interação e colaboração.
+
+A competição busca incentivar constância e participação. XP é uma regra de engajamento da plataforma, não uma certificação de qualidade técnica ou experiência profissional. Na beta, regras e cobertura dos dados podem mudar.
+
+### Áreas da beta
+
+| Área | Proposta |
+| --- | --- |
+| Perfil | Identidade, carreira, projetos e conquistas |
+| GitHub | Login e sincronização de contribuições elegíveis |
+| Competição | XP, níveis, classificações e temporadas |
+| Missões | Objetivos com progresso e recompensas de participação |
+| Comunidade | Feed, interações, grupos e colaboração |
+| Preferências | Aparência, privacidade e notificações |
+
+A disponibilidade depende da versão e da configuração do ambiente. Limites e falhas das APIs do GitHub podem atrasar a sincronização. Consulte as [regras de pontuação e privacidade](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/docs/GITHUB_COMMUNITY.md) antes de interpretar os rankings.
+
+## Tecnologias e organização
+
+| Camada | Tecnologias |
+| --- | --- |
+| Interface | React, JavaScript, Vite, CSS, Lucide React, Framer Motion |
+| Backend | Node.js, Express, Passport, sessões |
+| Banco e sessões | MongoDB, connect-mongo |
+| Ambiente local | Docker e Docker Compose; worker separado |
+| Hospedagem preparada | Vercel + Render + MongoDB Atlas; worker embutido no Render |
+
+`client/` contém a interface; `server/`, a API e os processos de sincronização. As integrações e telas antigas de produtividade pertencem à base QuestLog e não definem a proposta atual da comunidade.
+
+## Origem e créditos
+
+O Progress Hub evolui a partir do [QuestLog, de hussaino03](https://github.com/hussaino03/QuestLog), originalmente voltado à produtividade gamificada. O nome do repositório e partes do código preservam essa origem.
+
+Adaptação e manutenção: [phzl0](https://github.com/phzl0). Consulte a [licença do repositório](https://github.com/phzl0/QuestLog/blob/feat/github-community-mvp/LICENSE) e os guias técnicos da branch da comunidade.
